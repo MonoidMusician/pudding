@@ -55,20 +55,20 @@ parseTerm e = case e of
   Ident i -> do
     mix <- lookupIdent i
     case mix of
-      Just ix -> return (TVar ix)
-      Nothing -> return (TGlobal (Name i) undefined)
+      Just ix -> return (TVar mempty ix)
+      Nothing -> return (TGlobal mempty (Name i) undefined)
   List (x:xs) -> case x of
     _ | isLambda x -> do
           (binder, ty, body) <- parseBinder xs
-          return (TLambda Explicit binder ty body)
+          return (TLambda mempty Explicit binder ty body)
     _ | isPi x -> do
           (binder, ty, body) <- parseBinder xs
-          return (TPi Explicit binder ty body)
-    _ -> foldl TApp <$> parseTerm x <*> mapM parseTerm xs
+          return (TPi mempty Explicit binder ty body)
+    _ -> foldl (TApp mempty) <$> parseTerm x <*> mapM parseTerm xs
   List [] -> throwError "Empty list"
 
-isKeyword :: [String] -> SExpr -> Bool
-isKeyword kw (Ident i) = let i' = T.unpack i in elem i' kw
+isKeyword :: [Text] -> SExpr -> Bool
+isKeyword kw (Ident i) = elem i kw
 isKeyword _ _ = False
 
 isLambda :: SExpr -> Bool
