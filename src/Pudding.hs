@@ -1,4 +1,5 @@
 module Pudding (someFunc) where
 
 someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+someFunc = do
+  putStrLn "someFunc"
