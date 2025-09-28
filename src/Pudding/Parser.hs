@@ -1,7 +1,7 @@
 module Pudding.Parser where
 
 import Control.Applicative (many, (<|>))
-import Control.Monad.Reader ( MonadReader(local), asks, Reader )
+import Control.Monad.Reader ( MonadReader(local), asks, Reader, runReader )
 import qualified Text.Parsec as P
 import qualified Data.List as L
 import Data.Text (Text)
@@ -49,7 +49,7 @@ var = do
     Nothing -> return (TGlobal mempty i undefined)
 
 keyword :: [String] -> Parser ()
-keyword kw = void $ P.choice (map P.string' kw)
+keyword kw = void $ P.choice (map P.string' kw) *> P.spaces
 
 lambda :: Parser Term
 lambda = keyword ["lambda", "λ"] *> abstraction TLambda
@@ -70,3 +70,6 @@ app :: Parser Term
 app = do
   (x:xs) <- P.many1 term
   return $ foldl (TApp mempty) x xs
+
+runParser :: Parser a -> P.SourceName -> Text -> Either P.ParseError a
+runParser p s t = runReader (P.runParserT p () s t) (Ctx [])
