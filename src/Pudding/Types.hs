@@ -9,6 +9,8 @@ import Data.Map (Map)
 import Data.Vector (Vector)
 import GHC.Base (Symbol)
 import Text.Parsec.Pos (SourcePos)
+import Control.DeepSeq (NFData(rnf))
+import GHC.Generics (Generic)
 
 -- Just give a little description of the type
 type Desc (s :: Symbol) t = t
@@ -21,22 +23,26 @@ data Binder
   = BVar !(Meta CanonicalName)
   | BMulti !Binder !Binder -- Bind two to the same value
   | BPair !Binder !Binder -- Bind to fst and snd projections
+  deriving (Generic, NFData)
 
 data GlobalInfo
   -- A function or global constant or whatever
   = GlobalTerm (Desc "type" Term) (Desc "term" Term)
   -- An inductive type declaration
   | GlobalType GlobalTypeInfo
+  deriving (Generic, NFData)
 
 data GlobalTypeInfo = GlobalTypeInfo
   { typeArgs :: !(Vector (Plicit, Binder, Term))
   , typeCons :: !(Map Name ConstructorInfo)
   }
+  deriving (Generic, NFData)
 
 data ConstructorInfo = ConstructorInfo
   { arguments :: !(Vector (Plicit, Binder, Term))
   , indices :: !(Vector Term)
   }
+  deriving (Generic, NFData)
 
 ----------------------------------------
 -- An overview of important functions --
@@ -72,6 +78,7 @@ data Term
   -- | TPair Metadata (Desc "fst value" Term) (Desc "snd type functor" Term) (Desc "snd value" Term)
   -- | TFst Metadata Term
   -- | TSnd Metadata Term
+  deriving (Generic, NFData)
 
 -- Result of Normalization by Evaluation (NbE), the semantic domain.
 data Eval
@@ -81,54 +88,64 @@ data Eval
   | EPi Metadata !Plicit Binder (Desc "domain type" Eval) (Desc "codomain" Closure)
   | ESigma Metadata !Plicit Binder (Desc "fst type" Eval) (Desc "snd type under fst type" Closure)
   | EPair Metadata (Desc "fst value" Eval) (Desc "snd type functor" Eval) (Desc "snd value" Eval)
+  deriving (Generic, NFData)
 
 -- A Neutral is stuck on a variable (or hole), with some projections and eliminators applied to it.
 -- (This is the Normalization part of NbE: inserting variables to evaluate open terms.)
 data Neutral = Neutral NeutHead [NeutPrj]
+  deriving (Generic, NFData)
 data NeutHead
   = NVar Metadata (Desc "type" Term) !Level
   | NHole Metadata (Desc "type" Term) !Fresh
+  deriving (Generic, NFData)
 data NeutPrj
   = NFst Metadata
   | NSnd Metadata
+  deriving (Generic, NFData)
 
 -- Closure: an unevaluated term frozen in an environment of evaluated variables.
 data Closure = Closure EvalCtx Term
+  deriving (Generic, NFData)
 
 data EvalCtx = EvalCtx
   { evalSize :: !Int
   , evalValues :: ![Eval]
   }
+  deriving (Generic, NFData)
 
 data QuoteCtx = QuoteCtx
   { quoteSize :: !Int
   }
+  deriving (Generic, NFData)
 
 --------------------------------------------------------------------------------
 -- Helper types!                                                              --
 --------------------------------------------------------------------------------
 
 data Plicit = Explicit | Implicit
+  deriving (Eq, Ord, Generic, NFData)
 
 -- DeBruijn index: 0 is the most recently bound variable (inner scope). Used for typechecking.
 newtype Index = Index Int
-  deriving newtype (Eq, Ord, Show)
+  deriving newtype (Eq, Ord, Show, NFData)
 
 -- DeBruijn level: 0 is the first bound variable (outer scope). Used for evaluation.
 newtype Level = Level Int
-  deriving newtype (Eq, Ord, Show)
+  deriving newtype (Eq, Ord, Show, NFData)
 
 -- Name (TODO: string interning)
 data Name = Name Text
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Generic, NFData)
 
 -- E.g. for numbering typed holes
 newtype Fresh = Fresh Int
+  deriving newtype (Eq, Ord, Show, NFData)
 
 data ULevel
   = UBase !Int
   | UMeta !Int
   | UVar !Fresh -- unsolved level
+  deriving (Eq, Ord, Generic, NFData)
 
 --------------------------------------------------------------------------------
 -- Metadata types                                                             --
@@ -138,26 +155,30 @@ data ULevel
 -- implementation efficiency or so on.
 -- Should implement `Semigroup`, so it can be unified!
 newtype Meta t = Meta t
-  deriving (Eq, Ord, Semigroup)
+  deriving newtype (Eq, Ord, Semigroup, NFData)
 
 
--- Per-node metadata (a monoid, unlike the other `Meta`s)
+-- Per-node metadata (a monoid, unlike the other `Meta`s), since synthesized nodes
+-- do not have source metadata and such.
 data Metadata = Metadata
   { sourcePos :: Set SourcePos -- concatenated during unification
   }
+  deriving (Eq, Ord, Generic)
 instance Semigroup Metadata where
   m1 <> m2 = Metadata
     { sourcePos = sourcePos m1 <> sourcePos m2
     }
 instance Monoid Metadata where
   mempty = Metadata mempty
-
+instance NFData Metadata where
+  rnf (Metadata pos) = seq pos () -- good enough
 
 -- A canonical name, that is merged during unification
 data CanonicalName = CanonicalName
   { chosenName :: Name
   , allNames :: Set Name -- concatenated during unification
   }
+  deriving (Generic, NFData)
 
 instance Semigroup CanonicalName where
   l <> r = CanonicalName
@@ -168,7 +189,7 @@ instance Semigroup CanonicalName where
 
 -- `Exact` values only unify with themself: otherwise it throws an error.
 newtype Exact t = Exact t
-  deriving (Eq, Ord)
+  deriving newtype (Eq, Ord, NFData)
 
 instance Eq t => Semigroup (Exact t) where
   Exact l <> Exact r =

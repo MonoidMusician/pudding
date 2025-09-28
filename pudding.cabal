@@ -47,6 +47,7 @@ common defaults
         OverloadedStrings
         DerivingStrategies
         DerivingVia
+        DeriveAnyClass
         GeneralizedNewtypeDeriving
         LambdaCase
 

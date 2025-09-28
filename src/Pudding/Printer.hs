@@ -20,7 +20,7 @@ printCore = \case
   TVar _m idx -> pure $ Doc.pretty $ "x" <> show idx
   TGlobal _m (Name name) _ -> pure $ Doc.pretty name
   TLambda _m p binder ty body -> sexp
-    [ pure "lambda"
+    [ pure $ "lambda" <> if p == Implicit then "?" else ""
     , sexp
       [ \ctx -> "x" <> Doc.pretty (quoteSize ctx)
       , printCore ty
@@ -28,7 +28,7 @@ printCore = \case
     , bound binder $ printCore body
     ]
   TPi _m p binder ty body -> sexp
-    [ pure "pi"
+    [ pure $ "pi" <> if p == Implicit then "?" else ""
     , sexp
       [ \ctx -> "x" <> Doc.pretty (quoteSize ctx)
       , printCore ty
