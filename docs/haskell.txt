@@ -1,4 +1,5 @@
 I don't like it, but apparently cabal is the new stack (/sarcasm), so... here we are
+  (okay actually Stack is being maintained again? ... too late, maybe)
 
 GHCup 0.1.50.2 (version probably doesn't matter, but use `ghcup tui` to install:)
   HLS 2.10.0.0 <~ seems to work?
@@ -12,4 +13,7 @@ Then `cabal build` should work?
 
 --------
 
-When you add a new module, you need to add it to `pudding.cabal` (and its module name needs to match its file path)
+When you add a new module, you need to add it to `pudding.cabal`:
+  its module name needs to match its file path
+
+Probably need to run `cabal build` again before it will show up

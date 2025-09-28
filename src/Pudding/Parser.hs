@@ -45,8 +45,8 @@ var = do
   i <- ident
   mix <- lookupIdent i
   case mix of
-    Just ix -> return (TVar ix)
-    Nothing -> return (TGlobal i undefined)
+    Just ix -> return (TVar mempty ix)
+    Nothing -> return (TGlobal mempty i undefined)
 
 keyword :: [String] -> Parser ()
 keyword kw = void $ P.choice (map P.string' kw)
@@ -57,16 +57,16 @@ lambda = keyword ["lambda", "λ"] *> abstraction TLambda
 piType :: Parser Term
 piType = keyword ["Pi", "Π"] *> abstraction TPi
 
-type Abstraction = Plicit -> Binder -> Term -> Term -> Term
+type Abstraction = Metadata -> Plicit -> Binder -> Term -> Term -> Term
 
 abstraction :: Abstraction -> Parser Term
 abstraction mk = do
   (name, ty) <- lp *> ((,) <$> ident <*> term) <* rp
   body <- local (bindIdent name) term
   let binder = BVar (Meta (CanonicalName name mempty))
-  return (mk Explicit binder ty body)
+  return (mk mempty Explicit binder ty body)
 
 app :: Parser Term
 app = do
   (x:xs) <- P.many1 term
-  return $ foldl TApp x xs
+  return $ foldl (TApp mempty) x xs
