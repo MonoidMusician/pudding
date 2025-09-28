@@ -1,3 +1,4 @@
+-- Run with `cabal test --verbose=0` or `cabal test` (from the project root)
 module Main (main) where
 
 import Control.Applicative (many, (<|>))
@@ -34,7 +35,7 @@ main = do
       exitFailure
     Right cases -> return cases
   results <- fmap mconcat $ forM cases $ \(TestCase expected text) ->
-    case runParser (P.spaces *> term <* P.eof) "test case" text of
+    runParser (P.spaces *> term <* P.eof) "test case" text >>= \case
       Left err -> case expected of
         Pass -> do
           putStrLn "Test failed (could not parse):"

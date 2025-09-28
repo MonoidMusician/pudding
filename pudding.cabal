@@ -50,6 +50,7 @@ common defaults
         DeriveAnyClass
         GeneralizedNewtypeDeriving
         LambdaCase
+        BlockArguments
 
     -- Other library packages from which modules are imported.
     -- (Slightly trimmed from PureScript)
@@ -100,6 +101,7 @@ library
         Pudding.Parser,
         Pudding.Printer,
         Pudding.Types,
+        Pudding.Name,
 
     -- Modules included in this library but not exported.
     -- other-modules:

@@ -1,16 +1,18 @@
 module Pudding.Parser where
 
 import Control.Applicative (many, (<|>))
-import Control.Monad.Reader ( MonadReader(local), asks, Reader, runReader )
+import Control.Monad.Reader ( MonadReader(local), asks, ReaderT (runReaderT) )
 import qualified Text.Parsec as P
 import qualified Data.List as L
 import Data.Text (Text)
-import Data.Functor (void)
+import Data.Functor (void, (<&>))
 import qualified Data.Text as T
 
 import Pudding.Types
+import Pudding.Name (NameTable)
+import Data.IORef (IORef)
 
-type Parser = P.ParsecT Text () (Reader Ctx)
+type Parser = P.ParsecT Text () (ReaderT Ctx IO)
 
 pragma :: Text -> Parser ()
 pragma name = void $ P.string' $ "%" <> T.unpack name
@@ -25,15 +27,16 @@ ident :: Parser Name
 ident = do
   t <- (:) <$> P.letter <*> many P.alphaNum
   P.spaces
-  return $ Name (T.pack t)
+  tbl <- asks table
+  internalize tbl $ T.pack t
 
 term :: Parser Term
 term = var <|> (lp *> (lambda <|> piType <|> app) <* rp)
 
-newtype Ctx = Ctx { scope :: [Name] }
+data Ctx = Ctx { scope :: [Name], table :: IORef NameTable }
 
 bindIdent :: Name -> Ctx -> Ctx
-bindIdent i (Ctx is) = Ctx (i:is)
+bindIdent i (Ctx is tbl) = Ctx (i:is) tbl
 
 lookupIdent :: Name -> Parser (Maybe Index)
 lookupIdent i = do
@@ -51,25 +54,30 @@ var = do
 keyword :: [String] -> Parser ()
 keyword kw = void $ P.choice (map P.string' kw) *> P.spaces
 
+kwPlicit :: [String] -> Parser Plicit
+kwPlicit kw = Implicit <$ keyword (kw <&> (<> "?")) <|> Explicit <$ keyword kw
+
 lambda :: Parser Term
-lambda = keyword ["lambda", "λ"] *> abstraction TLambda
+lambda = kwPlicit ["lambda", "λ"] >>= abstraction TLambda
 
 piType :: Parser Term
-piType = keyword ["Pi", "Π"] *> abstraction TPi
+piType = kwPlicit ["Pi", "Π"] >>= abstraction TPi
 
 type Abstraction = Metadata -> Plicit -> Binder -> Term -> Term -> Term
 
-abstraction :: Abstraction -> Parser Term
-abstraction mk = do
+abstraction :: Abstraction -> Plicit -> Parser Term
+abstraction mk plicit = do
   (name, ty) <- lp *> ((,) <$> ident <*> term) <* rp
   body <- local (bindIdent name) term
   let binder = BVar (Meta (CanonicalName name mempty))
-  return (mk mempty Explicit binder ty body)
+  return (mk mempty plicit binder ty body)
 
 app :: Parser Term
 app = do
   (x:xs) <- P.many1 term
   return $ foldl (TApp mempty) x xs
 
-runParser :: Parser a -> P.SourceName -> Text -> Either P.ParseError a
-runParser p s t = runReader (P.runParserT p () s t) (Ctx [])
+runParser :: Parser a -> P.SourceName -> Text -> IO (Either P.ParseError a)
+runParser p s t = do
+  tbl <- initTable
+  runReaderT (P.runParserT p () s t) (Ctx [] tbl)

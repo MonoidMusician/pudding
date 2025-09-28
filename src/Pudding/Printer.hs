@@ -18,7 +18,7 @@ bound _ f (QuoteCtx lvl) = f (QuoteCtx (lvl + 1))
 printCore :: forall ann. Term -> QuoteCtx -> Doc.Doc ann
 printCore = \case
   TVar _m idx -> pure $ Doc.pretty $ "x" <> show idx
-  TGlobal _m (Name name) _ -> pure $ Doc.pretty name
+  TGlobal _m (Name _ name) _ -> pure $ Doc.pretty name
   TLambda _m p binder ty body -> sexp
     [ pure $ "lambda" <> if p == Implicit then "?" else ""
     , sexp

@@ -11,9 +11,13 @@ Run `cabal update` to fetch the latest package index
 
 Then `cabal build` should work?
 
+This HLS error during startup seems benign, but it can also indicate a real error:
+
+> Failed to find the GHC version of this Cabal project. Error when calling cabal exec -v0 -- ghc --print-libdir
+
 --------
 
 When you add a new module, you need to add it to `pudding.cabal`:
   its module name needs to match its file path
 
-Probably need to run `cabal build` again before it will show up
+Probably need to run `cabal build` again before it will show up, and/or restart HLS

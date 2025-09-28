@@ -1,9 +1,11 @@
 {-# LANGUAGE DataKinds #-}
-module Pudding.Types where
+module Pudding.Types
+  ( module Pudding.Types -- Export the default exports of this module
+  , module Pudding.Name -- Export more
+  ) where
 
 import Data.Functor ((<&>))
 import Data.Functor.Const (Const(..))
-import Data.Text (Text)
 import Data.Set (Set)
 import Data.Map (Map)
 import Data.Vector (Vector)
@@ -11,7 +13,7 @@ import GHC.Base (Symbol)
 import Text.Parsec.Pos (SourcePos)
 import Control.DeepSeq (NFData(rnf))
 import GHC.Generics (Generic)
-
+import Pudding.Name (Name(..), newTable, initTable, internalize)
 -- Just give a little description of the type
 type Desc (s :: Symbol) t = t
 
@@ -25,9 +27,12 @@ data Binder
   | BPair !Binder !Binder -- Bind to fst and snd projections
   deriving (Generic, NFData)
 
+data GlobalTerm = GlobalTerm !Term Eval
+  deriving (Generic, NFData)
+
 data GlobalInfo
   -- A function or global constant or whatever
-  = GlobalTerm (Desc "type" Term) (Desc "term" Term)
+  = GlobalDefn (Desc "type" GlobalTerm) (Desc "term" GlobalTerm)
   -- An inductive type declaration
   | GlobalType GlobalTypeInfo
   deriving (Generic, NFData)
@@ -65,6 +70,8 @@ data ConstructorInfo = ConstructorInfo
 -- and not shove metadata into a separate structure, unfortunately)
 
 -- A dependently typed term in the *core* calculus (not meant to be pleasant to write).
+-- It is intrinsically typed in the sense that it supports `typeof :: Term -> Term`
+-- (where `typeof . typeof` resolves to some `TUniv`)
 data Term
   = TVar Metadata !Index
   -- | TUniv Metadata ULevel
@@ -132,10 +139,6 @@ newtype Index = Index Int
 -- DeBruijn level: 0 is the first bound variable (outer scope). Used for evaluation.
 newtype Level = Level Int
   deriving newtype (Eq, Ord, Show, NFData)
-
--- Name (TODO: string interning)
-data Name = Name Text
-  deriving (Eq, Ord, Generic, NFData)
 
 -- E.g. for numbering typed holes
 newtype Fresh = Fresh Int
