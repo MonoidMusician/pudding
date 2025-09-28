@@ -12,6 +12,7 @@ import qualified Text.Parsec as P
 import Text.Parsec.Text (Parser)
 
 import Pudding.Parser (runParser, term)
+import Pudding.Printer (formatCore, Style (Ansi))
 
 data TestResults = TestResults { passed :: Int, failed :: Int }
 
@@ -43,8 +44,10 @@ main = do
           putStrLn $ "  " ++ show err
           return resultFail
         Fail -> return resultPass
-      Right _ -> case expected of
-        Pass -> return resultPass
+      Right parsed -> case expected of
+        Pass -> do
+          putStrLn $ T.unpack $ formatCore Ansi parsed
+          return resultPass
         Fail -> do
           putStrLn "Test failed (should not have parsed):"
           putStrLn $ "  " ++ T.unpack text

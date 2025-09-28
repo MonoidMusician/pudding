@@ -87,6 +87,12 @@ data Term
   -- | TSnd Metadata Term
   deriving (Generic, NFData)
 
+spine :: Term -> (Term, [Term])
+spine = go []
+  where
+  go acc (TApp _ fun arg) = go (arg : acc) fun
+  go acc fun = (fun, acc)
+
 -- Result of Normalization by Evaluation (NbE), the semantic domain.
 data Eval
   = ENeut Metadata Neutral -- do we want it tagged with its ultimate type?
