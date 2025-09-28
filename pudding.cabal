@@ -47,6 +47,7 @@ library
     exposed-modules:
         Pudding,
         Pudding.Parser,
+        Pudding.Types,
 
     -- Modules included in this library but not exported.
     -- other-modules:

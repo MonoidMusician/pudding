@@ -5,3 +5,7 @@ GHCup 0.1.50.2 (version probably doesn't matter, but use `ghcup tui` to install:
   cabal 3.12.1.0 <~ important!
   GHC 9.8.4 (Dec 2024) <~ very important!
     base 4.19.2.0 (comes with GHC 9.8.4, nothing you need to do there, just thought it was important to note)
+
+Run `cabal update` to fetch the latest package index
+
+Then `cabal build` should work?
