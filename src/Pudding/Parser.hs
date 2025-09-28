@@ -47,7 +47,7 @@ rp = P.char ')' *> spaces
 ident :: Parser Name
 ident = do
   t <- (:) <$> P.letter <*> many P.alphaNum
-  P.spaces
+  spaces
   tbl <- asks table
   internalize tbl $ T.pack t
 
