@@ -58,12 +58,8 @@ parseTerm e = case e of
       Just ix -> return (TVar ix)
       Nothing -> return (TGlobal (Name i) undefined)
   List (x:xs) -> case x of
-    _ | isLambda x -> do
-          (binder, ty, body) <- parseBinder xs
-          return (TLambda Explicit binder ty body)
-    _ | isPi x -> do
-          (binder, ty, body) <- parseBinder xs
-          return (TPi Explicit binder ty body)
+    _ | isLambda x -> parseBinder TLambda xs
+    _ | isPi x -> parseBinder TPi xs
     _ -> foldl TApp <$> parseTerm x <*> mapM parseTerm xs
   List [] -> throwError "Empty list"
 
@@ -77,13 +73,13 @@ isLambda = isKeyword ["lambda", "λ"]
 isPi :: SExpr -> Bool
 isPi = isKeyword ["Pi", "Π"]
 
-parseBinder :: [SExpr] -> SExprParser (Binder, Term, Term)
-parseBinder xs = case xs of
+parseBinder :: (Plicit -> Binder -> Term -> Term -> Term) -> [SExpr] -> SExprParser Term
+parseBinder mk xs = case xs of
   [List [Ident name, ty], body] -> do
     ty' <- parseTerm ty
     body' <- local (bindIdent name) $ parseTerm body
     let binder = BVar (Meta (CanonicalName (Name name) mempty))
-    return (binder, ty', body')
+    return (mk Explicit binder ty' body')
   -- TODO: Better error message
   _ -> throwError "Invalid expression"
 
