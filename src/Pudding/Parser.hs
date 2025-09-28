@@ -1,10 +1,8 @@
 module Pudding.Parser where
 
 import Control.Applicative (many, (<|>))
-import Control.Monad.Error.Class
-import Control.Monad.Reader
+import Control.Monad.Reader ( MonadReader(local), asks, Reader )
 import qualified Text.Parsec as P
-import qualified Text.Parsec.Text as PT
 import qualified Data.List as L
 import Data.Text (Text)
 import Data.Functor (void)
@@ -12,12 +10,10 @@ import qualified Data.Text as T
 
 import Pudding.Types
 
-type Parser = PT.Parser
+type Parser = P.ParsecT Text () (Reader Ctx)
 
 pragma :: Text -> Parser ()
 pragma name = void $ P.string' $ "%" <> T.unpack name
-
-data SExpr = Ident Text | List [SExpr]
 
 lp :: Parser ()
 lp = P.char '(' *> P.spaces
@@ -25,67 +21,52 @@ lp = P.char '(' *> P.spaces
 rp :: Parser ()
 rp = P.char ')' *> P.spaces
 
-ident :: Parser Text
+ident :: Parser Name
 ident = do
   t <- (:) <$> P.letter <*> many P.alphaNum
   P.spaces
-  return (T.pack t)
+  return $ Name (T.pack t)
 
-list :: Parser [SExpr]
-list = lp *> many sexpr <* rp
+term :: Parser Term
+term = var <|> (lp *> (lambda <|> piType <|> app) <* rp)
 
-sexpr :: Parser SExpr
-sexpr = Ident <$> ident <|> List <$> list
+newtype Ctx = Ctx { scope :: [Name] }
 
-newtype Ctx = Ctx { scope :: [Text] }
-
-bindIdent :: Text -> Ctx -> Ctx
+bindIdent :: Name -> Ctx -> Ctx
 bindIdent i (Ctx is) = Ctx (i:is)
 
--- TODO: Track source locations for errors
-type SExprParser a = ReaderT Ctx (Either String) a
-
-lookupIdent :: Text -> SExprParser (Maybe Index)
+lookupIdent :: Name -> Parser (Maybe Index)
 lookupIdent i = do
   idents <- asks scope
   return $ Index <$> L.elemIndex i idents
 
-parseTerm :: SExpr -> SExprParser Term
-parseTerm e = case e of
-  Ident i -> do
-    mix <- lookupIdent i
-    case mix of
-      Just ix -> return (TVar ix)
-      Nothing -> return (TGlobal (Name i) undefined)
-  List (x:xs) -> case x of
-    _ | isLambda x -> parseBinder TLambda xs
-    _ | isPi x -> parseBinder TPi xs
-    _ -> foldl TApp <$> parseTerm x <*> mapM parseTerm xs
-  List [] -> throwError "Empty list"
+var :: Parser Term
+var = do
+  i <- ident
+  mix <- lookupIdent i
+  case mix of
+    Just ix -> return (TVar ix)
+    Nothing -> return (TGlobal i undefined)
 
-isKeyword :: [String] -> SExpr -> Bool
-isKeyword kw (Ident i) = let i' = T.unpack i in elem i' kw
-isKeyword _ _ = False
+keyword :: [String] -> Parser ()
+keyword kw = void $ P.choice (map P.string' kw)
 
-isLambda :: SExpr -> Bool
-isLambda = isKeyword ["lambda", "λ"]
+lambda :: Parser Term
+lambda = keyword ["lambda", "λ"] *> abstraction TLambda
 
-isPi :: SExpr -> Bool
-isPi = isKeyword ["Pi", "Π"]
+piType :: Parser Term
+piType = keyword ["Pi", "Π"] *> abstraction TPi
 
-parseBinder :: (Plicit -> Binder -> Term -> Term -> Term) -> [SExpr] -> SExprParser Term
-parseBinder mk xs = case xs of
-  [List [Ident name, ty], body] -> do
-    ty' <- parseTerm ty
-    body' <- local (bindIdent name) $ parseTerm body
-    let binder = BVar (Meta (CanonicalName (Name name) mempty))
-    return (mk Explicit binder ty' body')
-  -- TODO: Better error message
-  _ -> throwError "Invalid expression"
+type Abstraction = Plicit -> Binder -> Term -> Term -> Term
 
-term :: Parser Term
-term = do
-  e <- sexpr
-  case runReaderT (parseTerm e) (Ctx []) of
-    Left err -> fail err
-    Right t -> return t
+abstraction :: Abstraction -> Parser Term
+abstraction mk = do
+  (name, ty) <- lp *> ((,) <$> ident <*> term) <* rp
+  body <- local (bindIdent name) term
+  let binder = BVar (Meta (CanonicalName name mempty))
+  return (mk Explicit binder ty body)
+
+app :: Parser Term
+app = do
+  (x:xs) <- P.many1 term
+  return $ foldl TApp x xs
