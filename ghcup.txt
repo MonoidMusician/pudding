@@ -9,3 +9,7 @@ GHCup 0.1.50.2 (version probably doesn't matter, but use `ghcup tui` to install:
 Run `cabal update` to fetch the latest package index
 
 Then `cabal build` should work?
+
+--------
+
+When you add a new module, you need to add it to `pudding.cabal` (and its module name needs to match its file path)
