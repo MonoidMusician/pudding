@@ -1,0 +1,32 @@
+-- Var
+pass { x }
+
+-- App
+pass { (f x) }
+pass { (f x y) }
+pass { (f x y z) }
+fail { f x }
+
+-- Lambda
+pass { (lambda (x A) x) }
+pass { (λ (x A) x) }
+pass { (λ (x A) (f x)) }
+fail { (lambda (x A)) }
+fail { (lambda (x A) f x) }
+fail { (lambda (x) x) }
+fail { (lambda x x) }
+
+-- Pi
+pass { (Pi (x A) B) }
+pass { (Π (x A) B) }
+pass { (Π (x A) (B x)) }
+fail { (Pi (x A)) }
+fail { (Pi (x A) B x) }
+fail { (Pi (x) B) }
+fail { (Pi x B) }
+
+-- Compound
+pass {
+  (lambda (f (Pi (x A) (B x)))
+    (f ((lambda (s T) (s s)) y) z))
+}
