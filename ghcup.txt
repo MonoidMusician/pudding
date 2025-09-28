@@ -1,0 +1,5 @@
+GHCup 0.1.50.2 (probably doesn't matter)
+HLS 2.10.0.0 <~ seems to work?
+cabal 3.12.1.0 <~ important!
+GHC 9.8.4 (Dec 2024) <~ very important!
+base 4.19.2.0 (comes with GHC 9.8.4)
