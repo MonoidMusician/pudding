@@ -1,6 +1,6 @@
 module Testing where
 
-import Control.Monad (ap, forM_)
+import Control.Monad (ap, forM_, unless)
 import Control.Monad.Except ( MonadError(catchError) )
 import Control.Monad.IO.Class ( MonadIO(..) )
 
@@ -26,6 +26,7 @@ data TestResult = TestResult
   , testStatus :: Status
   }
 
+-- TODO: Give testFail access to test names
 data Test a = Test (IO (Either String a, [TestResult]))
   deriving (Functor)
 
@@ -62,7 +63,8 @@ testCase name t = Test $ do
 
 testFail :: String -> Test a
 testFail e = Test $ do
-  putStrLn e
+  -- TODO: Color
+  putStrLn $ "[ FAIL ]  " ++ e
   return (Left e, [])
 
 data TestSuite = TestSuite String (Test ())
@@ -84,3 +86,10 @@ summarize :: TestResult -> TestSummary
 summarize (TestResult _ [] Pass) = TestSummary 1 0
 summarize (TestResult _ [] (Fail _)) = TestSummary 0 1
 summarize (TestResult _ r _) = foldMap summarize r
+
+-- TODO: Expect?
+assert :: Bool -> String -> Test ()
+assert c e = unless c $ testFail $ "Assertion failed: " ++ e
+
+assertEq :: (Eq a, Show a) => a -> a -> Test ()
+assertEq a b = assert (a == b) $ show a ++ " == " ++ show b

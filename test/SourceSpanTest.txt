@@ -1,0 +1,5 @@
+(lambda (x A)
+  (f x x x))
+
+(lambda (Loop (Pi (x A) (Id x x)))
+  (eq (Loop z) (refl z)))
