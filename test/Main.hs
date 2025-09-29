@@ -20,7 +20,7 @@ import Testing
 
 main :: IO ()
 main = do
-  r <- runSuites [parserTest, sourceSpanTest]
+  r <- runSuites "Pudding" [parserTest, sourceSpanTest]
   let summary = summarize r
   putStrLn $ show (passed summary) ++ " tests passed"
   putStrLn $ show (failed summary) ++ " tests failed"
@@ -34,9 +34,9 @@ parserTest = TestSuite "ParserTest" do
     Left err -> testFail $ "Failed to parse test cases: " ++ show err
     Right cases -> return cases
   forM_ (zip [1..] cases) $ \(n :: Int, TestCase expected text) -> do
-    let name = "ParserTest/" ++ show n
-    testCase name do
-      r <- liftIO $ runParser (P.spaces *> term <* P.eof) name text
+    testCase (show n) do
+      name <- testCaseName
+      r <- liftIO $ runParser (P.spaces *> term <* P.eof) (show name) text
       case r of
         Left err -> case expected of
           ExpectPass -> testFail $

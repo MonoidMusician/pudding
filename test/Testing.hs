@@ -3,6 +3,7 @@ module Testing where
 import Control.Monad (ap, forM_, unless)
 import Control.Monad.Except ( MonadError(catchError) )
 import Control.Monad.IO.Class ( MonadIO(..) )
+import Data.List (intercalate)
 
 data Status = Pass | Fail String
   deriving (Eq)
@@ -26,51 +27,63 @@ data TestResult = TestResult
   , testStatus :: Status
   }
 
+newtype TestName = TestName [String]
+
+child :: TestName -> String -> TestName
+child (TestName p) c = TestName (c:p)
+
+instance Show TestName where
+  show (TestName parts) = intercalate "/" $ reverse parts
+
 -- TODO: Give testFail access to test names
-data Test a = Test (IO (Either String a, [TestResult]))
+data Test a = Test (TestName -> IO (Either String a, [TestResult]))
   deriving (Functor)
 
 instance Applicative Test where
-  pure a = Test $ return (Right a, [])
+  pure a = Test $ \_ -> return (Right a, [])
   (<*>) = ap
 
 instance Monad Test where
   return = pure
-  Test m1 >>= f = Test $ do
-    (x, r) <- m1
+  Test m1 >>= f = Test $ \name -> do
+    (x, r) <- m1 name
     case x of
       Left e -> return (Left e, r)
       Right a -> do
         let Test m2 = f a
-        (x', r') <- m2
+        (x', r') <- m2 name
         return (x', r <> r')
 
 instance MonadIO Test where
-  liftIO m = Test $ catchError
+  liftIO m = Test $ \_ -> catchError
     (m >>= \a -> return (Right a, []))
     (\e -> return (Left (show e), []))
 
-runTest :: String -> Test () -> IO TestResult
-runTest name (Test m) = do
-  (x, r) <- m
+runTest :: TestName -> String -> Test () -> IO TestResult
+runTest parent name (Test m) = do
+  (x, r) <- m $ child parent name
   let s = status x <> mconcat [testStatus t | t <- r]
   return $ TestResult name r s
 
 testCase :: String -> Test () -> Test ()
-testCase name t = Test $ do
-  r <- runTest name t
+testCase name t = Test $ \parent -> do
+  r <- runTest parent name t
   return (Right (), [r])
 
+testCaseName :: Test TestName
+testCaseName = Test $ \name ->
+  return (Right name, [])
+
 testFail :: String -> Test a
-testFail e = Test $ do
+testFail e = Test $ \name -> do
   -- TODO: Color
-  putStrLn $ "[ FAIL ]  " ++ e
+  putStrLn $ "[ FAIL ]  " ++ show name ++ "\n" ++ e
   return (Left e, [])
 
 data TestSuite = TestSuite String (Test ())
 
-runSuites :: [TestSuite] -> IO TestResult
-runSuites suite = runTest "All tests" $
+runSuites :: String -> [TestSuite] -> IO TestResult
+runSuites topLevel suite = runTest (TestName []) topLevel $
   forM_ suite $ \(TestSuite name t) -> testCase name t
 
 data TestSummary = TestSummary { passed :: Int, failed :: Int }
