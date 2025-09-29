@@ -95,24 +95,25 @@ spine = go []
 
 -- Result of Normalization by Evaluation (NbE), the semantic domain.
 data Eval
-  = ENeut Metadata Neutral -- do we want it tagged with its ultimate type?
+  = ENeut Neutral -- do we want it tagged with its ultimate type?
   | EUniv Metadata ULevel
   | ELambda Metadata !Plicit Binder (Desc "domain type" Eval) (Desc "body" Closure)
   | EPi Metadata !Plicit Binder (Desc "domain type" Eval) (Desc "codomain" Closure)
-  | ESigma Metadata !Plicit Binder (Desc "fst type" Eval) (Desc "snd type under fst type" Closure)
-  | EPair Metadata (Desc "fst value" Eval) (Desc "snd type functor" Eval) (Desc "snd value" Eval)
+  -- | ESigma Metadata !Plicit Binder (Desc "fst type" Eval) (Desc "snd type under fst type" Closure)
+  -- | EPair Metadata (Desc "fst value" Eval) (Desc "snd type functor" Eval) (Desc "snd value" Eval)
   deriving (Generic, NFData)
 
 -- A Neutral is stuck on a variable (or hole), with some projections and eliminators applied to it.
 -- (This is the Normalization part of NbE: inserting variables to evaluate open terms.)
-data Neutral = Neutral NeutHead [NeutPrj]
+data Neutral = Neutral NeutFocus [NeutPrj]
   deriving (Generic, NFData)
-data NeutHead
+data NeutFocus
   = NVar Metadata (Desc "type" Term) !Level
   | NHole Metadata (Desc "type" Term) !Fresh
   deriving (Generic, NFData)
 data NeutPrj
-  = NFst Metadata
+  = NApp Metadata (Desc "arg" Eval)
+  | NFst Metadata
   | NSnd Metadata
   deriving (Generic, NFData)
 

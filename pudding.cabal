@@ -102,6 +102,7 @@ library
         Pudding.Printer,
         Pudding.Types,
         Pudding.Name,
+        Pudding.Eval,
 
     -- Modules included in this library but not exported.
     -- other-modules:

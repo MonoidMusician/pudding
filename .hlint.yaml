@@ -4,6 +4,7 @@
 - ignore: { name: "Use $>" }
 - ignore: { name: "Use fmap" }
 - ignore: { name: "Use newtype instead of data" }
+- ignore: { name: "Avoid lambda using `infix`" }
 
 # Annoying that it does not reload automatically in VSCodium :-/
 

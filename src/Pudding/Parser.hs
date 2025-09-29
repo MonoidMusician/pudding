@@ -61,7 +61,7 @@ data Ctx = Ctx
   }
 
 bindIdent :: Name -> Ctx -> Ctx
-bindIdent i (Ctx is tbl e) = Ctx (i:is) tbl e
+bindIdent i ctx = ctx { scope = i : scope ctx }
 
 lookupIdent :: Name -> Parser (Maybe Index)
 lookupIdent i = do
