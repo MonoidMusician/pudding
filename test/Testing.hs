@@ -51,11 +51,10 @@ runTest parent name (Test m) = do
   (_, r, fs) <- m fullName
   let result = TestResult name r fs
   let summary = summarize result
-  -- TODO: Color
   if failed summary == 0 then
-    putStrLn $ "[ PASS ]  " ++ show fullName
+    putStrLn $ "\ESC[32m[ PASS ]\ESC[0m  " ++ show fullName
   else
-    putStrLn $ "[ FAIL ]  " ++ show fullName
+    putStrLn $ "\ESC[31m[ FAIL ]\ESC[0m  " ++ show fullName
   return result
 
 testCase :: String -> Test () -> Test ()
