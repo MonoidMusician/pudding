@@ -1,8 +1,9 @@
 module Testing where
 
+import Control.Exception (IOException, SomeException, catch)
 import Control.Monad (ap, forM_, unless)
-import Control.Monad.Except ( MonadError(catchError) )
 import Control.Monad.IO.Class ( MonadIO(..) )
+import Data.Functor ((<&>))
 import Data.List (intercalate)
 
 type TestFailure = String
@@ -41,14 +42,19 @@ instance Monad Test where
         return (x', r <> r', fs <> fs')
 
 instance MonadIO Test where
-  liftIO m = Test $ \_ -> catchError
-    (m >>= \a -> return (Just a, [], []))
-    (\e -> return (Nothing, [], [show e]))
+  liftIO m = Test $ \_ -> catch
+    (m <&> \a -> (Just a, [], []))
+    \(e :: IOException) -> do
+      print e
+      return (Nothing, [], [show e])
 
 runTest :: TestName -> String -> Test () -> IO TestResult
 runTest parent name (Test m) = do
   let fullName = child parent name
-  (_, r, fs) <- m fullName
+  (_, r, fs) <- catch (m fullName)
+    \(e :: SomeException) -> do
+      print e
+      return (Nothing, [], [show e])
   let result = TestResult name r fs
   let summary = summarize result
   if failed summary == 0 then
