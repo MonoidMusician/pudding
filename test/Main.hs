@@ -24,7 +24,7 @@ main = do
   let summary = summarize r
   putStrLn $ show (passed summary) ++ " tests passed"
   putStrLn $ show (failed summary) ++ " tests failed"
-  when (testStatus r /= Pass) exitFailure
+  when (failed summary /= 0) exitFailure
 
 parserTest :: TestSuite
 parserTest = TestSuite "ParserTest" do
@@ -75,11 +75,11 @@ metaSpan meta = case elems (sourcePos meta) of
   [SourceSpan begin end] -> return (simplePos begin, simplePos end)
   _ -> testFail "Malformed metadata"
 
-assertSpan :: ((Int, Int), (Int, Int)) -> Metadata -> Test ()
-assertSpan (eBegin, eEnd) meta = do
+expectSpan :: ((Int, Int), (Int, Int)) -> Metadata -> Test ()
+expectSpan (eBegin, eEnd) meta = do
   (begin, end) <- metaSpan meta
-  assertEq eBegin begin
-  assertEq eEnd end
+  expectEq eBegin begin
+  expectEq eEnd end
 
 sourceSpanTest :: TestSuite
 sourceSpanTest = TestSuite "SourceSpanTest" do
@@ -92,28 +92,28 @@ sourceSpanTest = TestSuite "SourceSpanTest" do
       testCase "TVar" case t1 of
         -- The final "x" in the term (f x x x)
         (TLambda _ _ _ _ (TApp _ _ (TVar meta _))) ->
-          assertSpan ((2, 10), (2, 11)) meta
+          expectSpan ((2, 10), (2, 11)) meta
         _ -> testFail "Wrong term"
       testCase "TGlobal" case t1 of
         -- The type "A" in (lambda (x A) ...)
         (TLambda _ _ _ (TGlobal meta _ _) _) ->
-          assertSpan ((1, 12), (1, 13)) meta
+          expectSpan ((1, 12), (1, 13)) meta
         _ -> testFail "Wrong term"
       testCase "TLambda" case t2 of
         -- The entire second top-level term
         (TLambda meta _ _ _ _) ->
-          assertSpan ((4, 2), (5, 25)) meta
+          expectSpan ((4, 2), (5, 25)) meta
         _ -> testFail "Wrong term"
       testCase "TPi" case t2 of
         -- The entire second top-level term
         (TLambda _ _ _ (TPi meta _ _ _ _) _) ->
-          assertSpan ((4, 16), (4, 33)) meta
+          expectSpan ((4, 16), (4, 33)) meta
         _ -> testFail "Wrong term"
       testCase "TApp" case t2 of
         -- The term (eq (Loop z) (refl z))
         (TLambda _ _ _ _ (TApp meta (TApp lmeta _ _) (TApp rmeta _ _))) -> do
-          assertSpan ((5, 4), (5, 24)) meta
-          assertSpan ((5, 4), (5, 15)) lmeta
-          assertSpan ((5, 17), (5, 23)) rmeta
+          expectSpan ((5, 4), (5, 24)) meta
+          expectSpan ((5, 4), (5, 15)) lmeta
+          expectSpan ((5, 17), (5, 23)) rmeta
         _ -> testFail "Wrong term"
     Right _ -> testFail "Parsed incorrectly"

@@ -5,26 +5,12 @@ import Control.Monad.Except ( MonadError(catchError) )
 import Control.Monad.IO.Class ( MonadIO(..) )
 import Data.List (intercalate)
 
-data Status = Pass | Fail String
-  deriving (Eq)
-
-instance Semigroup Status where
-  Pass <> Pass = Pass
-  Pass <> Fail e = Fail e
-  Fail e <> Pass = Fail e
-  Fail _ <> Fail _ = Fail "(multiple failures)"
-
-instance Monoid Status where
-  mempty = Pass
-
-status :: Either String () -> Status
-status (Left e) = Fail e
-status (Right _) = Pass
+type TestFailure = String
 
 data TestResult = TestResult
   { testName :: String
   , testCases :: [TestResult]
-  , testStatus :: Status
+  , testFailures :: [TestFailure]
   }
 
 newtype TestName = TestName [String]
@@ -35,50 +21,61 @@ child (TestName p) c = TestName (c:p)
 instance Show TestName where
   show (TestName parts) = intercalate "/" $ reverse parts
 
--- TODO: Give testFail access to test names
-data Test a = Test (TestName -> IO (Either String a, [TestResult]))
+-- TODO: Snoc lists?
+data Test a = Test (TestName -> IO (Maybe a, [TestResult], [TestFailure]))
   deriving (Functor)
 
 instance Applicative Test where
-  pure a = Test $ \_ -> return (Right a, [])
+  pure a = Test $ \_ -> return (Just a, [], [])
   (<*>) = ap
 
 instance Monad Test where
   return = pure
   Test m1 >>= f = Test $ \name -> do
-    (x, r) <- m1 name
+    (x, r, fs) <- m1 name
     case x of
-      Left e -> return (Left e, r)
-      Right a -> do
+      Nothing -> return (Nothing, r, fs)
+      Just a -> do
         let Test m2 = f a
-        (x', r') <- m2 name
-        return (x', r <> r')
+        (x', r', fs') <- m2 name
+        return (x', r <> r', fs <> fs')
 
 instance MonadIO Test where
   liftIO m = Test $ \_ -> catchError
-    (m >>= \a -> return (Right a, []))
-    (\e -> return (Left (show e), []))
+    (m >>= \a -> return (Just a, [], []))
+    (\e -> return (Nothing, [], [show e]))
 
 runTest :: TestName -> String -> Test () -> IO TestResult
 runTest parent name (Test m) = do
-  (x, r) <- m $ child parent name
-  let s = status x <> mconcat [testStatus t | t <- r]
-  return $ TestResult name r s
+  let fullName = child parent name
+  (_, r, fs) <- m fullName
+  let result = TestResult name r fs
+  let summary = summarize result
+  -- TODO: Color
+  if failed summary == 0 then
+    putStrLn $ "[ PASS ]  " ++ show fullName
+  else
+    putStrLn $ "[ FAIL ]  " ++ show fullName
+  return result
 
 testCase :: String -> Test () -> Test ()
 testCase name t = Test $ \parent -> do
   r <- runTest parent name t
-  return (Right (), [r])
+  return (Just (), [r], [])
 
 testCaseName :: Test TestName
 testCaseName = Test $ \name ->
-  return (Right name, [])
+  return (Just name, [], [])
 
 testFail :: String -> Test a
-testFail e = Test $ \name -> do
-  -- TODO: Color
-  putStrLn $ "[ FAIL ]  " ++ show name ++ "\n" ++ e
-  return (Left e, [])
+testFail e = Test $ \_ -> do
+  putStrLn e
+  return (Nothing, [], [e])
+
+testFailSoft :: String -> Test ()
+testFailSoft e = Test $ \_ -> do
+  putStrLn e
+  return (Just (), [], [e])
 
 data TestSuite = TestSuite String (Test ())
 
@@ -96,13 +93,18 @@ instance Monoid TestSummary where
   mempty = TestSummary 0 0
 
 summarize :: TestResult -> TestSummary
-summarize (TestResult _ [] Pass) = TestSummary 1 0
-summarize (TestResult _ [] (Fail _)) = TestSummary 0 1
-summarize (TestResult _ r _) = foldMap summarize r
+summarize (TestResult _ r fs) = foldMap summarize r <> case fs of
+  [] -> TestSummary 1 0
+  _ -> TestSummary 0 1
 
--- TODO: Expect?
 assert :: Bool -> String -> Test ()
 assert c e = unless c $ testFail $ "Assertion failed: " ++ e
 
 assertEq :: (Eq a, Show a) => a -> a -> Test ()
 assertEq a b = assert (a == b) $ show a ++ " == " ++ show b
+
+expect :: Bool -> String -> Test ()
+expect c e = unless c $ testFailSoft $ "Assertion failed: " ++ e
+
+expectEq :: (Eq a, Show a) => a -> a -> Test ()
+expectEq a b = expect (a == b) $ show a ++ " == " ++ show b
