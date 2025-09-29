@@ -2,7 +2,8 @@
 module Main (main) where
 
 import Control.Applicative (many, (<|>))
-import Control.Monad (forM, when)
+import Control.Monad (forM_, when)
+import Control.Monad.IO.Class (liftIO)
 import Data.Functor (void)
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -13,51 +14,38 @@ import Text.Parsec.Text (Parser)
 
 import Pudding.Parser (runParser, term)
 import Pudding.Printer (formatCore, Style (Ansi))
-
-data TestResults = TestResults { passed :: Int, failed :: Int }
-
-resultPass, resultFail :: TestResults
-resultPass = TestResults 1 0
-resultFail = TestResults 0 1
-
-instance Semigroup TestResults where
-  TestResults p1 f1 <> TestResults p2 f2 = TestResults (p1 + p2) (f1 + f2)
-
-instance Monoid TestResults where
-  mempty = TestResults 0 0
+import Testing
 
 main :: IO ()
 main = do
-  let sourceName = "test/core.txt"
-  raw <- TIO.readFile sourceName
-  cases <- case P.runParser testFile () sourceName raw of
-    Left err -> do
-      putStrLn $ "Failed to parse test cases: " ++ show err
-      exitFailure
-    Right cases -> return cases
-  results <- fmap mconcat $ forM cases $ \(TestCase expected text) ->
-    runParser (P.spaces *> term <* P.eof) "test case" text >>= \case
-      Left err -> case expected of
-        Pass -> do
-          putStrLn "Test failed (could not parse):"
-          putStrLn $ "  " ++ T.unpack text
-          putStrLn $ "  " ++ show err
-          return resultFail
-        Fail -> return resultPass
-      Right parsed -> case expected of
-        Pass -> do
-          putStrLn $ T.unpack $ formatCore Ansi parsed
-          return resultPass
-        Fail -> do
-          putStrLn "Test failed (should not have parsed):"
-          putStrLn $ "  " ++ T.unpack text
-          -- putStrLn $ "  " ++ show t
-          return resultFail
-  putStrLn $ show (passed results) ++ " tests passed"
-  putStrLn $ show (failed results) ++ " tests failed"
-  when (failed results /= 0) exitFailure
+  r <- runSuites [parserTest]
+  let summary = summarize r
+  putStrLn $ show (passed summary) ++ " tests passed"
+  putStrLn $ show (failed summary) ++ " tests failed"
+  when (testStatus r /= Pass) exitFailure
 
-data Expected = Pass | Fail
+parserTest :: TestSuite
+parserTest = TestSuite "ParserTest" do
+  let sourceName = "test/core.txt"
+  raw <- liftIO $ TIO.readFile sourceName
+  cases <- case P.runParser testFile () sourceName raw of
+    Left err -> testFail $ "Failed to parse test cases: " ++ show err
+    Right cases -> return cases
+  forM_ (zip [1..] cases) $ \(n :: Int, TestCase expected text) -> do
+    let name = "ParserTest/" ++ show n
+    testCase name do
+      r <- liftIO $ runParser (P.spaces *> term <* P.eof) name text
+      case r of
+        Left err -> case expected of
+          ExpectPass -> testFail $
+            "Test failed (could not parse): " ++ show err
+          ExpectFail -> return ()
+        Right parsed -> case expected of
+          ExpectPass -> liftIO $ putStrLn $ T.unpack $ formatCore Ansi parsed
+          ExpectFail -> testFail $
+            "Test failed (should not have parsed): " ++ T.unpack text
+
+data Expected = ExpectPass | ExpectFail
 data TestCase = TestCase Expected Text
 
 comment :: Parser ()
@@ -66,12 +54,13 @@ comment = void $ P.string "--" *> P.manyTill P.anyChar (P.char '\n')
 space :: Parser ()
 space = P.spaces *> P.skipMany (comment *> P.spaces)
 
-testCase :: Parser TestCase
-testCase = do
-  e <- Pass <$ P.string' "pass" <|> Fail <$ P.string' "fail"
+testFileCase :: Parser TestCase
+testFileCase = do
+  e <- ExpectPass <$ P.string' "pass"
+    <|> ExpectFail <$ P.string' "fail"
   space *> P.char '{' *> space
   cs <- P.manyTill P.anyChar (P.char '}') <* space
   return (TestCase e (T.pack cs))
 
 testFile :: Parser [TestCase]
-testFile = space *> many testCase <* P.eof
+testFile = space *> many testFileCase <* P.eof

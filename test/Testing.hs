@@ -1,0 +1,86 @@
+module Testing where
+
+import Control.Monad (ap, forM_)
+import Control.Monad.Except ( MonadError(catchError) )
+import Control.Monad.IO.Class ( MonadIO(..) )
+
+data Status = Pass | Fail String
+  deriving (Eq)
+
+instance Semigroup Status where
+  Pass <> Pass = Pass
+  Pass <> Fail e = Fail e
+  Fail e <> Pass = Fail e
+  Fail _ <> Fail _ = Fail "(multiple failures)"
+
+instance Monoid Status where
+  mempty = Pass
+
+status :: Either String () -> Status
+status (Left e) = Fail e
+status (Right _) = Pass
+
+data TestResult = TestResult
+  { testName :: String
+  , testCases :: [TestResult]
+  , testStatus :: Status
+  }
+
+data Test a = Test (IO (Either String a, [TestResult]))
+  deriving (Functor)
+
+instance Applicative Test where
+  pure a = Test $ return (Right a, [])
+  (<*>) = ap
+
+instance Monad Test where
+  return = pure
+  Test m1 >>= f = Test $ do
+    (x, r) <- m1
+    case x of
+      Left e -> return (Left e, r)
+      Right a -> do
+        let Test m2 = f a
+        (x', r') <- m2
+        return (x', r <> r')
+
+instance MonadIO Test where
+  liftIO m = Test $ catchError
+    (m >>= \a -> return (Right a, []))
+    (\e -> return (Left (show e), []))
+
+runTest :: String -> Test () -> IO TestResult
+runTest name (Test m) = do
+  (x, r) <- m
+  let s = status x <> mconcat [testStatus t | t <- r]
+  return $ TestResult name r s
+
+testCase :: String -> Test () -> Test ()
+testCase name t = Test $ do
+  r <- runTest name t
+  return (Right (), [r])
+
+testFail :: String -> Test a
+testFail e = Test $ do
+  putStrLn e
+  return (Left e, [])
+
+data TestSuite = TestSuite String (Test ())
+
+runSuites :: [TestSuite] -> IO TestResult
+runSuites suite = runTest "All tests" $
+  forM_ suite $ \(TestSuite name t) -> testCase name t
+
+data TestSummary = TestSummary { passed :: Int, failed :: Int }
+
+instance Semigroup TestSummary where
+  TestSummary p1 f1 <> TestSummary p2 f2 =
+    TestSummary (p1 + p2) (f1 + f2)
+
+instance Monoid TestSummary where
+  mempty = TestSummary 0 0
+
+summarize :: TestResult -> TestSummary
+summarize (TestResult _ [] Pass) = TestSummary 1 0
+summarize (TestResult _ [] (Fail _)) = TestSummary 0 1
+summarize (TestResult _ r _) = foldMap summarize r
