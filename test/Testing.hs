@@ -1,6 +1,6 @@
 module Testing where
 
-import Control.Exception (IOException, SomeException, catch)
+import Control.Exception (SomeException, catch)
 import Control.Monad (ap, forM_, unless)
 import Control.Monad.IO.Class ( MonadIO(..) )
 import Data.Functor ((<&>))
@@ -23,7 +23,9 @@ instance Show TestName where
   show (TestName parts) = intercalate "/" $ reverse parts
 
 -- TODO: Snoc lists?
-data Test a = Test (TestName -> IO (Maybe a, [TestResult], [TestFailure]))
+type TestState a = (Maybe a, [TestResult], [TestFailure])
+
+data Test a = Test (TestName -> IO (TestState a))
   deriving (Functor)
 
 instance Applicative Test where
@@ -33,28 +35,29 @@ instance Applicative Test where
 instance Monad Test where
   return = pure
   Test m1 >>= f = Test $ \name -> do
-    (x, r, fs) <- m1 name
+    (x, r, fs) <- wrapExceptions (m1 name)
     case x of
       Nothing -> return (Nothing, r, fs)
       Just a -> do
         let Test m2 = f a
-        (x', r', fs') <- m2 name
+        (x', r', fs') <- wrapExceptions (m2 name)
         return (x', r <> r', fs <> fs')
 
 instance MonadIO Test where
-  liftIO m = Test $ \_ -> catch
+  liftIO m = Test $ \_ -> wrapExceptions
     (m <&> \a -> (Just a, [], []))
-    \(e :: IOException) -> do
-      print e
-      return (Nothing, [], [show e])
+
+wrapExceptions :: IO (TestState a) -> IO (TestState a)
+wrapExceptions m = catch m
+  \(e :: SomeException) -> do
+    let s = show e
+    putStrLn s
+    return (Nothing, [], [s])
 
 runTest :: TestName -> String -> Test () -> IO TestResult
 runTest parent name (Test m) = do
   let fullName = child parent name
-  (_, r, fs) <- catch (m fullName)
-    \(e :: SomeException) -> do
-      print e
-      return (Nothing, [], [show e])
+  (_, r, fs) <- wrapExceptions (m fullName)
   let result = TestResult name r fs
   let summary = summarize result
   if failed summary == 0 then
