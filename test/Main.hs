@@ -96,7 +96,7 @@ sourceSpanTest = TestSuite "SourceSpanTest" do
     TLambda meta _ _ _ _ <- pure t2
     expectSpan ((4, 2), (5, 25)) meta
   testCase "TPi" do
-    -- The entire second top-level term
+    -- The term (Pi (x A) (Id x x))
     TLambda _ _ _ (TPi meta _ _ _ _) _ <- pure t2
     expectSpan ((4, 16), (4, 33)) meta
   testCase "TApp" do
