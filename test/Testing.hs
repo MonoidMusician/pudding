@@ -44,6 +44,9 @@ instance Monad Test where
         (x', r', fs') <- wrapExceptions (m2 name)
         return (x', r <> r', fs <> fs')
 
+instance MonadFail Test where
+  fail = testFail
+
 instance MonadIO Test where
   liftIO m = Test $ \_ -> wrapExceptions
     (m <&> \a -> (Just a, [], []))

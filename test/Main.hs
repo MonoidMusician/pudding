@@ -30,9 +30,7 @@ parserTest :: TestSuite
 parserTest = TestSuite "ParserTest" do
   let sourceName = "test/ParserTest.txt"
   raw <- liftIO $ TIO.readFile sourceName
-  cases <- case P.runParser testFile () sourceName raw of
-    Left err -> testFail $ "Failed to parse test cases: " ++ show err
-    Right cases -> return cases
+  cases <- assertRight $ P.runParser testFile () sourceName raw
   forM_ (zip [1..] cases) $ \(n :: Int, TestCase expected text) -> do
     testCase (show n) case expected of
       ExpectPass -> testParser text
@@ -84,34 +82,26 @@ sourceSpanTest = TestSuite "SourceSpanTest" do
   let sourceName = "test/SourceSpanTest.txt"
   raw <- liftIO $ TIO.readFile sourceName
   res <- liftIO $ runParser (P.spaces *> many term <* P.eof) sourceName raw
-  case res of
-    Left e -> testFail (show e)
-    Right [t1, t2] -> do
-      testCase "TVar" case t1 of
-        -- The final "x" in the term (f x x x)
-        (TLambda _ _ _ _ (TApp _ _ (TVar meta _))) ->
-          expectSpan ((2, 10), (2, 11)) meta
-        _ -> testFail "Wrong term"
-      testCase "TGlobal" case t1 of
-        -- The type "A" in (lambda (x A) ...)
-        (TLambda _ _ _ (TGlobal meta _ _) _) ->
-          expectSpan ((1, 12), (1, 13)) meta
-        _ -> testFail "Wrong term"
-      testCase "TLambda" case t2 of
-        -- The entire second top-level term
-        (TLambda meta _ _ _ _) ->
-          expectSpan ((4, 2), (5, 25)) meta
-        _ -> testFail "Wrong term"
-      testCase "TPi" case t2 of
-        -- The entire second top-level term
-        (TLambda _ _ _ (TPi meta _ _ _ _) _) ->
-          expectSpan ((4, 16), (4, 33)) meta
-        _ -> testFail "Wrong term"
-      testCase "TApp" case t2 of
-        -- The term (eq (Loop z) (refl z))
-        (TLambda _ _ _ _ (TApp meta (TApp lmeta _ _) (TApp rmeta _ _))) -> do
-          expectSpan ((5, 4), (5, 24)) meta
-          expectSpan ((5, 4), (5, 15)) lmeta
-          expectSpan ((5, 17), (5, 23)) rmeta
-        _ -> testFail "Wrong term"
-    Right _ -> testFail "Parsed incorrectly"
+  [t1, t2] <- assertRight res
+  testCase "TVar" do
+    -- The final "x" in the term (f x x x)
+    TLambda _ _ _ _ (TApp _ _ (TVar meta _)) <- pure t1
+    expectSpan ((2, 10), (2, 11)) meta
+  testCase "TGlobal" do
+    -- The type "A" in (lambda (x A) ...)
+    TLambda _ _ _ (TGlobal meta _ _) _ <- pure t1
+    expectSpan ((1, 12), (1, 13)) meta
+  testCase "TLambda" do
+    -- The entire second top-level term
+    TLambda meta _ _ _ _ <- pure t2
+    expectSpan ((4, 2), (5, 25)) meta
+  testCase "TPi" do
+    -- The entire second top-level term
+    TLambda _ _ _ (TPi meta _ _ _ _) _ <- pure t2
+    expectSpan ((4, 16), (4, 33)) meta
+  testCase "TApp" do
+    -- The term (eq (Loop z) (refl z))
+    TLambda _ _ _ _ (TApp meta (TApp lmeta _ _) (TApp rmeta _ _)) <- pure t2
+    expectSpan ((5, 4), (5, 24)) meta
+    expectSpan ((5, 4), (5, 15)) lmeta
+    expectSpan ((5, 17), (5, 23)) rmeta
