@@ -8,19 +8,25 @@ captureClosure = flip Closure
 cons :: Eval -> EvalCtx -> EvalCtx
 cons value (EvalCtx sz stack) = EvalCtx (sz+1) (value:stack)
 
+evalIndex :: Index -> EvalCtx -> Eval
+evalIndex (Index idx) ctx = evalValues ctx !! idx
+
+evalLevel :: Level -> EvalCtx -> Eval
+evalLevel lvl ctx = evalIndex (lvl2idx (evalSize ctx) lvl) ctx
+
 -- Normalization by Evaluation
 evaling :: Term -> EvalCtx -> Eval
 evaling = \case
   -- If we have a variable
-  TVar moreMeta (Index idx) -> \ctx ->
+  TVar moreMeta idx -> \ctx ->
     -- Look it up by index: it must be in the context.
     -- Note that we do not generate neutrals here: they are put in the context
     -- only during *quoting* and *conversion checking*, where we must handle
     -- open terms (digging down below binders (λ, Π, Σ)) by seeding neutrals
-    case evalValues ctx !! idx of
+    case evalIndex idx ctx of
       -- If it is a neutral, we should add metadata...
-      ENeut (Neutral (NVar metaNeut ty lvl) []) ->
-        ENeut (Neutral (NVar (metaNeut <> moreMeta) ty lvl) [])
+      ENeut (Neutral (NVar metaNeut lvl) []) ->
+        ENeut (Neutral (NVar (metaNeut <> moreMeta) lvl) [])
       -- Otherwise we just pass the value from context along:
       -- the variable has done its job
       e -> e
@@ -28,7 +34,7 @@ evaling = \case
   TGlobal _ _ (Meta (Exact global)) ->
     -- The global info is already looked up
     case global of
-      -- We already have a lazy evaluation for a global definition
+      -- We already have a shared lazy evaluation for a global definition
       GlobalDefn _ (GlobalTerm _ eval) -> pure eval
       -- Constructors are a bit tricky
       _ -> error "Not implemented yet"
@@ -52,3 +58,28 @@ evaling = \case
       (ENeut (Neutral focus prjs), evalingArg) ->
         ENeut (Neutral focus (NApp metaApp evalingArg : prjs))
       _ -> error "Type error: cannot apply to non-function"
+  TUniv meta univ -> pure $ EUniv meta univ
+  THole meta hole -> pure $ ENeut (Neutral (NHole meta hole) [])
+
+quoting :: Eval -> QuoteCtx -> Term
+quoting = \case
+  ENeut (Neutral focus prjs) -> \ctx ->
+    let
+      base = case focus of
+        NVar meta lvl -> TVar meta (lvl2idx (quoteSize ctx) lvl)
+        NHole meta hole -> THole meta hole
+      go (prj : more) soFar = go more case prj of
+        NApp meta arg -> TApp meta soFar (quoting arg ctx)
+      go [] result = result
+    in go prjs base
+  EUniv meta univ -> pure $ TUniv meta univ
+  ELambda meta plicit binder ty body ->
+    TLambda meta plicit binder <$> quoting ty <*> quotingClosure body ty
+  EPi meta plicit binder ty body ->
+    TPi meta plicit binder <$> quoting ty <*> quotingClosure body ty
+
+quotingClosure :: Closure -> Eval -> QuoteCtx -> Term
+quotingClosure (Closure savedCtx savedBody) argTy ctx =
+  let
+    evalingArg = ENeut (Neutral (NVar mempty (Level (quoteSize ctx))) [])
+  in quoting (evaling savedBody $ cons evalingArg savedCtx) ctx

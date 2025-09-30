@@ -4,7 +4,6 @@ module Pudding.Types
   , module Pudding.Name -- Export more
   ) where
 
-import Data.Functor ((<&>))
 import Data.Functor.Const (Const(..))
 import Data.Set (Set)
 import Data.Map (Map)
@@ -14,6 +13,8 @@ import Text.Parsec.Pos (SourcePos)
 import Control.DeepSeq (NFData(rnf))
 import GHC.Generics (Generic)
 import Pudding.Name (Name(..), newTable, initTable, internalize)
+import Control.Applicative.Backwards (Backwards (forwards, Backwards))
+
 -- Just give a little description of the type
 type Desc (s :: Symbol) t = t
 
@@ -74,7 +75,8 @@ data ConstructorInfo = ConstructorInfo
 -- (where `typeof . typeof` resolves to some `TUniv`)
 data Term
   = TVar Metadata !Index
-  -- | TUniv Metadata ULevel
+  | THole Metadata !Fresh
+  | TUniv Metadata ULevel
   | TGlobal Metadata !Name (Desc "cached info" (Meta (Exact GlobalInfo)))
   -- | THole Metadata !Fresh
   -- | TLet Metadata Binder (Desc "value" Term) (Desc "body" Term)
@@ -108,16 +110,17 @@ data Eval
 data Neutral = Neutral NeutFocus [NeutPrj]
   deriving (Generic, NFData)
 data NeutFocus
-  = NVar Metadata (Desc "type" Term) !Level
-  | NHole Metadata (Desc "type" Term) !Fresh
+  = NVar Metadata !Level
+  | NHole Metadata !Fresh -- needs some scoping information
   deriving (Generic, NFData)
 data NeutPrj
   = NApp Metadata (Desc "arg" Eval)
-  | NFst Metadata
-  | NSnd Metadata
+  -- | NFst Metadata
+  -- | NSnd Metadata
   deriving (Generic, NFData)
 
--- Closure: an unevaluated term frozen in an environment of evaluated variables.
+-- Closure: an unevaluated term frozen in an environment of evaluated (or neutral)
+-- variable values.
 data Closure = Closure EvalCtx Term
   deriving (Generic, NFData)
 
@@ -147,6 +150,11 @@ newtype Index = Index Int
 newtype Level = Level Int
   deriving newtype (Eq, Ord, Show, NFData)
 
+idx2lvl :: Int -> Index -> Level
+idx2lvl size (Index idx) = Level ((size - 1) - idx)
+lvl2idx :: Int -> Level -> Index
+lvl2idx size (Level idx) = Index ((size - 1) - idx)
+
 -- E.g. for numbering typed holes
 newtype Fresh = Fresh Int
   deriving newtype (Eq, Ord, Show, NFData)
@@ -154,7 +162,8 @@ newtype Fresh = Fresh Int
 data ULevel
   = UBase !Int
   | UMeta !Int
-  | UVar !Fresh -- unsolved level
+  | UVar !Fresh !Int -- unsolved level, plus offset
+    -- sigh, scoping...
   deriving (Eq, Ord, Generic, NFData)
 
 --------------------------------------------------------------------------------
@@ -246,13 +255,73 @@ foldMetadata f t = let Const r = traverseMetadata (Const . f) t in r
 instance HasMetadata Term where
   onMetadata f = \case
     TVar old idx | new <- f old -> (old, TVar new idx, new)
+    THole old hole | new <- f old -> (old, THole new hole, new)
+    TUniv old univ | new <- f old -> (old, TUniv new univ, new)
     TGlobal old name info | new <- f old -> (old, TGlobal new name info, new)
     TLambda old p b ty body | new <- f old -> (old, TLambda new p b ty body, new)
     TPi old p b ty body | new <- f old -> (old, TPi new p b ty body, new)
     TApp old fun arg | new <- f old -> (old, TApp new fun arg, new)
   traverseMetadata f = \case
-    TVar old idx -> f old <&> \new -> TVar new idx
-    TGlobal old name info -> f old <&> \new -> TGlobal new name info
-    TLambda old p b ty body -> f old <&> \new -> TLambda new p b ty body
-    TPi old p b ty body -> f old <&> \new -> TPi new p b ty body
-    TApp old fun arg -> f old <&> \new -> TApp new fun arg
+    TVar old idx -> (\new -> TVar new idx) <$> f old
+    THole old hole -> (\new -> THole new hole) <$> f old
+    TUniv old univ -> (\new -> TUniv new univ) <$> f old
+    TGlobal old name info -> (\new -> TGlobal new name info) <$> f old
+    TLambda old p b ty body -> (\new -> TLambda new p b)
+      <$> f old
+      <*> traverseMetadata f ty
+      <*> traverseMetadata f body
+    TPi old p b ty body -> (\new -> TPi new p b)
+      <$> f old
+      <*> traverseMetadata f ty
+      <*> traverseMetadata f body
+    TApp old fun arg -> (\new -> TApp new)
+      <$> f old
+      <*> traverseMetadata f fun
+      <*> traverseMetadata f arg
+
+instance HasMetadata Eval where
+  onMetadata f = \case
+    ENeut neutral | (old, neutral', new) <- onMetadata f neutral -> (old, ENeut neutral', new)
+    EUniv old univ | new <- f old -> (old, EUniv new univ, new)
+    ELambda old p b ty body | new <- f old -> (old, ELambda new p b ty body, new)
+    EPi old p b ty body | new <- f old -> (old, EPi new p b ty body, new)
+  traverseMetadata f = \case
+    ENeut neutral -> ENeut <$> traverseMetadata f neutral
+    EUniv old univ -> (\new -> EUniv new univ) <$> f old
+    ELambda old p b ty body -> (\new -> ELambda new p b)
+      <$> f old
+      <*> traverseMetadata f ty
+      <*> traverseMetadata f body
+    EPi old p b ty body -> (\new -> EPi new p b)
+      <$> f old
+      <*> traverseMetadata f ty
+      <*> traverseMetadata f body
+
+instance HasMetadata Neutral where
+  onMetadata f (Neutral focus [])
+    | (old, focus', new) <- onMetadata f focus
+    = (old, Neutral focus' [], new)
+  onMetadata f (Neutral focus (prj : prjs))
+    | (old, prj', new) <- onMetadata f prj
+    = (old, Neutral focus (prj' : prjs), new)
+  traverseMetadata f (Neutral focus prjs) = forwards $
+    Neutral <$> Backwards (traverseMetadata f focus) <*> bwd prjs
+    where
+    bwd [] = pure []
+    bwd (one : more) = flip (:) <$> bwd more <*> Backwards (traverseMetadata f one)
+
+instance HasMetadata NeutFocus where
+  onMetadata f (NVar old lvl) | new <- f old = (old, NVar new lvl, new)
+  onMetadata f (NHole old hole) | new <- f old = (old, NHole new hole, new)
+  traverseMetadata f (NVar old lvl) = (\new -> NVar new lvl) <$> f old
+  traverseMetadata f (NHole old hole) = (\new -> NHole new hole) <$> f old
+
+instance HasMetadata NeutPrj where
+  onMetadata f (NApp old arg) | new <- f old = (old, NApp new arg, new)
+  traverseMetadata f (NApp old arg) = (\new -> NApp new)
+    <$> f old
+    <*> traverseMetadata f arg
+
+instance HasMetadata Closure where
+  onMetadata f (Closure ctx term) | (old, term', new) <- onMetadata f term = (old, Closure ctx term', new)
+  traverseMetadata f (Closure ctx term) = Closure ctx <$> traverseMetadata f term
