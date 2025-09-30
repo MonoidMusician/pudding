@@ -34,18 +34,16 @@ parserTest = TestSuite "ParserTest" do
     Left err -> testFail $ "Failed to parse test cases: " ++ show err
     Right cases -> return cases
   forM_ (zip [1..] cases) $ \(n :: Int, TestCase expected text) -> do
-    testCase (show n) do
-      name <- testCaseName
-      r <- liftIO $ runParser (P.spaces *> term <* P.eof) (show name) text
-      case r of
-        Left err -> case expected of
-          ExpectPass -> testFail $
-            "Test failed (could not parse): " ++ show err
-          ExpectFail -> return ()
-        Right parsed -> case expected of
-          ExpectPass -> liftIO $ putStrLn $ T.unpack $ formatCore Ansi parsed
-          ExpectFail -> testFail $
-            "Test failed (should not have parsed): " ++ T.unpack text
+    testCase (show n) case expected of
+      ExpectPass -> testParser text
+      ExpectFail -> expectFail $ testParser text
+
+testParser :: Text -> Test ()
+testParser text = do
+  name <- testCaseName
+  r <- liftIO $ runParser (P.spaces *> term <* P.eof) (show name) text
+  tm <- assertRight r
+  liftIO $ putStrLn $ T.unpack $ formatCore Ansi tm
 
 data Expected = ExpectPass | ExpectFail
 data TestCase = TestCase Expected Text

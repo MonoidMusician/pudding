@@ -5,6 +5,7 @@ import Control.Monad (ap, forM_, unless)
 import Control.Monad.IO.Class ( MonadIO(..) )
 import Data.Functor ((<&>))
 import Data.List (intercalate)
+import Data.Maybe (isNothing)
 
 type TestFailure = String
 
@@ -111,8 +112,20 @@ assert c e = unless c $ testFail $ "Assertion failed: " ++ e
 assertEq :: (Eq a, Show a) => a -> a -> Test ()
 assertEq a b = assert (a == b) $ show a ++ " == " ++ show b
 
+assertRight :: Show e => Either e a -> Test a
+assertRight (Left e) = testFail $ show e
+assertRight (Right a) = return a
+
 expect :: Bool -> String -> Test ()
 expect c e = unless c $ testFailSoft $ "Assertion failed: " ++ e
 
 expectEq :: (Eq a, Show a) => a -> a -> Test ()
 expectEq a b = expect (a == b) $ show a ++ " == " ++ show b
+
+expectFail :: Test () -> Test ()
+expectFail (Test m) = do
+  f <- Test $ \name -> do
+    let fullName = child name "expectFail"
+    (x, _, _) <- wrapExceptions (m fullName)
+    return (Just (isNothing x), [], [])
+  expect f "expectFail ..."
