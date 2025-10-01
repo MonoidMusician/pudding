@@ -55,19 +55,7 @@ termEquiv _ _ = False
 newtype Term' = Term' Term
 
 instance Show Term' where
-  show (Term' t) = show' t
-    where
-      show' (TVar {}) = "TVar {}"
-      show' (THole {}) = "THole {}"
-      show' (TUniv {}) = "TUniv {}"
-      show' (TGlobal {}) = "TGlobal {}"
-      show' (TLambda {}) = "TLambda {}"
-      show' (TPi {}) = "TPi {}"
-      show' (TApp {}) = "TApp {}"
-      show' (TSigma {}) = "TSigma {}"
-      show' (TPair {}) = "TPair {}"
-      show' (TFst {}) = "TFst {}"
-      show' (TSnd {}) = "TSnd {}"
+  show (Term' t) = T.unpack $ formatCore Ansi t
 
 instance Eq Term' where
   Term' t1 == Term' t2 = t1 `termEquiv` t2
