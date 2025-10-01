@@ -133,6 +133,7 @@ test-suite pudding-test
 
     -- Modules included in this executable, other than Main.
     other-modules:
+        ParserTest,
         Testing,
 
     -- The interface type and version of the test suite.

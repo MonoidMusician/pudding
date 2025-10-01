@@ -91,6 +91,9 @@ testFailSoft e = Test $ \_ -> do
 
 data TestSuite = TestSuite String (Test ())
 
+runSuite :: TestSuite -> Test ()
+runSuite (TestSuite name t) = testCase name t
+
 runSuites :: String -> [TestSuite] -> IO TestResult
 runSuites topLevel suite = runTest (TestName []) topLevel $
   forM_ suite $ \(TestSuite name t) -> testCase name t
