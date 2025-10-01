@@ -78,7 +78,7 @@ data Term
   = TVar Metadata !Index
   | THole Metadata !Fresh
   | TUniv Metadata ULevel
-  | TGlobal Metadata !Name (Desc "cached info" (Meta (Exact GlobalInfo)))
+  | TGlobal Metadata !Name
   -- | THole Metadata !Fresh
   -- | TLet Metadata Binder (Desc "value" Term) (Desc "body" Term)
   | TLambda Metadata !Plicit Binder (Desc "domain type" Term) (Desc "body" Term)
@@ -148,6 +148,7 @@ data Closure = Closure EvalCtx Term
 data EvalCtx = EvalCtx
   { evalSize :: !Int
   , evalValues :: ![Eval]
+  , evalGlobals :: Map Name GlobalInfo
   }
   deriving (Generic, NFData)
 
@@ -186,7 +187,7 @@ data ULevel
   | UMeta !Int
   | UVar !Fresh !Int -- unsolved level, plus offset
     -- sigh, scoping...
-  deriving (Eq, Ord, Generic, NFData)
+  deriving (Eq, Ord, Generic, Show, NFData)
 
 --------------------------------------------------------------------------------
 -- Metadata types                                                             --
@@ -279,7 +280,7 @@ instance HasMetadata Term where
     TVar old idx | new <- f old -> (old, TVar new idx, new)
     THole old hole | new <- f old -> (old, THole new hole, new)
     TUniv old univ | new <- f old -> (old, TUniv new univ, new)
-    TGlobal old name info | new <- f old -> (old, TGlobal new name info, new)
+    TGlobal old name | new <- f old -> (old, TGlobal new name, new)
     TLambda old p b ty body | new <- f old -> (old, TLambda new p b ty body, new)
     TPi old p b ty body | new <- f old -> (old, TPi new p b ty body, new)
     TApp old fun arg | new <- f old -> (old, TApp new fun arg, new)
@@ -291,7 +292,7 @@ instance HasMetadata Term where
     TVar old idx -> (\new -> TVar new idx) <$> f old
     THole old hole -> (\new -> THole new hole) <$> f old
     TUniv old univ -> (\new -> TUniv new univ) <$> f old
-    TGlobal old name info -> (\new -> TGlobal new name info) <$> f old
+    TGlobal old name -> (\new -> TGlobal new name) <$> f old
     TLambda old p b ty body -> (\new -> TLambda new p b)
       <$> f old
       <*> traverseMetadata f ty

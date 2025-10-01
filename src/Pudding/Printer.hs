@@ -41,12 +41,12 @@ printCore :: Term -> Printer
 printCore = \case
   TVar _m idx -> \(_, ctx) -> "$" <>
     Doc.pretty (idx2lvl (quoteSize ctx) idx)
-  TGlobal _m name _ -> pure $ Doc.pretty name
+  TGlobal _m name -> pure $ Doc.pretty name
   THole _m fresh -> pure $ Doc.pretty fresh
   TUniv _m univ -> pure $ Doc.pretty $ case univ of
-    UBase lvl -> "U0 " <> show lvl
-    UMeta lvl -> "U1 " <> show lvl
-    UVar fresh incr -> "U?" <> show fresh <> "+" <> show incr
+    UBase lvl -> "(U0 " <> show lvl <> ")" -- (U0 0), (U0 1), ...
+    UMeta lvl -> "(U1 " <> show lvl <> ")" -- (U1 0), ...
+    UVar fresh incr -> "(U?" <> show fresh <> "+" <> show incr <> ")"
   TLambda _m p binder ty body -> sexp
     [ pure $ "λ" <> if p == Implicit then "?" else ""
     , sexp

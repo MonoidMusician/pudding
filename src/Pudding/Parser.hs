@@ -13,6 +13,9 @@ import qualified Data.Text as T
 
 import Pudding.Types
 import Pudding.Name (NameTable)
+import Data.Map (Map)
+import qualified Data.Map as Map
+import Control.Monad (when)
 
 type Parser = P.ParsecT Text () (ReaderT Ctx IO)
 
@@ -51,6 +54,9 @@ rp = P.char ')' *> spaces
 
 word :: Parser a -> Parser a
 word p = P.try (p <* P.notFollowedBy P.alphaNum) <* spaces
+
+parens :: forall a. Parser a -> Parser a
+parens p = lp *> p <* rp
 
 ident :: Parser Name
 ident = do
@@ -100,7 +106,7 @@ var = do
   mix <- lookupIdent i
   return $ case mix of
     Just ix -> TVar meta ix
-    Nothing -> TGlobal meta i $ error $ "Undefined global: " <> show i
+    Nothing -> TGlobal meta i
 
 keyword :: [String] -> Parser ()
 keyword kw = void $ P.choice (map (word . P.string) kw)
@@ -136,6 +142,21 @@ app = do
     trackApp (Tracked s1 a) (Tracked s2 b) =
       let s = s1 <> s2 in
         Tracked s (TApp (Metadata (singleton s)) a b)
+
+declaration :: Parser (Name, GlobalInfo)
+declaration = parens $ P.choice
+  [ do
+      keyword ["define"]
+      n <- ident
+      t <- term
+      pure (n, GlobalDefn undefined (GlobalTerm t undefined))
+  ]
+declarations :: Parser (Map Name GlobalInfo)
+declarations = P.many declaration >>= \decls -> do
+  let globals = Map.fromList decls
+  when (Map.size globals /= length decls) do
+    fail "Duplicate global names"
+  pure globals
 
 runParser :: Parser a -> P.SourceName -> Text -> IO (Either P.ParseError a)
 runParser p s t = do

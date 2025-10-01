@@ -86,7 +86,7 @@ sourceSpanTest = TestSuite "SourceSpanTest" do
     expectSpan ((2, 10), (2, 11)) meta
   testCase "TGlobal" do
     -- The type "A" in (lambda (x A) ...)
-    TLambda _ _ _ (TGlobal meta _ _) _ <- pure t1
+    TLambda _ _ _ (TGlobal meta _) _ <- pure t1
     expectSpan ((1, 12), (1, 13)) meta
   testCase "TLambda" do
     -- The entire second top-level term

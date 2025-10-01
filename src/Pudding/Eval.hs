@@ -2,12 +2,16 @@
 module Pudding.Eval where
 
 import Pudding.Types
+import qualified Data.Map as Map
+import Data.Map (Map)
+import Data.Functor ((<&>))
 
 captureClosure :: Term -> EvalCtx -> Closure
 captureClosure = flip Closure
 
 cons :: Eval -> EvalCtx -> EvalCtx
-cons value (EvalCtx sz stack) = EvalCtx (sz+1) (value:stack)
+cons value ctx@(EvalCtx { evalSize = sz, evalValues = stack }) =
+  ctx { evalSize = sz+1, evalValues = value:stack }
 
 evalIndex :: Index -> EvalCtx -> Eval
 evalIndex (Index idx) ctx = evalValues ctx !! idx
@@ -20,11 +24,20 @@ eval = flip evaling
 quote :: QuoteCtx -> Eval -> Term
 quote = flip quoting
 
+-- Share partial evaluation of globals
+bootGlobals :: Map Name GlobalInfo -> Map Name GlobalInfo
+bootGlobals globals = globals <&> \case
+  GlobalDefn ty tm -> GlobalDefn (globalTerm ty) (globalTerm tm)
+  global -> global
+  where
+  globalTerm (GlobalTerm tm _) = GlobalTerm tm (evalGlobal tm)
+  evalGlobal = eval (EvalCtx 0 [] globals)
+
 -- If you want to fully partially evaluate (ahem, normalize) a top-level `Term`.
-normalize :: Term -> Term
-normalize original =
+normalize :: Map Name GlobalInfo -> Term -> Term
+normalize globals original =
   let
-    evaluated = eval (EvalCtx 0 []) original
+    evaluated = eval (EvalCtx 0 [] globals) original
     -- Now we are left with something that is evaluated to depth 1
     -- (so it might have applied some functions and ended up with a `EPair` or
     -- something), but now we need to recursively normalize under binders:
@@ -64,13 +77,14 @@ evaling = \case
       -- the variable has done its job
       e -> e
   -- If we are looking at evaluating a global
-  TGlobal _ _ (Meta (Exact global)) ->
+  TGlobal _ name -> \ctx ->
     -- The global info is already looked up
-    case global of
+    case Map.lookup name (evalGlobals ctx) of
       -- We already have a shared lazy evaluation for a global definition
-      GlobalDefn _ (GlobalTerm _ eval) -> pure eval
+      Just (GlobalDefn _ (GlobalTerm _ evaled)) -> evaled
       -- Constructors are a bit tricky
-      _ -> error "Not implemented yet"
+      Just _ -> error "Not implemented yet"
+      Nothing -> error $ "Could not find global " <> show name
   -- For a lambda
   TLambda meta plicit binder ty body ->
     -- We eval the type, but capture the body as a closure in *this* environment
