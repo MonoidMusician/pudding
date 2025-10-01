@@ -1,15 +1,12 @@
 module ParserTest (parserTest, sourceSpanTest) where
 
-import Control.Applicative (many, (<|>))
-import Control.Monad (forM_)
+import Control.Applicative (many)
 import Control.Monad.IO.Class (liftIO)
-import Data.Functor (void)
 import Data.Set (elems)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Text.Parsec as P
-import Text.Parsec.Text (Parser)
 
 import Pudding.Parser (runParser, term)
 import Pudding.Printer (formatCore, Style (Ansi))
@@ -23,13 +20,33 @@ parserTest = TestSuite "ParserTest" do
 
 termTest :: TestSuite
 termTest = TestSuite "TermTest" do
-  let sourceName = "test/TermTest.txt"
-  raw <- liftIO $ TIO.readFile sourceName
-  cases <- assertRight $ P.runParser testFile () sourceName raw
-  forM_ (zip [1..] cases) $ \(n :: Int, TestCase expected text) -> do
-    testCase (show n) case expected of
-      ExpectPass -> testParser text
-      ExpectFail -> expectFail $ testParser text
+  testCase "Var" do
+    testParser "x"
+  testCase "App" do
+    testParser "(f x)"
+    testParser "(f x y)"
+    testParser "(f x y z)"
+    expectFail $ testParser "f x"
+  testCase "Lambda" do
+    testParser "(lambda (x A) x)"
+    testParser "(λ (x A) x)"
+    testParser "(λ (x A) (f x))"
+    expectFail $ testParser "(lambda (x A))"
+    expectFail $ testParser "(lambda (x A) f x)"
+    expectFail $ testParser "(lambda (x) x)"
+    expectFail $ testParser "(lambda x x)"
+  testCase "Pi" do
+    testParser "(Pi (x A) B)"
+    testParser "(Π (x A) B)"
+    testParser "(Π (x A) (B x))"
+    expectFail $ testParser "(Pi (x A))"
+    expectFail $ testParser "(Pi (x A) B x)"
+    expectFail $ testParser "(Pi (x) B)"
+    expectFail $ testParser "(Pi x B)"
+  testCase "BigTerm" do
+    testParser "(lambda (f (Pi (x A) (B x))) (f ((lambda (s T) (s s)) y) z))"
+  testCase "Keyword" do
+    testParser "(lambda2)"
 
 testParser :: Text -> Test ()
 testParser text = do
@@ -37,28 +54,6 @@ testParser text = do
   r <- liftIO $ runParser (P.spaces *> term <* P.eof) (show name) text
   tm <- assertRight r
   liftIO $ putStrLn $ T.unpack $ formatCore Ansi tm
-
-data Expected = ExpectPass | ExpectFail
-data TestCase = TestCase Expected Text
-
-comment :: Parser ()
-comment = void $ P.string "--" *> P.manyTill P.anyChar (P.char '\n')
-
-space :: Parser ()
-space = P.spaces *> P.skipMany (comment *> P.spaces)
-
-word :: String -> Parser String
-word s = P.try (P.string s <* P.notFollowedBy P.alphaNum) <* space
-
-testFileCase :: Parser TestCase
-testFileCase = do
-  e <- ExpectPass <$ word "pass" <|> ExpectFail <$ word "fail"
-  P.char '{' *> space
-  cs <- P.manyTill P.anyChar (P.char '}') <* space
-  return (TestCase e (T.pack cs))
-
-testFile :: Parser [TestCase]
-testFile = space *> many testFileCase <* P.eof
 
 simplePos :: P.SourcePos -> (Int, Int)
 simplePos p = (P.sourceLine p, P.sourceColumn p)
