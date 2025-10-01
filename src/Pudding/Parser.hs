@@ -8,7 +8,7 @@ import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import qualified Data.List as L
 import Data.Set (singleton)
 import Data.Text (Text)
-import Data.Functor (void)
+import Data.Functor (void, ($>))
 import qualified Data.Text as T
 
 import Pudding.Types
@@ -16,6 +16,7 @@ import Pudding.Name (NameTable)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Control.Monad (when)
+import GHC.IO (unsafePerformIO)
 
 type Parser = P.ParsecT Text () (ReaderT Ctx IO)
 
@@ -83,6 +84,8 @@ term = var <|> (lp *> (P.choice terms <|> app) <* rp)
         dep <- term
         r <- term
         return $ \meta -> TPair meta p l dep r
+    , trackMeta $ do keyword ["U0"] $> \meta -> TUniv meta (UBase 0)
+    , trackMeta $ do keyword ["U1"] $> \meta -> TUniv meta (UMeta 0)
     ]
 
 data Ctx = Ctx
@@ -160,6 +163,9 @@ declarations = P.many declaration >>= \decls -> do
 
 runParser :: Parser a -> P.SourceName -> Text -> IO (Either P.ParseError a)
 runParser p s t = do
-  tbl <- initTable
   end <- newIORef undefined
-  runReaderT (P.runParserT p () s t) (Ctx [] tbl end)
+  runReaderT (P.runParserT p () s t) (Ctx { scope = [], table = globalTable, lastEnd = end })
+
+{-# NOINLINE globalTable #-}
+globalTable :: IORef NameTable
+globalTable = unsafePerformIO initTable

@@ -7,22 +7,28 @@ import Pudding.Eval
 import Pudding.Parser
 import Pudding.Types
 import Testing
-import qualified Data.Map as Map
+import Pudding (parseAndBootGlobals)
+import Data.Text (Text)
 
 evalTest :: TestSuite
 evalTest = TestSuite "EvalTest" do
   testCase "BetaReduction" do
-    t1 <- parseTerm "(lambda (x A) (x x))"
-    t2 <- parseTerm "y"
-    t3 <- parseTerm "(y y)"
-    let t12' = normalize Map.empty (TApp (Metadata mempty) t1 t2)
-    let t3' = normalize Map.empty t3
+    let
+      globals = parseAndBootGlobals $ T.unlines
+        -- Id := \(x : U0) -> x
+        [ "(define Id (lambda (x (U0)) x))"
+        ]
+    t1 <- parseTerm "(lambda (x (U0)) x)"
+    t2 <- parseTerm "(U0)"
+    t3 <- parseTerm "(U0)"
+    let t12' = normalize globals (TApp (Metadata mempty) t1 t2)
+    let t3' = normalize globals t3
     expectEquiv Term' t12' t3'
 
-parseTerm :: String -> Test Term
+parseTerm :: Text -> Test Term
 parseTerm s = do
   name <- testCaseName
-  r <- liftIO $ runParser term (show name) (T.pack s)
+  r <- liftIO $ runParser term (show name) s
   assertRight r
 
 termEquiv :: Term -> Term -> Bool
