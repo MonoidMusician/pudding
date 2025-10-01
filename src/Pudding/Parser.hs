@@ -49,10 +49,12 @@ lp = P.char '(' *> spaces
 rp :: Parser ()
 rp = P.char ')' *> spaces
 
+word :: Parser a -> Parser a
+word p = P.try (p <* P.notFollowedBy P.alphaNum) <* spaces
+
 ident :: Parser Name
 ident = do
-  t <- (:) <$> P.letter <*> many P.alphaNum
-  spaces
+  t <- word $ (:) <$> P.letter <*> many P.alphaNum
   tbl <- asks table
   internalize tbl $ T.pack t
 
@@ -101,7 +103,7 @@ var = do
     Nothing -> TGlobal meta i $ error $ "Undefined global: " <> show i
 
 keyword :: [String] -> Parser ()
-keyword kw = void $ P.choice (map P.string' kw) *> P.spaces
+keyword kw = void $ P.choice (map (word . P.string) kw)
 
 kwPlicit :: [String] -> Parser Plicit
 kwPlicit kw = keyword kw *> plicity

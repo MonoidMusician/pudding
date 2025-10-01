@@ -30,3 +30,6 @@ pass {
   (lambda (f (Pi (x A) (B x)))
     (f ((lambda (s T) (s s)) y) z))
 }
+
+-- Keyword parsing
+pass { (lambda2) }

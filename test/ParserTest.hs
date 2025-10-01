@@ -47,11 +47,13 @@ comment = void $ P.string "--" *> P.manyTill P.anyChar (P.char '\n')
 space :: Parser ()
 space = P.spaces *> P.skipMany (comment *> P.spaces)
 
+word :: String -> Parser String
+word s = P.try (P.string s <* P.notFollowedBy P.alphaNum) <* space
+
 testFileCase :: Parser TestCase
 testFileCase = do
-  e <- ExpectPass <$ P.string' "pass"
-    <|> ExpectFail <$ P.string' "fail"
-  space *> P.char '{' *> space
+  e <- ExpectPass <$ word "pass" <|> ExpectFail <$ word "fail"
+  P.char '{' *> space
   cs <- P.manyTill P.anyChar (P.char '}') <* space
   return (TestCase e (T.pack cs))
 
