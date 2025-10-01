@@ -56,6 +56,10 @@ instance Show Term' where
       show' (TLambda {}) = "TLambda {}"
       show' (TPi {}) = "TPi {}"
       show' (TApp {}) = "TApp {}"
+      show' (TSigma {}) = "TSigma {}"
+      show' (TPair {}) = "TPair {}"
+      show' (TFst {}) = "TFst {}"
+      show' (TSnd {}) = "TSnd {}"
 
 instance Eq Term' where
   Term' t1 == Term' t2 = t1 `termEquiv` t2
