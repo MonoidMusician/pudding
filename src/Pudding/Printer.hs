@@ -39,7 +39,7 @@ formatCore style term = format style $ printCore term (0, QuoteCtx 0)
 
 printCore :: Term -> Printer
 printCore = \case
-  TVar _m idx -> pure $ Doc.pretty $ "x" <> show idx
+  TVar _m idx -> pure $ Doc.pretty $ "$" <> show idx
   TGlobal _m (Name _ name) _ -> pure $ Doc.pretty name
   THole _m fresh -> pure $ Doc.pretty $ show fresh
   TUniv _m univ -> pure $ Doc.pretty $ case univ of
@@ -49,7 +49,7 @@ printCore = \case
   TLambda _m p binder ty body -> sexp
     [ pure $ "λ" <> if p == Implicit then "?" else ""
     , sexp
-      [ \(_, ctx) -> "x" <> Doc.pretty (quoteSize ctx)
+      [ \(_, ctx) -> "$" <> Doc.pretty (quoteSize ctx)
       , printCore ty
       ]
     , pure Doc.hardline
@@ -58,7 +58,7 @@ printCore = \case
   TPi _m p binder ty body -> sexp
     [ pure $ "Π" <> if p == Implicit then "?" else ""
     , sexp
-      [ \(_, ctx) -> "x" <> Doc.pretty (quoteSize ctx)
+      [ \(_, ctx) -> "$" <> Doc.pretty (quoteSize ctx)
       , printCore ty
       ]
     , pure Doc.hardline
@@ -70,7 +70,7 @@ printCore = \case
   TSigma _m p binder ty body -> sexp
     [ pure $ "Σ" <> if p == Implicit then "?" else ""
     , sexp
-      [ \(_, ctx) -> "x" <> Doc.pretty (quoteSize ctx)
+      [ \(_, ctx) -> "$" <> Doc.pretty (quoteSize ctx)
       , printCore ty
       ]
     , pure Doc.hardline

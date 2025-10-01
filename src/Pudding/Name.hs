@@ -7,6 +7,8 @@ import GHC.StableName (StableName, hashStableName, makeStableName)
 import Data.IORef (IORef, readIORef, modifyIORef', newIORef)
 import Data.Coerce (coerce)
 import Control.Monad.IO.Class (MonadIO(liftIO))
+import Prettyprinter (Pretty(pretty))
+import qualified Data.Text as T
 
 data Name = Name !(StableName Text) !Text
 
@@ -20,6 +22,12 @@ instance Ord Name where
       c -> c
 instance NFData Name where
   rnf name = seq name ()
+
+instance Show Name where
+  show (Name _ name) = T.unpack name
+
+instance Pretty Name where
+  pretty (Name _ name) = pretty name
 
 newtype NameTable = NameTable (Map.Map Text Name)
 

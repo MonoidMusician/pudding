@@ -98,7 +98,7 @@ var = do
   mix <- lookupIdent i
   return $ case mix of
     Just ix -> TVar meta ix
-    Nothing -> TGlobal meta i undefined
+    Nothing -> TGlobal meta i $ error $ "Undefined global: " <> show i
 
 keyword :: [String] -> Parser ()
 keyword kw = void $ P.choice (map P.string' kw) *> P.spaces
@@ -107,7 +107,7 @@ kwPlicit :: [String] -> Parser Plicit
 kwPlicit kw = keyword kw *> plicity
 
 plicity :: Parser Plicit
-plicity = (Implicit <$ P.string' "?" <|> pure Explicit) <* P.spaces
+plicity = P.option Explicit (Implicit <$ P.char '?') <* P.spaces
 
 type Abstraction = Metadata -> Plicit -> Binder -> Term -> Term -> Term
 
