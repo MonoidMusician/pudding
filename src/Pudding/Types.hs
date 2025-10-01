@@ -108,7 +108,16 @@ data Eval
 
 -- A Neutral is stuck on a variable (or hole), with some projections and eliminators applied to it.
 -- (This is the Normalization part of NbE: inserting variables to evaluate open terms.)
-data Neutral = Neutral NeutFocus [NeutPrj]
+data Neutral = Neutral
+  { neutralBlocking :: NeutFocus
+  , neutralSpine :: [NeutPrj]
+    -- ^ Spine of projections/function applications/eliminators to apply,
+    -- either to reconstruct the syntax around the variable, or to finish
+    -- evaluating it once it is known.
+    --
+    -- This should **really** be a Snoc list (in terms of order of
+    -- evaluation), but I've been lazy thus far.
+  }
   deriving (Generic, NFData)
 data NeutFocus
   = NVar Metadata !Level
@@ -122,6 +131,17 @@ data NeutPrj
 
 -- Closure: an unevaluated term frozen in an environment of evaluated (or neutral)
 -- variable values.
+--
+-- A closure is created during evaluation from a binder (like lambda/Pi/Sigma),
+-- where `EvalCtx` is the external context *not* including what was just bound
+-- (whatever the context happened to be when we ran into the lambda), and `Term`
+-- is literally just the body of the lambda, waiting for the bound variable to
+-- have some `Eval` to instantiate it (during evaluation: with a value, or during
+-- quoting: with a neutral term, to capture the dependence of the body on
+-- the argument it is expecting).
+--
+-- `(\x -> x + 1) 2` will evaluate the `Closure` immediately, but
+-- `(\x -> x) (\y -> y)` leaves `(\y -> y)` for quoting
 data Closure = Closure EvalCtx Term
   deriving (Generic, NFData)
 
@@ -133,6 +153,7 @@ data EvalCtx = EvalCtx
 
 data QuoteCtx = QuoteCtx
   { quoteSize :: !Int
+  -- ^ `quoteSize` is just used to convert `Level` back to `Index`
   }
   deriving (Generic, NFData)
 

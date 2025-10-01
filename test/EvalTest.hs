@@ -14,8 +14,8 @@ evalTest = TestSuite "EvalTest" do
     t1 <- parseTerm "(lambda (x A) (x x))"
     t2 <- parseTerm "y"
     t3 <- parseTerm "(y y)"
-    let t12' = nbe (TApp (Metadata mempty) t1 t2)
-    let t3' = nbe t3
+    let t12' = normalize (TApp (Metadata mempty) t1 t2)
+    let t3' = normalize t3
     expectEquiv Term' t12' t3'
 
 parseTerm :: String -> Test Term
@@ -23,12 +23,6 @@ parseTerm s = do
   name <- testCaseName
   r <- liftIO $ runParser term (show name) (T.pack s)
   assertRight r
-
-nbe :: Term -> Term
-nbe t = let
-  eCtx = EvalCtx 0 []
-  qCtx = QuoteCtx 0
-  in quoting (evaling t eCtx) qCtx
 
 termEquiv :: Term -> Term -> Bool
 termEquiv (TVar _ i1) (TVar _ i2) = i1 == i2

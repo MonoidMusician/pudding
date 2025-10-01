@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 module Pudding.Eval where
 
 import Pudding.Types
@@ -14,7 +15,39 @@ evalIndex (Index idx) ctx = evalValues ctx !! idx
 evalLevel :: Level -> EvalCtx -> Eval
 evalLevel lvl ctx = evalIndex (lvl2idx (evalSize ctx) lvl) ctx
 
+eval :: EvalCtx -> Term -> Eval
+eval = flip evaling
+quote :: QuoteCtx -> Eval -> Term
+quote = flip quoting
+
+-- If you want to fully partially evaluate (ahem, normalize) a top-level `Term`.
+normalize :: Term -> Term
+normalize original =
+  let
+    evaluated = eval (EvalCtx 0 []) original
+    -- Now we are left with something that is evaluated to depth 1
+    -- (so it might have applied some functions and ended up with a `EPair` or
+    -- something), but now we need to recursively normalize under binders:
+    -- which is what `quote` does.
+    quoted = quote (QuoteCtx { quoteSize = 0 }) evaluated
+    -- And now it is a `Term` again: core syntax that we can manipulate as a
+    -- self-contained thing. (Whereas the `Closure`s in `Eval` contain
+    -- frozen contexts that we can't deal with in any sensible way.)
+    --
+    -- `quoteSize` is just used to convert `Level` back to `Index`
+  in quoted
+
 -- Normalization by Evaluation
+-- - Much more efficient: avoids retraversing terms when possible
+-- - Still can do full partial evaluation, but this work is split between
+--   `eval` and `quote` now.
+-- - `Closure` sometimes uses closures from the host language, which makes it
+--   look weird/cool (and I don't think it buys you much), so that would be
+--   `(Eval -> Eval)` via `\evalingArg -> evaling savedBody $ cons evalingArg savedCtx`
+-- - But here we represent `Closure` explicitly as an ordinary ADT.
+-- - Eval does as much work as it can in a single pass. Quoting makes it recur
+--   under binders (into closures), to make it into a *partial* evaluator
+--   (since `eval` handles neutrals nicely).
 evaling :: Term -> EvalCtx -> Eval
 evaling = \case
   -- If we have a variable
@@ -51,9 +84,16 @@ evaling = \case
     ESigma meta plicit binder <$> evaling ty <*> captureClosure body
   -- Application is interesting
   TApp metaApp fun arg -> \ctx ->
+    -- `($) :: (a -> b) -> a -> b` is strict in its first argument: we always
+    -- want to evaluate that and see what it does: thus evaluating `fun` as
+    -- `evaling fun ctx` and casing on it immediately, *not* examining the raw
+    -- `fun :: Term` because that would just be inefficient at that point.
     case (evaling fun ctx, evaling arg ctx) of
       -- Beta redex: we can resume the body closure now that we know the value
       -- it was waiting for: `evalingArg`
+      --
+      -- (here we have a lazy interpreter in `evaling arg ctx` just because
+      -- Haskell is lazy: `evalingArg` could be ignored by the `Closure`)
       (ELambda _ _ _ _ (Closure savedCtx savedBody), evalingArg) ->
         evaling savedBody $ cons evalingArg savedCtx
       -- If it was stuck as a neutral, we need to preserve the argument on the
@@ -66,7 +106,12 @@ evaling = \case
   TFst meta term -> \ctx ->
     -- Again, we look to beta reduce, or add a projection to a neutral
     case evaling term ctx of
+      -- If it reduces to a literal, it must be a pair by type correctness
       EPair _ _ left _ _ -> left
+      -- Otherwise it must be a neutral: it does not have an actual value yet
+      -- (it is waiting for a variable / hole), so we *record* that we want to
+      -- apply `fst` to it when it does reduce -> this means that in quoting we
+      -- can actually reconstruct the syntax around the neutral
       ENeut (Neutral focus prjs) ->
         ENeut (Neutral focus (NFst meta : prjs))
       _ -> error "Type error: cannot apply to non-function"
@@ -103,8 +148,12 @@ quoting = \case
   EPair meta plicit left ltr right ->
     TPair meta plicit <$> quoting left <*> quoting ltr <*> quoting right
 
+-- Quote a closure back into a syntactic term: this generates a neutral to be
+-- a placeholder for the bound variable during evaluation, and then it restarts
+-- evaluation on the frozen `Term` inside the `Closure`.
 quotingClosure :: Closure -> Eval -> QuoteCtx -> Term
 quotingClosure (Closure savedCtx savedBody) argTy ctx =
   let
+    -- This is the (only-ish) place that we create neutrals: when quoting.
     evalingArg = ENeut (Neutral (NVar mempty (Level (quoteSize ctx))) [])
   in quoting (evaling savedBody $ cons evalingArg savedCtx) ctx
