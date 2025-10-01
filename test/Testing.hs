@@ -115,9 +115,6 @@ summarize (TestResult _ r fs) = foldMap summarize r <> case fs of
 assert :: Bool -> String -> Test ()
 assert c e = unless c $ testFail $ "Assertion failed: " ++ e
 
-assertEq :: (Eq a, Show a) => a -> a -> Test ()
-assertEq a b = assert (a == b) $ show a ++ " == " ++ show b
-
 assertRight :: Show e => Either e a -> Test a
 assertRight (Left e) = testFail $ show e
 assertRight (Right a) = return a
@@ -127,6 +124,12 @@ expect c e = unless c $ testFailSoft $ "Assertion failed: " ++ e
 
 expectEq :: (Eq a, Show a) => a -> a -> Test ()
 expectEq a b = expect (a == b) $ show a ++ " == " ++ show b
+
+expectEquiv :: (Eq b, Show b) => (a -> b) -> a -> a -> Test ()
+expectEquiv e a b = let
+  a' = e a
+  b' = e b
+  in assert (a' == b') $ show a' ++ " ~= " ++ show b'
 
 expectFail :: Test () -> Test ()
 expectFail (Test m) = do
