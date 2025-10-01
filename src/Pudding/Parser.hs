@@ -8,7 +8,7 @@ import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import qualified Data.List as L
 import Data.Set (singleton)
 import Data.Text (Text)
-import Data.Functor (void, (<&>))
+import Data.Functor (void)
 import qualified Data.Text as T
 
 import Pudding.Types
@@ -25,6 +25,11 @@ track p = do
   result <- p
   end <- asks lastEnd >>= liftIO . readIORef
   return $ Tracked (SourceSpan begin end) result
+
+trackMeta :: Parser (Metadata -> a) -> Parser a
+trackMeta p = do
+  Tracked sourceSpan fn <- track p
+  return $ fn $ Metadata $ singleton sourceSpan
 
 markEnd :: Parser ()
 markEnd = do
@@ -52,7 +57,25 @@ ident = do
   internalize tbl $ T.pack t
 
 term :: Parser Term
-term = var <|> (lp *> (lambda <|> piType <|> app) <* rp)
+term = var <|> (lp *> (P.choice terms <|> app) <* rp)
+  where
+  terms =
+    [ abstraction (kwPlicit ["lambda", "λ"]) TLambda
+    , abstraction (kwPlicit ["Pi", "Π"]) TPi
+    , abstraction (kwPlicit ["Sigma", "Σ"]) TSigma
+    , trackMeta do
+        which <- TFst <$ P.string' "fst" <|> TSnd <$ P.string' "snd"
+        P.spaces
+        t <- term
+        return $ \meta -> which meta t
+    , trackMeta do
+        p <- kwPlicit ["pair"]
+        P.spaces
+        l <- term
+        dep <- term
+        r <- term
+        return $ \meta -> TPair meta p l dep r
+    ]
 
 data Ctx = Ctx
   { scope :: [Name]
@@ -81,13 +104,10 @@ keyword :: [String] -> Parser ()
 keyword kw = void $ P.choice (map P.string' kw) *> P.spaces
 
 kwPlicit :: [String] -> Parser Plicit
-kwPlicit kw = Implicit <$ keyword (kw <&> (<> "?")) <|> Explicit <$ keyword kw
+kwPlicit kw = keyword kw *> plicity
 
-lambda :: Parser Term
-lambda = abstraction (kwPlicit ["lambda", "λ"]) TLambda
-
-piType :: Parser Term
-piType = abstraction (kwPlicit ["Pi", "Π"]) TPi
+plicity :: Parser Plicit
+plicity = (Implicit <$ P.string' "?" <|> pure Explicit) <* P.spaces
 
 type Abstraction = Metadata -> Plicit -> Binder -> Term -> Term -> Term
 
