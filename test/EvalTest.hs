@@ -9,6 +9,8 @@ import Pudding.Types
 import Testing
 import Pudding (parseAndBootGlobals)
 import Data.Text (Text)
+import Data.Foldable (for_)
+import Pudding.Printer (formatCore, Style (Ansi))
 
 evalTest :: TestSuite
 evalTest = TestSuite "EvalTest" do
@@ -17,10 +19,16 @@ evalTest = TestSuite "EvalTest" do
       globals = parseAndBootGlobals $ T.unlines
         -- Id := \(x : U0) -> x
         [ "(define Id (lambda (x (U0)) x))"
+        -- Polymorphic identity function
+        , "(define identity (lambda (t (U0)) (lambda (x t) x)))"
         ]
+    for_ globals \case
+      GlobalDefn (GlobalTerm ty _) _ -> do
+        liftIO $ putStrLn $ T.unpack $ formatCore Ansi ty
+      _ -> pure ()
     t1 <- parseTerm "(lambda (x (U0)) x)"
     t2 <- parseTerm "(U0)"
-    t3 <- parseTerm "(U0)"
+    t3 <- parseTerm "(identity (U0) (U0))"
     let t12' = normalize globals (TApp (Metadata mempty) t1 t2)
     let t3' = normalize globals t3
     expectEquiv Term' t12' t3'

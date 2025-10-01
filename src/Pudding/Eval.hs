@@ -27,11 +27,15 @@ quote = flip quoting
 -- Share partial evaluation of globals
 bootGlobals :: Map Name GlobalInfo -> Map Name GlobalInfo
 bootGlobals globals = globals <&> \case
-  GlobalDefn ty tm -> GlobalDefn (globalTerm ty) (globalTerm tm)
+  GlobalDefn _ tm -> GlobalDefn (typeofGlobal tm) (globalTerm tm)
   global -> global
   where
   globalTerm (GlobalTerm tm _) = GlobalTerm tm (evalGlobal tm)
   evalGlobal = eval (EvalCtx 0 [] globals)
+  typeofGlobal :: GlobalTerm -> GlobalTerm
+  typeofGlobal (GlobalTerm tm _) =
+    let ty = typeof (TypeCtx { tcTypes = [], tcGlobals = globals }) tm
+    in GlobalTerm ty (evalGlobal ty)
 
 -- If you want to fully partially evaluate (ahem, normalize) a top-level `Term`.
 normalize :: Map Name GlobalInfo -> Term -> Term
@@ -171,3 +175,77 @@ quotingClosure (Closure savedCtx savedBody) argTy ctx =
     -- This is the (only-ish) place that we create neutrals: when quoting.
     evalingArg = ENeut (Neutral (NVar mempty (Level (quoteSize ctx))) [])
   in quoting (evaling savedBody $ cons evalingArg savedCtx) ctx
+
+
+
+data TypeCtx = TypeCtx
+  { tcTypes :: [Term]
+  , tcGlobals :: Map Name GlobalInfo
+  }
+
+umax :: ULevel -> ULevel -> ULevel
+umax = undefined
+
+typeof :: TypeCtx -> Term -> Term
+typeof ctx = \case
+  TVar _ (Index idx) -> tcTypes ctx !! idx
+  TGlobal _ name -> case Map.lookup name (tcGlobals ctx) of
+    Nothing -> error $ "Undefined global " <> show name
+    Just (GlobalDefn (GlobalTerm ty _) _) -> ty
+    Just _ -> error "Not implemented"
+  THole _ fresh -> error "typeof hole not implemented"
+  TUniv meta univ -> TUniv meta case univ of
+    UBase lvl -> UBase (lvl + 1)
+    UMeta lvl -> UMeta (lvl + 1)
+    -- This is why `UVar` has an `Int`: increment to get the typeof
+    UVar fresh incr -> UVar fresh (incr + 1)
+  TLambda meta p b ty body ->
+    TPi meta p b ty (typeof (into ty) body)
+  TPi _ _ _ ty body ->
+    -- Π(x : ty : U), (body : U)
+    case (typeof ctx ty, typeof (into ty) body) of
+      (TUniv m1 u1, TUniv m2 u2) -> TUniv (m1 <> m2) (umax u1 u2)
+      _ -> error "Bad pi type"
+  TSigma _ _ _ ty body ->
+    case (typeof ctx ty, typeof (into ty) body) of
+      (TUniv m1 u1, TUniv m2 u2) -> TUniv (m1 <> m2) (umax u1 u2)
+      _ -> error "Bad sigma type"
+  TPair meta p left dep _right ->
+    -- A bit tricky: `dep` is the dependency of the type of `right` on `left`:
+    -- because we can infer `left` (and we could infer `right`), but we can't
+    -- infer their exact dependency as `left` varies: so `dep` itself should have
+    -- type `(typeof left) -> Type`
+    --
+    -- so we make it back into syntax by applying the variable we just bound
+    -- (... potentially not great because it is unevaluated, but yeah)
+    case dep of
+      -- Shortcut: if it is a lambda, then we can transmogrify it into a TSigma
+      TLambda _ _ b ty body ->
+        TSigma
+          -- take metadata and plicity from the pair/sigma
+          meta p
+          -- take the binder from the lambda, trust the type, and insert the body
+          b ty body
+      -- Otherwise we just use `TApp` to apply the variable we just bound
+      _ ->
+        TSigma meta p (BVar noName) (typeof ctx left) (TApp mempty dep (TVar mempty (Index 0)))
+  TFst _ tm -> case typeof ctx tm of
+    TSigma _ _ _ ty _body -> ty
+    _ -> error "Bad fst"
+  TSnd _ tm -> case typeof ctx tm of
+    -- snd (tm : Σ(x : ty), body) = body@[x := fst tm]
+    TSigma _ _ binder ty body ->
+      TApp mempty (TLambda mempty Explicit binder ty body) (TFst mempty tm)
+    _ -> error "Bad snd"
+  TApp _ fun arg -> case typeof ctx fun of
+    TPi meta p b ty body -> TApp mempty (TLambda meta p b ty body) arg
+    _ -> error "Bad app"
+  where
+  into :: Term -> TypeCtx
+  into ty = ctx { tcTypes = ty : tcTypes ctx }
+
+  noName :: Meta CanonicalName
+  noName = Meta $ CanonicalName { chosenName = undefined, allNames = mempty }
+
+
+
