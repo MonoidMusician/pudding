@@ -46,6 +46,9 @@ evaling = \case
   -- Similar story
   TPi meta plicit binder ty body ->
     EPi meta plicit binder <$> evaling ty <*> captureClosure body
+  -- Similar story
+  TSigma meta plicit binder ty body ->
+    ESigma meta plicit binder <$> evaling ty <*> captureClosure body
   -- Application is interesting
   TApp metaApp fun arg -> \ctx ->
     case (evaling fun ctx, evaling arg ctx) of
@@ -57,6 +60,22 @@ evaling = \case
       -- stack of projections to apply to the neutral variable
       (ENeut (Neutral focus prjs), evalingArg) ->
         ENeut (Neutral focus (NApp metaApp evalingArg : prjs))
+      _ -> error "Type error: cannot apply to non-function"
+  TPair meta plicit left ltr right ->
+    EPair meta plicit <$> evaling left <*> evaling ltr <*> evaling right
+  TFst meta term -> \ctx ->
+    -- Again, we look to beta reduce, or add a projection to a neutral
+    case evaling term ctx of
+      EPair _ _ left _ _ -> left
+      ENeut (Neutral focus prjs) ->
+        ENeut (Neutral focus (NFst meta : prjs))
+      _ -> error "Type error: cannot apply to non-function"
+  TSnd meta term -> \ctx ->
+    -- Again, we look to beta reduce, or add a projection to a neutral
+    case evaling term ctx of
+      EPair _ _ _ _ right -> right
+      ENeut (Neutral focus prjs) ->
+        ENeut (Neutral focus (NSnd meta : prjs))
       _ -> error "Type error: cannot apply to non-function"
   TUniv meta univ -> pure $ EUniv meta univ
   THole meta hole -> pure $ ENeut (Neutral (NHole meta hole) [])
@@ -70,6 +89,8 @@ quoting = \case
         NHole meta hole -> THole meta hole
       go (prj : more) soFar = go more case prj of
         NApp meta arg -> TApp meta soFar (quoting arg ctx)
+        NFst meta -> TFst meta soFar
+        NSnd meta -> TSnd meta soFar
       go [] result = result
     in go prjs base
   EUniv meta univ -> pure $ TUniv meta univ
@@ -77,6 +98,10 @@ quoting = \case
     TLambda meta plicit binder <$> quoting ty <*> quotingClosure body ty
   EPi meta plicit binder ty body ->
     TPi meta plicit binder <$> quoting ty <*> quotingClosure body ty
+  ESigma meta plicit binder ty body ->
+    TSigma meta plicit binder <$> quoting ty <*> quotingClosure body ty
+  EPair meta plicit left ltr right ->
+    TPair meta plicit <$> quoting left <*> quoting ltr <*> quoting right
 
 quotingClosure :: Closure -> Eval -> QuoteCtx -> Term
 quotingClosure (Closure savedCtx savedBody) argTy ctx =

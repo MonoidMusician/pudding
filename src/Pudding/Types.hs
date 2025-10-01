@@ -83,10 +83,10 @@ data Term
   | TLambda Metadata !Plicit Binder (Desc "domain type" Term) (Desc "body" Term)
   | TPi Metadata !Plicit Binder (Desc "domain type" Term) (Desc "codomain" Term)
   | TApp Metadata (Desc "function" Term) (Desc "argument" Term)
-  -- | TSigma Metadata !Plicit Binder (Desc "fst type" Term) (Desc "snd type under fst type" Term)
-  -- | TPair Metadata (Desc "fst value" Term) (Desc "snd type functor" Term) (Desc "snd value" Term)
-  -- | TFst Metadata Term
-  -- | TSnd Metadata Term
+  | TSigma Metadata !Plicit Binder (Desc "fst type" Term) (Desc "snd type under fst type" Term)
+  | TPair Metadata !Plicit (Desc "fst value" Term) (Desc "snd type functor" Term) (Desc "snd value" Term)
+  | TFst Metadata Term
+  | TSnd Metadata Term
   deriving (Generic, NFData)
 
 spine :: Term -> (Term, [Term])
@@ -101,8 +101,8 @@ data Eval
   | EUniv Metadata ULevel
   | ELambda Metadata !Plicit Binder (Desc "domain type" Eval) (Desc "body" Closure)
   | EPi Metadata !Plicit Binder (Desc "domain type" Eval) (Desc "codomain" Closure)
-  -- | ESigma Metadata !Plicit Binder (Desc "fst type" Eval) (Desc "snd type under fst type" Closure)
-  -- | EPair Metadata (Desc "fst value" Eval) (Desc "snd type functor" Eval) (Desc "snd value" Eval)
+  | ESigma Metadata !Plicit Binder (Desc "fst type" Eval) (Desc "snd type under fst type" Closure)
+  | EPair Metadata !Plicit (Desc "fst value" Eval) (Desc "snd type functor" Eval) (Desc "snd value" Eval)
   deriving (Generic, NFData)
 
 -- A Neutral is stuck on a variable (or hole), with some projections and eliminators applied to it.
@@ -115,8 +115,8 @@ data NeutFocus
   deriving (Generic, NFData)
 data NeutPrj
   = NApp Metadata (Desc "arg" Eval)
-  -- | NFst Metadata
-  -- | NSnd Metadata
+  | NFst Metadata
+  | NSnd Metadata
   deriving (Generic, NFData)
 
 -- Closure: an unevaluated term frozen in an environment of evaluated (or neutral)
@@ -261,6 +261,10 @@ instance HasMetadata Term where
     TLambda old p b ty body | new <- f old -> (old, TLambda new p b ty body, new)
     TPi old p b ty body | new <- f old -> (old, TPi new p b ty body, new)
     TApp old fun arg | new <- f old -> (old, TApp new fun arg, new)
+    TSigma old p b ty body | new <- f old -> (old, TSigma new p b ty body, new)
+    TPair old p l t r | new <- f old -> (old, TPair new p l t r, new)
+    TFst old t | new <- f old -> (old, TFst new t, new)
+    TSnd old t | new <- f old -> (old, TSnd new t, new)
   traverseMetadata f = \case
     TVar old idx -> (\new -> TVar new idx) <$> f old
     THole old hole -> (\new -> THole new hole) <$> f old
@@ -274,10 +278,21 @@ instance HasMetadata Term where
       <$> f old
       <*> traverseMetadata f ty
       <*> traverseMetadata f body
-    TApp old fun arg -> (\new -> TApp new)
+    TApp old fun arg -> TApp
       <$> f old
       <*> traverseMetadata f fun
       <*> traverseMetadata f arg
+    TSigma old p b ty body -> (\new -> TSigma new p b)
+      <$> f old
+      <*> traverseMetadata f ty
+      <*> traverseMetadata f body
+    TPair old p l t r -> (\new -> TPair new p)
+      <$> f old
+      <*> traverseMetadata f l
+      <*> traverseMetadata f t
+      <*> traverseMetadata f r
+    TFst old t -> TFst <$> f old <*> traverseMetadata f t
+    TSnd old t -> TSnd <$> f old <*> traverseMetadata f t
 
 instance HasMetadata Eval where
   onMetadata f = \case
@@ -285,6 +300,8 @@ instance HasMetadata Eval where
     EUniv old univ | new <- f old -> (old, EUniv new univ, new)
     ELambda old p b ty body | new <- f old -> (old, ELambda new p b ty body, new)
     EPi old p b ty body | new <- f old -> (old, EPi new p b ty body, new)
+    ESigma old p b ty body | new <- f old -> (old, ESigma new p b ty body, new)
+    EPair old p l t r | new <- f old -> (old, EPair new p l t r, new)
   traverseMetadata f = \case
     ENeut neutral -> ENeut <$> traverseMetadata f neutral
     EUniv old univ -> (\new -> EUniv new univ) <$> f old
@@ -296,6 +313,15 @@ instance HasMetadata Eval where
       <$> f old
       <*> traverseMetadata f ty
       <*> traverseMetadata f body
+    ESigma old p b ty body -> (\new -> ESigma new p b)
+      <$> f old
+      <*> traverseMetadata f ty
+      <*> traverseMetadata f body
+    EPair old p l t r -> (\new -> EPair new p)
+      <$> f old
+      <*> traverseMetadata f l
+      <*> traverseMetadata f t
+      <*> traverseMetadata f r
 
 instance HasMetadata Neutral where
   onMetadata f (Neutral focus [])
@@ -317,10 +343,16 @@ instance HasMetadata NeutFocus where
   traverseMetadata f (NHole old hole) = (\new -> NHole new hole) <$> f old
 
 instance HasMetadata NeutPrj where
-  onMetadata f (NApp old arg) | new <- f old = (old, NApp new arg, new)
-  traverseMetadata f (NApp old arg) = (\new -> NApp new)
-    <$> f old
-    <*> traverseMetadata f arg
+  onMetadata f = \case
+    NApp old arg | new <- f old -> (old, NApp new arg, new)
+    NFst old | new <- f old -> (old, NFst new, new)
+    NSnd old | new <- f old -> (old, NSnd new, new)
+  traverseMetadata f = \case
+    NApp old arg -> NApp
+      <$> f old
+      <*> traverseMetadata f arg
+    NFst old -> NFst <$> f old
+    NSnd old -> NSnd <$> f old
 
 instance HasMetadata Closure where
   onMetadata f (Closure ctx term) | (old, term', new) <- onMetadata f term = (old, Closure ctx term', new)

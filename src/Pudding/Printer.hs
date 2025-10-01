@@ -41,6 +41,11 @@ printCore :: Term -> Printer
 printCore = \case
   TVar _m idx -> pure $ Doc.pretty $ "x" <> show idx
   TGlobal _m (Name _ name) _ -> pure $ Doc.pretty name
+  THole _m fresh -> pure $ Doc.pretty $ show fresh
+  TUniv _m univ -> pure $ Doc.pretty $ case univ of
+    UBase lvl -> "U0 " <> show lvl
+    UMeta lvl -> "U1 " <> show lvl
+    UVar fresh incr -> "U?" <> show fresh <> "+" <> show incr
   TLambda _m p binder ty body -> sexp
     [ pure $ "λ" <> if p == Implicit then "?" else ""
     , sexp
@@ -62,4 +67,21 @@ printCore = \case
   app@(TApp _m _ _) ->
     let (fun, args) = spine app in
     sexp $ printCore <$> fun : args
+  TSigma _m p binder ty body -> sexp
+    [ pure $ "Σ" <> if p == Implicit then "?" else ""
+    , sexp
+      [ \(_, ctx) -> "x" <> Doc.pretty (quoteSize ctx)
+      , printCore ty
+      ]
+    , pure Doc.hardline
+    , bound binder $ printCore body
+    ]
+  TPair _m p left ltr right -> sexp
+    [ pure $ "pair" <> if p == Implicit then "?" else ""
+    , printCore left
+    , printCore ltr
+    , printCore right
+    ]
+  TFst _m term -> sexp [ pure "fst", printCore term ]
+  TSnd _m term -> sexp [ pure "snd", printCore term ]
 
