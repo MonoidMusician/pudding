@@ -39,9 +39,10 @@ formatCore style term = format style $ printCore term (0, QuoteCtx 0)
 
 printCore :: Term -> Printer
 printCore = \case
-  TVar _m idx -> pure $ Doc.pretty $ "$" <> show idx
-  TGlobal _m (Name _ name) _ -> pure $ Doc.pretty name
-  THole _m fresh -> pure $ Doc.pretty $ show fresh
+  TVar _m idx -> \(_, ctx) -> "$" <>
+    Doc.pretty (idx2lvl (quoteSize ctx) idx)
+  TGlobal _m name _ -> pure $ Doc.pretty name
+  THole _m fresh -> pure $ Doc.pretty fresh
   TUniv _m univ -> pure $ Doc.pretty $ case univ of
     UBase lvl -> "U0 " <> show lvl
     UMeta lvl -> "U1 " <> show lvl

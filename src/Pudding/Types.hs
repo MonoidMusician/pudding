@@ -14,6 +14,7 @@ import Control.DeepSeq (NFData(rnf))
 import GHC.Generics (Generic)
 import Pudding.Name (Name(..), newTable, initTable, internalize)
 import Control.Applicative.Backwards (Backwards (forwards, Backwards))
+import Prettyprinter (Pretty)
 
 -- Just give a little description of the type
 type Desc (s :: Symbol) t = t
@@ -144,11 +145,11 @@ data Plicit = Explicit | Implicit
 
 -- DeBruijn index: 0 is the most recently bound variable (inner scope). Used for typechecking.
 newtype Index = Index Int
-  deriving newtype (Eq, Ord, Show, NFData)
+  deriving newtype (Eq, Ord, Show, Pretty, NFData)
 
 -- DeBruijn level: 0 is the first bound variable (outer scope). Used for evaluation.
 newtype Level = Level Int
-  deriving newtype (Eq, Ord, Show, NFData)
+  deriving newtype (Eq, Ord, Show, Pretty, NFData)
 
 idx2lvl :: Int -> Index -> Level
 idx2lvl size (Index idx) = Level ((size - 1) - idx)
@@ -157,7 +158,7 @@ lvl2idx size (Level idx) = Index ((size - 1) - idx)
 
 -- E.g. for numbering typed holes
 newtype Fresh = Fresh Int
-  deriving newtype (Eq, Ord, Show, NFData)
+  deriving newtype (Eq, Ord, Show, Pretty, NFData)
 
 data ULevel
   = UBase !Int
