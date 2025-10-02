@@ -15,6 +15,8 @@ import GHC.Generics (Generic)
 import Pudding.Name (Name(..), newTable, initTable, internalize)
 import Control.Applicative.Backwards (Backwards (forwards, Backwards))
 import Prettyprinter (Pretty)
+import GHC.StableName (StableName)
+import Data.Text (Text)
 
 -- Just give a little description of the type
 type Desc (s :: Symbol) t = t
@@ -38,6 +40,8 @@ data GlobalInfo
   -- An inductive type declaration
   | GlobalType GlobalTypeInfo
   deriving (Generic, NFData)
+
+type Globals = Map Name GlobalInfo
 
 data GlobalTypeInfo = GlobalTypeInfo
   { typeArgs :: !(Vector (Plicit, Binder, Term))
@@ -104,6 +108,7 @@ data Eval
   | EPi Metadata !Plicit Binder (Desc "domain type" Eval) (Desc "codomain" Closure)
   | ESigma Metadata !Plicit Binder (Desc "fst type" Eval) (Desc "snd type under fst type" Closure)
   | EPair Metadata !Plicit (Desc "fst value" Eval) (Desc "snd type functor" Eval) (Desc "snd value" Eval)
+  | EDeferred (Desc "reason" (Meta Text)) (Desc "type" Eval) !(Desc "sharing" (Maybe (StableName Eval))) Metadata (Desc "deferred term" Eval)
   deriving (Generic, NFData)
 
 -- A Neutral is stuck on a variable (or hole), with some projections and eliminators applied to it.
@@ -142,7 +147,7 @@ data NeutPrj
 --
 -- `(\x -> x + 1) 2` will evaluate the `Closure` immediately, but
 -- `(\x -> x) (\y -> y)` leaves `(\y -> y)` for quoting
-data Closure = Closure EvalCtx Term
+data Closure = Closure (Desc "saved external context" EvalCtx) (Desc "body" Term)
   deriving (Generic, NFData)
 
 data EvalCtx = EvalCtx
@@ -325,6 +330,7 @@ instance HasMetadata Eval where
     EPi old p b ty body | new <- f old -> (old, EPi new p b ty body, new)
     ESigma old p b ty body | new <- f old -> (old, ESigma new p b ty body, new)
     EPair old p l t r | new <- f old -> (old, EPair new p l t r, new)
+    EDeferred reason ty ref old term | new <- f old -> (old, EDeferred reason ty ref new (setMetadata term new), new)
   traverseMetadata f = \case
     ENeut neutral -> ENeut <$> traverseMetadata f neutral
     EUniv old univ -> (\new -> EUniv new univ) <$> f old
@@ -345,6 +351,10 @@ instance HasMetadata Eval where
       <*> traverseMetadata f l
       <*> traverseMetadata f t
       <*> traverseMetadata f r
+    EDeferred reason ty ref _ term ->
+      (\term' ty' -> EDeferred reason ty' ref (getMetadata term') term')
+      <$> traverseMetadata f term
+      <*> traverseMetadata f ty
 
 instance HasMetadata Neutral where
   onMetadata f (Neutral focus [])

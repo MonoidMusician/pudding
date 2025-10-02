@@ -34,7 +34,7 @@ bootGlobals globals = globals <&> \case
   evalGlobal = eval (EvalCtx 0 [] globals)
   typeofGlobal :: GlobalTerm -> GlobalTerm
   typeofGlobal (GlobalTerm tm _) =
-    let ty = typeof (TypeCtx { tcTypes = [], tcGlobals = globals }) tm
+    let ty = typeof (simpleCtx globals []) tm
     in GlobalTerm ty (evalGlobal ty)
 
 -- If you want to fully partially evaluate (ahem, normalize) a top-level `Term`.
@@ -112,7 +112,7 @@ evaling = \case
       --
       -- (here we have a lazy interpreter in `evaling arg ctx` just because
       -- Haskell is lazy: `evalingArg` could be ignored by the `Closure`)
-      (ELambda _ _ _ _ (Closure savedCtx savedBody), evalingArg) ->
+      (ELambda _ _ _ _ (Closure _ty savedCtx savedBody), evalingArg) ->
         evaling savedBody $ cons evalingArg savedCtx
       -- If it was stuck as a neutral, we need to preserve the argument on the
       -- stack of projections to apply to the neutral variable
@@ -165,12 +165,13 @@ quoting = \case
     TSigma meta plicit binder <$> quoting ty <*> quotingClosure body ty
   EPair meta plicit left ltr right ->
     TPair meta plicit <$> quoting left <*> quoting ltr <*> quoting right
+  EDeferred _ _ _ _ tm -> quoting tm
 
 -- Quote a closure back into a syntactic term: this generates a neutral to be
 -- a placeholder for the bound variable during evaluation, and then it restarts
 -- evaluation on the frozen `Term` inside the `Closure`.
 quotingClosure :: Closure -> Eval -> QuoteCtx -> Term
-quotingClosure (Closure savedCtx savedBody) argTy ctx =
+quotingClosure (Closure _ty savedCtx savedBody) argTy ctx =
   let
     -- This is the (only-ish) place that we create neutrals: when quoting.
     evalingArg = ENeut (Neutral (NVar mempty (Level (quoteSize ctx))) [])
@@ -178,18 +179,28 @@ quotingClosure (Closure savedCtx savedBody) argTy ctx =
 
 
 
-data TypeCtx = TypeCtx
-  { tcTypes :: [Term]
-  , tcGlobals :: Map Name GlobalInfo
+data SimpleCtx item = SimpleCtx
+  { scSize :: !Int
+  , scStack :: [item]
+  , scGlobals :: Map Name GlobalInfo
   }
+type TypeCtx = SimpleCtx Term
+type EvalTypeCtx = SimpleCtx Eval
+
+simpleCtx :: forall item. Map Name GlobalInfo -> [item] -> SimpleCtx item
+simpleCtx globals stack = SimpleCtx (length stack) stack globals
+
+snocSimple :: forall item. SimpleCtx item -> item -> SimpleCtx item
+snocSimple ctx item = ctx
+  { scSize = scSize ctx + 1, scStack = item : scStack ctx }
 
 umax :: ULevel -> ULevel -> ULevel
 umax = undefined
 
 typeof :: TypeCtx -> Term -> Term
 typeof ctx = \case
-  TVar _ (Index idx) -> tcTypes ctx !! idx
-  TGlobal _ name -> case Map.lookup name (tcGlobals ctx) of
+  TVar _ (Index idx) -> scStack ctx !! idx
+  TGlobal _ name -> case Map.lookup name (scGlobals ctx) of
     Nothing -> error $ "Undefined global " <> show name
     Just (GlobalDefn (GlobalTerm ty _) _) -> ty
     Just _ -> error "Not implemented"
@@ -242,10 +253,63 @@ typeof ctx = \case
     _ -> error "Bad app"
   where
   into :: Term -> TypeCtx
-  into ty = ctx { tcTypes = ty : tcTypes ctx }
+  into ty = ctx { scStack = ty : scStack ctx }
 
   noName :: Meta CanonicalName
   noName = Meta $ CanonicalName { chosenName = undefined, allNames = mempty }
 
+typeofEval :: EvalTypeCtx -> Eval -> Eval
+typeofEval ctx = \case
+  EUniv meta univ -> EUniv meta case univ of
+    UBase lvl -> UBase (lvl + 1)
+    UMeta lvl -> UMeta (lvl + 1)
+    -- This is why `UVar` has an `Int`: increment to get the typeof
+    UVar fresh incr -> UVar fresh (incr + 1)
+  ELambda meta p b ty body ->
+    EPi meta p b ty (typeofClosure ty body)
+  EPi _ _ _ ty body ->
+    -- Π(x : ty : U), (body : U)
+    case (typeofEval ctx ty, typeofClosure ty body) of
+      (EUniv m1 u1, EUniv m2 u2) -> EUniv (m1 <> m2) (umax u1 u2)
+      _ -> error "Bad pi type"
+  ESigma _ _ _ ty body ->
+    case (typeofEval ctx ty, typeofClosure ty body) of
+      (EUniv m1 u1, EUniv m2 u2) -> EUniv (m1 <> m2) (umax u1 u2)
+      _ -> error "Bad sigma type"
+  EPair meta p left dep _right ->
+    case dep of
+      ELambda _ _ b ty body ->
+        ESigma
+          -- take metadata and plicity from the pair/sigma
+          meta p
+          -- take the binder from the lambda, trust the type, and insert the body
+          b ty body
+      -- Otherwise we just use `TApp` to apply the variable we just bound
+      _ ->
+        ESigma meta p (BVar noName) (typeofEval ctx left) (ENeut (Neutral (NVar mempty ()) (NApp mempty dep)))
+  ENeut (Neutral focus prjs) -> typeofPrjs (typeofFocus focus) prjs
+  EDeferred _ ty _ _ _ -> ty
+  where
+  into :: Eval -> EvalTypeCtx
+  into ty = ctx { scStack = ty : scStack ctx }
 
+  noName :: Meta CanonicalName
+  noName = Meta $ CanonicalName { chosenName = undefined, allNames = mempty }
 
+  typeofFocus = \case
+    NVar _ (Level idx) -> scStack ctx !! idx
+    NHole _ fresh -> error "typeof hole not implemented"
+  typeofPrjs ty [] = ty
+  typeofPrjs ty (prj : prjs) = typeofPrjs (typeofPrj ty prj) prjs
+  typeofPrj ty = \case
+    NFst _ -> case ty of
+      TSigma _ _ _ ty _body -> ty
+      _ -> error "Bad fst"
+    NSnd _ -> case ty of
+      -- snd (tm : Σ(x : ty), body) = body@[x := fst tm]
+      ESigma _ _ binder ty body ->
+        TApp mempty (ELambda mempty Explicit binder ty body) (EFst mempty tm)
+      _ -> error "Bad snd"
+    NApp _ arg -> case ty of
+      EPi meta p b ty body -> EApp mempty (ELambda meta p b ty body) arg
+      _ -> error "Bad app"
