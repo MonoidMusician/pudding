@@ -2,6 +2,7 @@ module ParserTest (parserTest, sourceSpanTest) where
 
 import Control.Applicative (many)
 import Control.Monad.IO.Class (liftIO)
+import Data.Functor (void)
 import Data.Set (elems)
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -21,39 +22,48 @@ parserTest = TestSuite "ParserTest" do
 termTest :: TestSuite
 termTest = TestSuite "TermTest" do
   testCase "Var" do
-    testParser "x"
+    testParser' "x"
   testCase "App" do
-    testParser "(f x)"
-    testParser "(f x y)"
-    testParser "(f x y z)"
-    expectFail $ testParser "f x"
+    testParser' "(f x)"
+    testParser' "(f x y)"
+    testParser' "(f x y z)"
+    expectFail $ testParser' "f x"
   testCase "Lambda" do
-    testParser "(lambda (x A) x)"
-    testParser "(λ (x A) x)"
-    testParser "(λ (x A) (f x))"
-    expectFail $ testParser "(lambda (x A))"
-    expectFail $ testParser "(lambda (x A) f x)"
-    expectFail $ testParser "(lambda (x) x)"
-    expectFail $ testParser "(lambda x x)"
+    testParser' "(lambda (x A) x)"
+    testParser' "(λ (x A) x)"
+    testParser' "(λ (x A) (f x))"
+    expectFail $ testParser' "(lambda (x A))"
+    expectFail $ testParser' "(lambda (x A) f x)"
+    expectFail $ testParser' "(lambda (x) x)"
+    expectFail $ testParser' "(lambda x x)"
   testCase "Pi" do
-    testParser "(Pi (x A) B)"
-    testParser "(Π (x A) B)"
-    testParser "(Π (x A) (B x))"
-    expectFail $ testParser "(Pi (x A))"
-    expectFail $ testParser "(Pi (x A) B x)"
-    expectFail $ testParser "(Pi (x) B)"
-    expectFail $ testParser "(Pi x B)"
+    testParser' "(Pi (x A) B)"
+    testParser' "(Π (x A) B)"
+    testParser' "(Π (x A) (B x))"
+    expectFail $ testParser' "(Pi (x A))"
+    expectFail $ testParser' "(Pi (x A) B x)"
+    expectFail $ testParser' "(Pi (x) B)"
+    expectFail $ testParser' "(Pi x B)"
   testCase "BigTerm" do
-    testParser "(lambda (f (Pi (x A) (B x))) (f ((lambda (s T) (s s)) y) z))"
+    testParser' "(lambda (f (Pi (x A) (B x))) (f ((lambda (s T) (s s)) y) z))"
   testCase "Keyword" do
-    testParser "(lambda2)"
+    testParser' "(lambda2)"
+  testCase "TypeofIdentity" do
+    TPi _ _ _ _ (TPi _ _ _ (TVar _ i1) (TVar _ i2)) <-
+      testParser "(Pi (t (U0)) (Pi (x t) t))"
+    expectEq (Index 0) i1
+    expectEq (Index 1) i2
 
-testParser :: Text -> Test ()
+testParser :: Text -> Test Term
 testParser text = do
   name <- testCaseName
   r <- liftIO $ runParser (P.spaces *> term <* P.eof) (show name) text
   tm <- assertRight r
   liftIO $ putStrLn $ T.unpack $ formatCore Ansi tm
+  return tm
+
+testParser' :: Text -> Test ()
+testParser' = void . testParser
 
 simplePos :: P.SourcePos -> (Int, Int)
 simplePos p = (P.sourceLine p, P.sourceColumn p)

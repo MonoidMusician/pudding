@@ -58,7 +58,7 @@ wrapExceptions m = catch m
     putStrLn s
     return (Nothing, [], [s])
 
-runTest :: TestName -> String -> Test () -> IO TestResult
+runTest :: TestName -> String -> Test a -> IO TestResult
 runTest parent name (Test m) = do
   let fullName = child parent name
   (_, r, fs) <- wrapExceptions (m fullName)
@@ -70,7 +70,7 @@ runTest parent name (Test m) = do
     putStrLn $ "\ESC[31m[ FAIL ]\ESC[0m  " ++ show fullName
   return result
 
-testCase :: String -> Test () -> Test ()
+testCase :: String -> Test a -> Test ()
 testCase name t = Test $ \parent -> do
   r <- runTest parent name t
   return (Just (), [r], [])
@@ -131,7 +131,7 @@ expectEquiv e a b = let
   b' = e b
   in assert (a' == b') $ show a' ++ " ~= " ++ show b'
 
-expectFail :: Test () -> Test ()
+expectFail :: Test a -> Test ()
 expectFail (Test m) = do
   f <- Test $ \name -> do
     let fullName = child name "expectFail"
