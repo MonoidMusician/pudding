@@ -5,6 +5,8 @@ import Pudding.Types
 import qualified Data.Map as Map
 import Data.Map (Map)
 import Data.Functor ((<&>))
+import Pudding.Printer (formatCore, Style (Ansi))
+import qualified Data.Text as T
 
 captureClosure :: Term -> EvalCtx -> Closure
 captureClosure = flip Closure
@@ -112,8 +114,8 @@ evaling = \case
       --
       -- (here we have a lazy interpreter in `evaling arg ctx` just because
       -- Haskell is lazy: `evalingArg` could be ignored by the `Closure`)
-      (ELambda _ _ _ _ (Closure _ty savedCtx savedBody), evalingArg) ->
-        evaling savedBody $ cons evalingArg savedCtx
+      (ELambda _ _ _ _ (Closure savedCtx savedBody), evalingArg) ->
+        evaling (savedBody :: Term) $ cons (evalingArg :: Eval) (savedCtx :: EvalCtx)
       -- If it was stuck as a neutral, we need to preserve the argument on the
       -- stack of projections to apply to the neutral variable
       (ENeut (Neutral focus prjs), evalingArg) ->
@@ -143,6 +145,8 @@ evaling = \case
   TUniv meta univ -> pure $ EUniv meta univ
   THole meta hole -> pure $ ENeut (Neutral (NHole meta hole) [])
 
+-- Quoting takes a term that was evaluated to depth 1 (`Eval`) and turns it back
+-- into a `Term`, now evaluated fully.
 quoting :: Eval -> QuoteCtx -> Term
 quoting = \case
   ENeut (Neutral focus prjs) -> \ctx ->
@@ -169,13 +173,14 @@ quoting = \case
 
 -- Quote a closure back into a syntactic term: this generates a neutral to be
 -- a placeholder for the bound variable during evaluation, and then it restarts
--- evaluation on the frozen `Term` inside the `Closure`.
+-- evaluation on the frozen `Term` inside the `Closure`. This finishes
+-- normalizing it.
 quotingClosure :: Closure -> Eval -> QuoteCtx -> Term
-quotingClosure (Closure _ty savedCtx savedBody) argTy ctx =
+quotingClosure (Closure savedCtx savedBody) argTy ctx =
   let
     -- This is the (only-ish) place that we create neutrals: when quoting.
     evalingArg = ENeut (Neutral (NVar mempty (Level (quoteSize ctx))) [])
-  in quoting (evaling savedBody $ cons evalingArg savedCtx) ctx
+  in quoting ((evaling savedBody $ cons evalingArg savedCtx) :: Eval) ctx
 
 
 
@@ -195,8 +200,11 @@ snocSimple ctx item = ctx
   { scSize = scSize ctx + 1, scStack = item : scStack ctx }
 
 umax :: ULevel -> ULevel -> ULevel
-umax = undefined
+umax (UBase l1) (UBase l2) = UBase (max l1 l2)
+umax (UMeta l1) (UMeta l2) = UMeta (max l1 l2)
+umax _ _ = error "Bad umax / unimplemented"
 
+-- This functions as a proof that terms are intrinsically typed
 typeof :: TypeCtx -> Term -> Term
 typeof ctx = \case
   TVar _ (Index idx) -> scStack ctx !! idx
@@ -216,7 +224,7 @@ typeof ctx = \case
     -- Π(x : ty : U), (body : U)
     case (typeof ctx ty, typeof (into ty) body) of
       (TUniv m1 u1, TUniv m2 u2) -> TUniv (m1 <> m2) (umax u1 u2)
-      _ -> error "Bad pi type"
+      (_, r) -> error $ "Bad pi type " <> T.unpack (formatCore Ansi r)
   TSigma _ _ _ ty body ->
     case (typeof ctx ty, typeof (into ty) body) of
       (TUniv m1 u1, TUniv m2 u2) -> TUniv (m1 <> m2) (umax u1 u2)

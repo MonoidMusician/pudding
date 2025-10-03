@@ -59,14 +59,20 @@ data ConstructorInfo = ConstructorInfo
 -- An overview of important functions --
 ----------------------------------------
 
+-- Surface syntax
 -- print, parse :: Surface <-> Text
 -- elaborate :: Surface -> Elab (Term, Term)
--- typeof :: Term -> Term
+
+-- Core syntax
 -- printCore, parseCore :: Term <-> Text
+-- typeof :: Term -> Term   -- Core syntax is intrinsically typed
+
+-- Normalization by Evaluation
 -- eval :: EvalCtx -> Term -> Eval
 -- printEval :: Eval -> Text
--- conversionCheck :: EvalCtx -> Eval -> Eval -> Maybe Eval
+-- conversionCheck / unification :: EvalCtx -> Eval -> Eval -> Maybe Eval
 -- quote :: QuoteCtx -> Eval -> Term
+-- normalize = quote . eval :: Term -> Term
 
 -------------------------------
 -- The core types themselves --
@@ -79,17 +85,34 @@ data ConstructorInfo = ConstructorInfo
 -- It is intrinsically typed in the sense that it supports `typeof :: Term -> Term`
 -- (where `typeof . typeof` resolves to some `TUniv`)
 data Term
+  -- (Local) variables
   = TVar Metadata !Index
+  -- Typed holes
   | THole Metadata !Fresh
+  -- Type universes
   | TUniv Metadata ULevel
+  -- Global variables
   | TGlobal Metadata !Name
-  -- | THole Metadata !Fresh
   -- | TLet Metadata Binder (Desc "value" Term) (Desc "body" Term)
-  | TLambda Metadata !Plicit Binder (Desc "domain type" Term) (Desc "body" Term)
-  | TPi Metadata !Plicit Binder (Desc "domain type" Term) (Desc "codomain" Term)
-  | TApp Metadata (Desc "function" Term) (Desc "argument" Term)
-  | TSigma Metadata !Plicit Binder (Desc "fst type" Term) (Desc "snd type under fst type" Term)
-  | TPair Metadata !Plicit (Desc "fst value" Term) (Desc "snd type functor" Term) (Desc "snd value" Term)
+  | TLambda
+      -- Metadata
+      Metadata !Plicit Binder
+      -- Actual core data (influences equality, etc.)
+      (Desc "domain type" Term) (Desc "body" Term)
+  | TPi
+      Metadata !Plicit Binder
+      (Desc "domain type" Term) (Desc "codomain" Term)
+  | TApp Metadata
+      (Desc "function" Term) (Desc "argument" Term)
+  | TSigma
+      Metadata !Plicit Binder
+      (Desc "fst type" Term) (Desc "snd type under fst type" Term)
+  -- A pair of a sigma type
+  | TPair Metadata !Plicit
+      (Desc "fst value" Term)
+        -- e.g. TSigma (T) (P) |-> TLambda (T) (P)
+        (Desc "dependence as a functor" Term)
+      (Desc "snd value" Term)
   | TFst Metadata Term
   | TSnd Metadata Term
   deriving (Generic, NFData)
@@ -101,12 +124,19 @@ spine = go []
   go acc fun = (fun, acc)
 
 -- Result of Normalization by Evaluation (NbE), the semantic domain.
+-- Concretely, it is Weak-Head Normal Forms (WHNF).
 data Eval
   = ENeut Neutral -- do we want it tagged with its ultimate type?
   | EUniv Metadata ULevel
-  | ELambda Metadata !Plicit Binder (Desc "domain type" Eval) (Desc "body" Closure)
-  | EPi Metadata !Plicit Binder (Desc "domain type" Eval) (Desc "codomain" Closure)
-  | ESigma Metadata !Plicit Binder (Desc "fst type" Eval) (Desc "snd type under fst type" Closure)
+  | ELambda
+      Metadata !Plicit Binder
+      (Desc "domain type" Eval) (Desc "body" Closure)
+  | EPi
+      Metadata !Plicit Binder
+      (Desc "domain type" Eval) (Desc "codomain" Closure)
+  | ESigma
+      Metadata !Plicit Binder
+      (Desc "fst type" Eval) (Desc "snd type under fst type" Closure)
   | EPair Metadata !Plicit (Desc "fst value" Eval) (Desc "snd type functor" Eval) (Desc "snd value" Eval)
   | EDeferred (Desc "reason" (Meta Text)) (Desc "type" Eval) !(Desc "sharing" (Maybe (StableName Eval))) Metadata (Desc "deferred term" Eval)
   deriving (Generic, NFData)
@@ -126,13 +156,16 @@ data Neutral = Neutral
   deriving (Generic, NFData)
 data NeutFocus
   = NVar Metadata !Level
-  | NHole Metadata !Fresh -- needs some scoping information
+  | NHole Metadata !Fresh -- needs some scoping information(?)
   deriving (Generic, NFData)
 data NeutPrj
   = NApp Metadata (Desc "arg" Eval)
   | NFst Metadata
   | NSnd Metadata
   deriving (Generic, NFData)
+-- Alternatively: we could just implement it as a recursive type
+-- Neutral = NVar Level | NFst Neutral | NApp (Desc "fun" Neutral) (Desc "arg" Eval)
+
 
 -- Closure: an unevaluated term frozen in an environment of evaluated (or neutral)
 -- variable values.
@@ -167,6 +200,10 @@ data QuoteCtx = QuoteCtx
 -- Helper types!                                                              --
 --------------------------------------------------------------------------------
 
+-- decl: Π(T : Type), T -> T
+-- surface syntax usage: f Nat 42
+-- decl: Π{T : Type}, T -> T
+-- surface syntax usage: f 42
 data Plicit = Explicit | Implicit
   deriving (Eq, Ord, Generic, NFData)
 
@@ -181,7 +218,7 @@ newtype Level = Level Int
 idx2lvl :: Int -> Index -> Level
 idx2lvl size (Index idx) = Level ((size - 1) - idx)
 lvl2idx :: Int -> Level -> Index
-lvl2idx size (Level idx) = Index ((size - 1) - idx)
+lvl2idx size (Level lvl) = Index ((size - 1) - lvl)
 
 -- E.g. for numbering typed holes
 newtype Fresh = Fresh Int
@@ -225,6 +262,7 @@ instance Semigroup Metadata where
   m1 <> m2 = Metadata
     { sourcePos = sourcePos m1 <> sourcePos m2
     }
+-- For nodes we synthesize, use `mempty :: Metadata`
 instance Monoid Metadata where
   mempty = Metadata mempty
 instance NFData Metadata where

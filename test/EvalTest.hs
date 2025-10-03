@@ -25,6 +25,7 @@ evalTest = TestSuite "EvalTest" do
     for_ globals \case
       GlobalDefn (GlobalTerm ty _) _ -> do
         liftIO $ putStrLn $ T.unpack $ formatCore Ansi ty
+        liftIO $ putStrLn $ T.unpack $ formatCore Ansi $ typeof (TypeCtx [] globals) ty
       _ -> pure ()
     t1 <- parseTerm "(lambda (x (U0)) x)"
     t2 <- parseTerm "(U0)"
