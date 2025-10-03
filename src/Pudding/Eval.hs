@@ -5,8 +5,10 @@ import Pudding.Types
 import qualified Data.Map as Map
 import Data.Map (Map)
 import Data.Functor ((<&>))
-import Pudding.Printer (formatCore, Style (Ansi))
+import Pudding.Printer (formatCore, Style (Ansi), format, printCore)
 import qualified Data.Text as T
+import Data.Text (intercalate)
+import Debug.Trace (trace)
 
 captureClosure :: Term -> EvalCtx -> Closure
 captureClosure = flip Closure
@@ -214,7 +216,7 @@ umax _ _ = error "Bad umax / unimplemented"
 -- This functions as a proof that terms are intrinsically typed
 typeof :: TypeCtx -> Term -> Term
 typeof ctx = \case
-  TVar _ (Index idx) -> scStack ctx !! idx
+  TVar _ idx -> getShifted idx (scStack ctx)
   TGlobal _ name -> case Map.lookup name (scGlobals ctx) of
     Nothing -> error $ "Undefined global " <> show name
     Just (GlobalDefn (GlobalTerm ty _) _) -> ty
@@ -231,7 +233,8 @@ typeof ctx = \case
     -- Π(x : ty : U), (body : U)
     case (typeof ctx ty, typeof (into ty) body) of
       (TUniv m1 u1, TUniv m2 u2) -> TUniv (m1 <> m2) (umax u1 u2)
-      (_, r) -> error $ "Bad pi type " <> T.unpack (formatCore Ansi r)
+      (_, r) -> error $ "Bad pi type: " <> T.unpack do
+        format Ansi $ printCore r (0, QuoteCtx $ scSize ctx)
   TSigma _ _ _ ty body ->
     case (typeof ctx ty, typeof (into ty) body) of
       (TUniv m1 u1, TUniv m2 u2) -> TUniv (m1 <> m2) (umax u1 u2)
@@ -264,6 +267,7 @@ typeof ctx = \case
       TApp mempty (TLambda mempty Explicit binder ty body) (TFst mempty tm)
     _ -> error "Bad snd"
   TApp _ fun arg -> case typeof ctx fun of
+    -- typeof ((f : Π(x : ty), body) (arg : ty)) = body@[x := arg] = (λ(x : ty), body)(arg)
     TPi meta p b ty body -> TApp mempty (TLambda meta p b ty body) arg
     _ -> error "Bad app"
   where
@@ -279,3 +283,37 @@ doPrj (EPair _ _ left _ _) (NFst _) = left
 doPrj (EPair _ _ _ _ right) (NSnd _) = right
 doPrj (ELambda _ _ _ _ body) (NApp _ arg) = instantiateClosure body arg
 doPrj _ _ = error "Type error in doPrj"
+
+-- We are lazy with shifting terms: they enter the context completely unshifted,
+-- and then when we want to pull one out, we shift by the appropriate amount
+-- based on how much the context has grown.
+getShifted :: Index -> [Term] -> Term
+getShifted (Index idx) terms =
+  -- We always shift at least one: index 0 is the most recent variable, but its
+  -- type belongs to the context _before_ it was introduced
+  shift (idx+1) (terms !! idx)
+
+shift :: Int -> Term -> Term
+shift = shiftFrom 0
+
+-- Only indices >= base are affected, which is incremented under binders
+shiftFrom :: Int -> Int -> Term -> Term
+shiftFrom base delta = \case
+  TVar meta (Index idx) -> TVar meta (Index (if idx >= base then idx + delta else idx))
+  TGlobal meta name -> TGlobal meta name
+  THole meta fresh -> THole meta fresh
+  TUniv meta univ -> TUniv meta univ
+  TLambda meta p b ty body ->
+    TLambda meta p b (go ty) (into body)
+  TPi meta p b ty body ->
+    TPi meta p b (go ty) (into body)
+  TSigma meta p b ty body ->
+    TSigma meta p b (go ty) (into body)
+  TPair meta p left dep right ->
+    TPair meta p (go left) (go dep) (go right)
+  TFst meta tm -> TFst meta $ go tm
+  TSnd meta tm -> TSnd meta $ go tm
+  TApp meta fun arg -> TApp meta (go fun) (go arg)
+  where
+  go = shiftFrom base delta
+  into = shiftFrom (base+1) delta
