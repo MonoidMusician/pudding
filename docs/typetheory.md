@@ -41,6 +41,8 @@ shift = undefined
 -- ^ That is what not to do, but it is familiar and you can write it down “on paper”
 ```
 
+This is how Dhall is specified on paper, although implementations should use NbE for efficiency: https://github.com/dhall-lang/dhall-lang/blob/master/standard/beta-normalization.md#functions
+
 ## Intrinsic vs Extrinsic typing
 
 Intrinsic is where each term has a unique type: when you have a lambda, its argument is annotated, for example.
@@ -58,6 +60,9 @@ So here, typing would look like `checkType :: Term -> Type -> Boolean`.
 Mathematically, they both are a relation (between terms and types), and intrinsic means this relation is functional and decidable.
 
 Languages like Lean and Agda have a core syntax that is intrinsically typed, but the surface syntax does not look like that: it has implicits and other features that make it nicer to write.
+Going from sugary surface syntax to filled-in core syntax is called elaboration, and involves type inference, type checking, and unification.
+
+Implementation-wise, intrinsically typed languages do not need to be as elaborated as Dhall's syntax: their core syntax can be a little more lenient / less annotated, as long as the correct type can be passed down separately when needed.
 
 ```agda
 id : {T : Type} -> T -> T
@@ -74,7 +79,7 @@ id {T = Nat} (45 : Nat)
 (id {T = Int} : Int -> Int)
 ```
 
-NuPRL, Isabelle (higher-order logic (HOL) theorem prover)
+Examples of extrinsic typed languages: Isabelle (higher-order logic (HOL) theorem prover)
 
 ## Intensional vs Extensional
 
@@ -91,10 +96,65 @@ x0 : X
 .x1 : X := x0
 -- dot marks it as already determined, so it does not actually participate in the context
 refl : x0 = x1
--- it is determiend because of this reflexivity here
+-- it is determined because of this reflexivity here
 ```
 
 [View from the Left](https://www.cambridge.org/core/journals/journal-of-functional-programming/article/view-from-the-left/F8A44CAC27CCA178AF69DD84BC585A2D)
+
+## [Observational type theory (OTT)](https://people.cs.nott.ac.uk/psztxa/publ/obseqnow.pdf)
+
+The inductive equality type in MLTT computes on its constructor `refl {T} {t1 t2 : T} : t1 = t2`, via the induction principle called the “J” axiom.
+Without `refl`, computation is blocked.
+(Cubical type theory has a different builtin equality type, that uses a synthetic interval type, and computes differently. It can be converted to the inductive equality type too, with the usual issues of converting between types that compute differently.)
+
+In OTT, I would summarize it by saying that equality *types* compute *on types*, in two senses of that phrase:
+
+- For an equality on a known type former, `t0 : T0 = t1 : T1`, the equality type will also reduce to a compound type of equalities (§3.1)
+  - If `T0` and `T1` are sigma types, it reduces to equality of the first projections conjoined with equality of the second projections
+    ```
+    (p0 : Σx0 : S0. T0) = (p1 : Σx1 : S1. T1)  ↦  (reduces to)
+      (fst p0 : S0) = (fst p1 : S1) ∧
+      (snd p0 : T0[fst p0]) = (snd p1 : T1[fst p1])
+    ```
+  - For pi types, it reduces to a principle that is closely equivalent to function extensionality: equality of arguments implies equality of results
+    ```
+    (f0 : Πx0 : S0. T0) = (f1 : Πx1 : S1. T1)  ↦  (reduces to)
+      ∀x0 : S0. ∀x1 : S1. (x0 : S0) = (x1 : S1) ⇒
+      (f0 x0 : T0[x0]) = (f1 x1 : T1[x1])
+    ```
+
+    OTT is a great way to bake in function extensionality, instead of having to add it as an uncomputable axiom!
+
+- For an equality between types, `T0 = T1 : Type`, the equality type may reduce to a compound type of equalities (§3)
+  - If `T0` and `T1` are sigma types, it reduces to equality of the first types conjoined with equality of the second types, under the assumption that the first _values_ are equal
+    ```
+    (Σx0 : S0. T0) = (Σx1 : S1. T1)  ↦  (reduces to)
+      S0 = S1 ∧
+      ∀x0 : S0. ∀x1 : S1. (x0 : S0) = (x1 : S1) ⇒ T0[x0] = T1[x1]
+    ```
+  - Similar for pi types
+    ```
+    (Πx0 : S0. T0) = (Πx1 : S1. T1)  ↦  (reduces to)
+      S1 = S0 ∧
+      ∀x1 : S1. ∀x0 : S0. (x1 : S1) = (x0 : S0) ⇒ T0[x0] = T1[x1]
+    ```
+
+The cool part is that, OTT actually matches up better with the semantic view here: verifying type theories often requires this kind of work on type equalities (e.g. a lot of the work of Alternkirch).
+
+It definitely needs to be built-in to the system, because this kind of type-casing is not allowed within the system.
+And heterogeneous equality is normally not well behaved either!
+
+Is OTT compatible with univalence?
+
+## Eta conversion (eta expansion / eta reduction)
+
+https://ncatlab.org/nlab/show/eta-conversion
+
+A couple options for implementation:
+
+- Easiest: Eta-long in `quote`, conversion checking does not need to care, potentially eta-reduce during pretty printing
+- Trickier: ignore eta in `quote`/`eval`, specifically handle eta-mismatches in conversion checking, and do nothing with the pretty printer
+- ??: eta-reduce in `quote` (except for the unit type), handle the unit type specially in conversion checking, and maybe also handle the unit type in pretty printing
 
 ## Misc / scratchpad
 
