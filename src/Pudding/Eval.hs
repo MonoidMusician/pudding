@@ -11,6 +11,13 @@ import qualified Data.Text as T
 captureClosure :: Term -> EvalCtx -> Closure
 captureClosure = flip Closure
 
+instantiateClosure :: Closure -> Eval -> Eval
+instantiateClosure (Closure savedCtx savedBody) providedArg =
+  evaling savedBody $ cons providedArg savedCtx
+
+neutralVar :: Int -> Eval
+neutralVar size = ENeut (Neutral (NVar mempty (Level size)) [])
+
 cons :: Eval -> EvalCtx -> EvalCtx
 cons value ctx@(EvalCtx { evalSize = sz, evalValues = stack }) =
   ctx { evalSize = sz+1, evalValues = value:stack }
@@ -190,7 +197,7 @@ data SimpleCtx item = SimpleCtx
   , scGlobals :: Map Name GlobalInfo
   }
 type TypeCtx = SimpleCtx Term
-type EvalTypeCtx = SimpleCtx Eval
+type EvalTypeCtx = SimpleCtx (Desc "type" Eval, Desc "value" Eval)
 
 simpleCtx :: forall item. Map Name GlobalInfo -> [item] -> SimpleCtx item
 simpleCtx globals stack = SimpleCtx (length stack) stack globals
@@ -252,7 +259,7 @@ typeof ctx = \case
     TSigma _ _ _ ty _body -> ty
     _ -> error "Bad fst"
   TSnd _ tm -> case typeof ctx tm of
-    -- snd (tm : Σ(x : ty), body) = body@[x := fst tm]
+    -- typeof (snd (tm : Σ(x : ty), body)) = body@[x := fst tm] = (λ(x : ty), body)(fst tm)
     TSigma _ _ binder ty body ->
       TApp mempty (TLambda mempty Explicit binder ty body) (TFst mempty tm)
     _ -> error "Bad snd"
@@ -295,29 +302,47 @@ typeofEval ctx = \case
       -- Otherwise we just use `TApp` to apply the variable we just bound
       _ ->
         ESigma meta p (BVar noName) (typeofEval ctx left) (ENeut (Neutral (NVar mempty ()) (NApp mempty dep)))
-  ENeut (Neutral focus prjs) -> typeofPrjs (typeofFocus focus) prjs
+  ENeut (Neutral focus prjs) -> typeofPrjs (typeofFocus focus, Neutral focus []) prjs
   EDeferred _ ty _ _ _ -> ty
   where
   into :: Eval -> EvalTypeCtx
   into ty = ctx { scStack = ty : scStack ctx }
 
+  typeofClosure :: EvalTypeCtx -> Desc "argument type" Eval -> Closure -> Eval
+  typeofClosure ctx argTy (Closure savedCtx savedBody) =
+    let
+      typeCtx = simpleCtx (scGlobals ctx) $ zip [0..] (scStack ctx)
+      typeAsTerm = typeof typeCtx savedBody
+      evalCtx = EvalCtx
+      typeAsEval = eval
+    in undefined
+
   noName :: Meta CanonicalName
   noName = Meta $ CanonicalName { chosenName = undefined, allNames = mempty }
 
   typeofFocus = \case
-    NVar _ (Level idx) -> scStack ctx !! idx
+    NVar _ lvl | Index idx <- lvl2idx (scSize ctx) lvl -> scStack ctx !! idx
     NHole _ fresh -> error "typeof hole not implemented"
-  typeofPrjs ty [] = ty
-  typeofPrjs ty (prj : prjs) = typeofPrjs (typeofPrj ty prj) prjs
-  typeofPrj ty = \case
+  typeofPrjs :: (Desc "type" Eval, Desc "value" Eval) -> [NeutPrj] -> Eval
+  typeofPrjs (ty, _tm) [] = ty
+  typeofPrjs tytm@(_, tm) (prj : prjs) = typeofPrjs (typeofPrj tytm prj, doPrj tm prj) prjs
+  typeofPrj :: (Desc "type" Eval, Desc "value" Eval) -> NeutPrj -> Eval
+  typeofPrj (ty, tm) = \case
     NFst _ -> case ty of
-      TSigma _ _ _ ty _body -> ty
+      ESigma _ _ _ fstTy _body -> fstTy
       _ -> error "Bad fst"
     NSnd _ -> case ty of
       -- snd (tm : Σ(x : ty), body) = body@[x := fst tm]
-      ESigma _ _ binder ty body ->
-        TApp mempty (ELambda mempty Explicit binder ty body) (EFst mempty tm)
+      ESigma _ _ _ _ body ->
+        instantiateClosure body (doPrj tm (NFst mempty))
       _ -> error "Bad snd"
     NApp _ arg -> case ty of
-      EPi meta p b ty body -> EApp mempty (ELambda meta p b ty body) arg
+      EPi _ _ _ _ body -> instantiateClosure body arg
       _ -> error "Bad app"
+
+doPrj :: Eval -> NeutPrj -> Eval
+doPrj (ENeut (Neutral blocker prjs)) prj = ENeut (Neutral blocker (prj : prjs))
+doPrj (EPair _ _ left _ _) (NFst _) = left
+doPrj (EPair _ _ _ _ right) (NSnd _) = right
+doPrj (ELambda _ _ _ _ body) (NApp _ arg) = instantiateClosure body arg
+doPrj _ _ = error "Type error in doPrj"
