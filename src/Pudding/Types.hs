@@ -123,8 +123,18 @@ spine = go []
   go acc (TApp _ fun arg) = go (arg : acc) fun
   go acc fun = (fun, acc)
 
--- Result of Normalization by Evaluation (NbE), the semantic domain.
--- Concretely, it is Weak-Head Normal Forms (WHNF).
+-- Result of the `eval` half of Normalization by Evaluation (NbE), called
+-- "the semantic domain".
+--
+-- Concretely, it is `Term` evaluated to a depth of 1, not recursing under any
+-- binders. Thus it sits between Weak-Head Normal Form (WHNF) and fully
+-- normalized.
+--
+-- If `ENeut` is ommitted, this would be no longer be suitable for partial
+-- evaluation: it could only evaluate top-level terms. That is suitable for many
+-- programming languages, but insufficient for a dependent type checker.
+-- Dependent types necessitate normalizing terms in arbitrary contexts (“open”
+-- terms).
 data Eval
   = ENeut Neutral -- do we want it tagged with its ultimate type?
   | EUniv Metadata ULevel

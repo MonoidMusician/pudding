@@ -5,10 +5,8 @@ import Pudding.Types
 import qualified Data.Map as Map
 import Data.Map (Map)
 import Data.Functor ((<&>))
-import Pudding.Printer (formatCore, Style (Ansi), format, printCore)
+import Pudding.Printer (Style (Ansi), format, printCore)
 import qualified Data.Text as T
-import Data.Text (intercalate)
-import Debug.Trace (trace)
 
 captureClosure :: Term -> EvalCtx -> Closure
 captureClosure = flip Closure
@@ -52,6 +50,7 @@ bootGlobals globals = globals <&> \case
 normalize :: Map Name GlobalInfo -> Term -> Term
 normalize globals original =
   let
+    -- First we use `eval` to partially evaluate `Term` into `Eval`
     evaluated = eval (EvalCtx 0 [] globals) original
     -- Now we are left with something that is evaluated to depth 1
     -- (so it might have applied some functions and ended up with a `EPair` or
@@ -123,8 +122,8 @@ evaling = \case
       --
       -- (here we have a lazy interpreter in `evaling arg ctx` just because
       -- Haskell is lazy: `evalingArg` could be ignored by the `Closure`)
-      (ELambda _ _ _ _ (Closure savedCtx savedBody), evalingArg) ->
-        evaling (savedBody :: Term) $ cons (evalingArg :: Eval) (savedCtx :: EvalCtx)
+      (ELambda _ _ _ _ clo, evalingArg) ->
+        instantiateClosure clo evalingArg
       -- If it was stuck as a neutral, we need to preserve the argument on the
       -- stack of projections to apply to the neutral variable
       (ENeut (Neutral focus prjs), evalingArg) ->
@@ -155,35 +154,47 @@ evaling = \case
   THole meta hole -> pure $ ENeut (Neutral (NHole meta hole) [])
 
 -- Quoting takes a term that was evaluated to depth 1 (`Eval`) and turns it back
--- into a `Term`, now evaluated fully.
+-- into a `Term`, calling `eval` on all closures to evaluate it fully.
 quoting :: Eval -> QuoteCtx -> Term
-quoting = \case
+quoting = eval2termWith quotingClosure
+
+-- We implement it via a generic function, to avoid duplication. (Duplication
+-- itself is not too painful, but having to add 500 new cases every time you
+-- add an AST node is painful.)
+eval2termWith ::
+  (Closure -> Desc "type" Eval -> QuoteCtx -> Term) ->
+  Eval -> QuoteCtx -> Term
+eval2termWith handleClosure = \case
   ENeut (Neutral focus prjs) -> \ctx ->
     let
       base = case focus of
         NVar meta lvl -> TVar meta (lvl2idx (quoteSize ctx) lvl)
         NHole meta hole -> THole meta hole
       go (prj : more) soFar = go more case prj of
-        NApp meta arg -> TApp meta soFar (quoting arg ctx)
+        NApp meta arg -> TApp meta soFar (e2t arg ctx)
         NFst meta -> TFst meta soFar
         NSnd meta -> TSnd meta soFar
       go [] result = result
     in go prjs base
   EUniv meta univ -> pure $ TUniv meta univ
   ELambda meta plicit binder ty body ->
-    TLambda meta plicit binder <$> quoting ty <*> quotingClosure body ty
+    TLambda meta plicit binder <$> e2t ty <*> handleClosure body ty
   EPi meta plicit binder ty body ->
-    TPi meta plicit binder <$> quoting ty <*> quotingClosure body ty
+    TPi meta plicit binder <$> e2t ty <*> handleClosure body ty
   ESigma meta plicit binder ty body ->
-    TSigma meta plicit binder <$> quoting ty <*> quotingClosure body ty
+    TSigma meta plicit binder <$> e2t ty <*> handleClosure body ty
   EPair meta plicit left ltr right ->
-    TPair meta plicit <$> quoting left <*> quoting ltr <*> quoting right
-  EDeferred _ _ _ _ tm -> quoting tm
+    TPair meta plicit <$> e2t left <*> e2t ltr <*> e2t right
+  EDeferred _ _ _ _ tm -> e2t tm
+  where
+  e2t = eval2termWith handleClosure
 
 -- Quote a closure back into a syntactic term: this generates a neutral to be
 -- a placeholder for the bound variable during evaluation, and then it restarts
 -- evaluation on the frozen `Term` inside the `Closure`. This finishes
 -- normalizing it.
+--
+-- Note: this calls directly into `quoting`.
 quotingClosure :: Closure -> Eval -> QuoteCtx -> Term
 quotingClosure (Closure savedCtx savedBody) argTy ctx =
   let
@@ -191,6 +202,11 @@ quotingClosure (Closure savedCtx savedBody) argTy ctx =
     evalingArg = ENeut (Neutral (NVar mempty (Level (quoteSize ctx))) [])
   in quoting ((evaling savedBody $ cons evalingArg savedCtx) :: Eval) ctx
 
+-- If we don't want to fully normalize, we can turn `Eval` back into a `Term`
+-- in the simplest way: copying the `Term` out of the `Closure` without any
+-- further evaluation.
+eval2term :: Eval -> QuoteCtx -> Term
+eval2term = eval2termWith \(Closure _ term) _ _ -> term
 
 
 data SimpleCtx item = SimpleCtx
