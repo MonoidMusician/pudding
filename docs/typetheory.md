@@ -156,6 +156,37 @@ A couple options for implementation:
 - Trickier: ignore eta in `quote`/`eval`, specifically handle eta-mismatches in conversion checking, and do nothing with the pretty printer
 - ??: eta-reduce in `quote` (except for the unit type), handle the unit type specially in conversion checking, and maybe also handle the unit type in pretty printing
 
+## De Bruijn Indexes vs Levels
+
+These are the two opposite ways of numbering variables (to remove the need for alpha conversion, arising from different names given to variables).
+
+- De Bruijn Indexes (the more common / historical variant) number the *most recent variable as zero*, and it counts upward into the older context
+- De Bruijn Levels count the *first bound variable as zero* (outermost context), and it counts up as *new* variables are introduced
+
+De Bruijn *Levels* work well for evaluation: they work just like familiar variables do or as a stack does.
+Once a number is assigned to a variable, that number is used to refer to it from then on.
+
+De Bruijn *Indexes* solve the opposite problem: they allow a term to be self-contained, and work the same in any context it is embedded in.
+The de Bruijn-indexed lambda `λ 0` always refers to the identity function, returning the newly bound variable regardless of the syntax around it.
+
+The formula to convert one into the other is the same as reversing the indices in an array: `(size of context) - 1 - (index or level)`, since the max value is `(size of context) - 1` and that is what the minimum value (`0`) needs to be mapped to.
+See `idx2lvl` and `lvl2idx`.
+
+## Identity function example
+
+as one example:
+in Haskell, the identity function is `id :: forall a. a -> a` and you use it like `id False` which means `id (False :: Bool) :: Bool`
+
+in dependent type theory, the identity function is something like `id : Π(t : Type), Π(x : t), t`, and you use it like `id Bool False`
+
+`(t : Type)` uses a type universe `Type` to function like `forall` in Haskell, but it is the same as any other dependent function
+
+`Π(x : t), t` is a dependent function without any dependence (`x` does not appear after being bound), so we write it as `t -> t`
+
+and finally, we don't want to have to _specify_ `Bool` to instantiate `id`: one could use a hole to indicate this, like `id _ False : Bool` which could solve for `_ = Bool`
+
+or, we could introduce _implicit_ arguments which are filled in by default by an _elaborator_: `id : Π{t : Type}, t -> t` so that you use it like `id False` again, standing for `id {t = Bool} False`
+
 ## Misc / scratchpad
 
 
@@ -171,5 +202,5 @@ function(evaledArg) {
 -- Maybe a helpful idea?
 generateBytecode :: Term -> Bytecode
 runBytecode :: Bytecode -> (EvalCtx -> Eval)
-evaling = runBytecode . generateByte
+evaling = runBytecode . generateBytecode
 ```

@@ -217,11 +217,14 @@ data QuoteCtx = QuoteCtx
 data Plicit = Explicit | Implicit
   deriving (Eq, Ord, Generic, NFData)
 
--- DeBruijn index: 0 is the most recently bound variable (inner scope). Used for typechecking.
+-- DeBruijn index: 0 is the most recently bound variable (inner scope). Used for
+-- syntax manipulation.
 newtype Index = Index Int
   deriving newtype (Eq, Ord, Show, Pretty, NFData)
 
--- DeBruijn level: 0 is the first bound variable (outer scope). Used for evaluation.
+-- DeBruijn level: 0 is the first bound variable (outer scope). Used for
+-- evaluation because they behave like variable names (they do not change once
+-- introduced, unlike indices which would require shifting).
 newtype Level = Level Int
   deriving newtype (Eq, Ord, Show, Pretty, NFData)
 
