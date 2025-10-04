@@ -43,9 +43,21 @@ evalTest = TestSuite "EvalTest" do
     let t12' = normalize globals (TApp (Metadata mempty) t1 t2)
     let t3' = normalize globals t3
     expectEquiv Term' t12' t3'
-  testCase "EtaReduction" do
-    t1 <- parseTerm "(lambda (A (U0)) (identity A))"
-    t2 <- parseTerm "identity"
+  testCase "EtaEquivalence" do
+    -- TODO: Express this test with open terms
+    t1 <- parseTerm $ T.unlines
+      [ "(lambda (A (U0))"
+      , "  (lambda (B (U0))"
+      , "    (lambda (f (Pi (x A) B))"
+      , "      f)))"
+      ]
+    t2 <- parseTerm $ T.unlines
+      [ "(lambda (A (U0))"
+      , "  (lambda (B (U0))"
+      , "    (lambda (f (Pi (x A) B))"
+      , "      (lambda (x A)"
+      , "        (f x)))))"
+      ]
     let t1' = normalize globals t1
     let t2' = normalize globals t2
     expectEquiv Term' t1' t2'
