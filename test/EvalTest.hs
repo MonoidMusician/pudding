@@ -62,6 +62,39 @@ evalTest = TestSuite "EvalTest" do
     let t1' = normalize globals t1
     let t2' = normalize globals t2
     expectEquiv Term' t1' t2'
+  testCase "AlreadyNormalized" do
+    let
+      alreadyNormalized s = do
+        t <- parseTerm s
+        let t1 = normalize globals t
+        let t2 = normalize globals t1
+        expectEquiv Term' t t1
+        expectEquiv Term' t t2
+    alreadyNormalized "(lambda (x (U0)) x)"
+    alreadyNormalized "(Pi (t (U0)) (U0))"
+    alreadyNormalized "(lambda (t (U0)) (lambda (x t) x))"
+    alreadyNormalized "(Pi (t (U0)) (Pi (x t) t))"
+  testCase "DoubleNormalize" do
+    let
+      doublyNormalized s = do
+        t <- normalize globals <$> parseTerm s
+        let t1 = normalize globals t
+        expectEquiv Term' t t1
+    doublyNormalized "(Id (Id (U0)))"
+    doublyNormalized "identity (U0) (U0)"
+    doublyNormalized $ T.unlines
+      [ "(lambda (A (U0))"
+      , "  (lambda (B (U0))"
+      , "    (lambda (f (Pi (x A) B))"
+      , "      f)))"
+      ]
+    doublyNormalized $ T.unlines
+      [ "(lambda (A (U0))"
+      , "  (lambda (B (U0))"
+      , "    (lambda (f (Pi (x A) B))"
+      , "      (lambda (x A)"
+      , "        (f x)))))"
+      ]
 
 parseTerm :: Text -> Test Term
 parseTerm s = do
