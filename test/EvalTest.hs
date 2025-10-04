@@ -32,6 +32,10 @@ evalTest = TestSuite "EvalTest" do
       expectType empty "Id" "(Pi (t (U0)) (U0))"
     testCase "identity" do
       expectType empty "identity" "(Pi (t (U0)) (Pi (x t) t))"
+  testCase "AlphaEquivalence" do
+    t1 <- parseTerm "(lambda (A (U0)) A)"
+    t2 <- parseTerm "(lambda (B (U0)) B)"
+    expectEquiv Term' t1 t2
   testCase "BetaReduction" do
     t1 <- parseTerm "(lambda (x (U0)) x)"
     t2 <- parseTerm "(U0)"
@@ -39,6 +43,12 @@ evalTest = TestSuite "EvalTest" do
     let t12' = normalize globals (TApp (Metadata mempty) t1 t2)
     let t3' = normalize globals t3
     expectEquiv Term' t12' t3'
+  testCase "EtaReduction" do
+    t1 <- parseTerm "(lambda (A (U0)) (identity A))"
+    t2 <- parseTerm "identity"
+    let t1' = normalize globals t1
+    let t2' = normalize globals t2
+    expectEquiv Term' t1' t2'
 
 parseTerm :: Text -> Test Term
 parseTerm s = do
