@@ -58,6 +58,7 @@ evalTest = TestSuite "EvalTest" do
       , "      (lambda (x A)"
       , "        (f x)))))"
       ]
+    -- liftIO $ putStrLn $ show $ Term' t1
     let t1' = normalize globals t1
     let t2' = normalize globals t2
     expectEquiv Term' t1' t2'

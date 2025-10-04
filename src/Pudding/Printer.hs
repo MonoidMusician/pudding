@@ -39,8 +39,10 @@ formatCore style term = format style $ printCore term (0, QuoteCtx 0)
 
 printCore :: Term -> Printer
 printCore = \case
-  TVar _m idx -> \(_, ctx) -> "$" <>
-    Doc.pretty (idx2lvl (quoteSize ctx) idx)
+  TVar _m idx -> \(_, ctx) -> mconcat
+    [ "$" <> Doc.pretty (idx2lvl (quoteSize ctx) idx)
+    -- , "." <> Doc.pretty idx
+    ]
   TGlobal _m name -> pure $ Doc.pretty name
   THole _m fresh -> pure $ Doc.pretty fresh
   TUniv _m univ -> pure $ Doc.pretty $ case univ of

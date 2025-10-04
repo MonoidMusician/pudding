@@ -200,7 +200,7 @@ quotingClosure (Closure savedCtx savedBody) argTy ctx =
   let
     -- This is the (only-ish) place that we create neutrals: when quoting.
     evalingArg = ENeut (Neutral (NVar mempty (Level (quoteSize ctx))) [])
-  in quoting ((evaling savedBody $ cons evalingArg savedCtx) :: Eval) ctx
+  in quoting ((evaling savedBody $ cons evalingArg savedCtx) :: Eval) ctx { quoteSize = quoteSize ctx + 1 }
 
 -- If we don't want to fully normalize, we can turn `Eval` back into a `Term`
 -- in the simplest way: copying the `Term` out of the `Closure` without any
