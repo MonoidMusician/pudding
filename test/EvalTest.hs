@@ -22,11 +22,13 @@ evalTest = TestSuite "EvalTest" do
       -- Polymorphic identity function
       , "(define identity (lambda (t (U0)) (lambda (x t) x)))"
       ]
+    normWith = normalizeNeutrals globals
+    u0 = TUniv mempty $ UBase 0
   testCase "Globals" do
     for_ globals \case
-      GlobalDefn (GlobalTerm ty _) _ -> do
-        liftIO $ putStrLn $ T.unpack $ formatCore Ansi ty
-        liftIO $ putStrLn $ T.unpack $ formatCore Ansi $ typeof empty ty
+    --   GlobalDefn (GlobalTerm ty _) _ -> do
+    --     liftIO $ putStrLn $ T.unpack $ formatCore Ansi ty
+    --     liftIO $ putStrLn $ T.unpack $ formatCore Ansi $ typeof empty ty
       _ -> pure ()
     testCase "Id" do
       expectType empty "Id" "(Pi (t (U0)) (U0))"
@@ -40,8 +42,8 @@ evalTest = TestSuite "EvalTest" do
     t1 <- parseTerm "(lambda (x (U0)) x)"
     t2 <- parseTerm "(U0)"
     t3 <- parseTerm "(identity (U0) (U0))"
-    let t12' = normalize globals (TApp (Metadata mempty) t1 t2)
-    let t3' = normalize globals t3
+    let t12' = normWith [] (TApp (Metadata mempty) t1 t2)
+    let t3' = normWith [] t3
     expectEquiv Term' t12' t3'
   testCase "EtaEquivalence" do
     -- TODO: Express this test with open terms
@@ -59,15 +61,15 @@ evalTest = TestSuite "EvalTest" do
       , "        (f x)))))"
       ]
     -- liftIO $ putStrLn $ show $ Term' t1
-    let t1' = normalize globals t1
-    let t2' = normalize globals t2
+    let t1' = normWith [u0, u0] t1
+    let t2' = normWith [u0, u0] t2
     expectEquiv Term' t1' t2'
   testCase "AlreadyNormalized" do
     let
       alreadyNormalized s = do
         t <- parseTerm s
-        let t1 = normalize globals t
-        let t2 = normalize globals t1
+        let t1 = normWith [] t
+        let t2 = normWith [] t1
         expectEquiv Term' t t1
         expectEquiv Term' t t2
     alreadyNormalized "(lambda (x (U0)) x)"
@@ -77,8 +79,8 @@ evalTest = TestSuite "EvalTest" do
   testCase "DoubleNormalize" do
     let
       doublyNormalized s = do
-        t <- normalize globals <$> parseTerm s
-        let t1 = normalize globals t
+        t <- normWith [] <$> parseTerm s
+        let t1 = normWith [] t
         expectEquiv Term' t t1
     doublyNormalized "(Id (Id (U0)))"
     doublyNormalized "identity (U0) (U0)"

@@ -15,8 +15,8 @@ instantiateClosure :: Closure -> Eval -> Eval
 instantiateClosure (Closure savedCtx savedBody) providedArg =
   evaling savedBody $ cons providedArg savedCtx
 
-neutralVar :: Int -> Eval
-neutralVar size = ENeut (Neutral (NVar mempty (Level size)) [])
+neutralVar :: Level -> Eval
+neutralVar lvl = ENeut (Neutral (NVar mempty lvl) [])
 
 cons :: Eval -> EvalCtx -> EvalCtx
 cons value ctx@(EvalCtx { evalSize = sz, evalValues = stack }) =
@@ -63,6 +63,16 @@ normalize globals original =
     --
     -- `quoteSize` is just used to convert `Level` back to `Index`
   in quoted
+
+normalizeCtx :: EvalCtx -> Term -> Term
+normalizeCtx ctx = quote (QuoteCtx { quoteSize = evalSize ctx }) . eval ctx
+
+normalizeNeutrals :: Map Name GlobalInfo -> [Desc "type" Term] -> Term -> Term
+normalizeNeutrals globals localTypes = normalizeCtx $
+  EvalCtx sz locals globals
+  where
+  sz = length locals
+  locals = zip [0..] localTypes <&> \(i, _ty) -> neutralVar (idx2lvl sz (Index i))
 
 -- Normalization by Evaluation
 -- - Much more efficient: avoids retraversing terms when possible
