@@ -14,19 +14,25 @@ import Pudding.Printer (formatCore, Style (Ansi))
 
 evalTest :: TestSuite
 evalTest = TestSuite "EvalTest" do
-  testCase "BetaReduction" do
-    let
-      globals = parseAndBootGlobals $ T.unlines
-        -- Id := \(x : U0) -> x
-        [ "(define Id (lambda (x (U0)) x))"
-        -- Polymorphic identity function
-        , "(define identity (lambda (t (U0)) (lambda (x t) x)))"
-        ]
+  let
+    empty = simpleCtx globals []
+    globals = parseAndBootGlobals $ T.unlines
+      -- Id := \(x : U0) -> x
+      [ "(define Id (lambda (x (U0)) x))"
+      -- Polymorphic identity function
+      , "(define identity (lambda (t (U0)) (lambda (x t) x)))"
+      ]
+  testCase "Globals" do
     for_ globals \case
       GlobalDefn (GlobalTerm ty _) _ -> do
         liftIO $ putStrLn $ T.unpack $ formatCore Ansi ty
-        liftIO $ putStrLn $ T.unpack $ formatCore Ansi $ typeof (simpleCtx globals []) ty
+        liftIO $ putStrLn $ T.unpack $ formatCore Ansi $ typeof empty ty
       _ -> pure ()
+    testCase "Id" do
+      expectType empty "Id" "(Pi (t (U0)) (U0))"
+    testCase "identity" do
+      expectType empty "identity" "(Pi (t (U0)) (Pi (x t) t))"
+  testCase "BetaReduction" do
     t1 <- parseTerm "(lambda (x (U0)) x)"
     t2 <- parseTerm "(U0)"
     t3 <- parseTerm "(identity (U0) (U0))"
@@ -39,6 +45,12 @@ parseTerm s = do
   name <- testCaseName
   r <- liftIO $ runParser term (show name) s
   assertRight r
+
+expectType :: TypeCtx -> Text -> Text -> Test ()
+expectType ctx tm ty = do
+  tm' <- parseTerm tm
+  ty' <- parseTerm ty
+  expectEquiv Term' ty' (typeof ctx tm')
 
 termEquiv :: Term -> Term -> Bool
 termEquiv (TVar _ i1) (TVar _ i2) = i1 == i2
