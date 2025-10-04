@@ -17,6 +17,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Control.Monad (when)
 import GHC.IO (unsafePerformIO)
+import Data.Traversable (for)
 
 type Parser = P.ParsecT Text () (ReaderT Ctx IO)
 
@@ -165,6 +166,12 @@ runParser :: Parser a -> P.SourceName -> Text -> IO (Either P.ParseError a)
 runParser p s t = do
   end <- newIORef undefined
   runReaderT (P.runParserT p () s t) (Ctx { scope = [], table = globalTable, lastEnd = end })
+
+runParserScope :: Parser a -> [Text] -> P.SourceName -> Text -> IO (Either P.ParseError a)
+runParserScope p names s t = do
+  end <- newIORef undefined
+  scope <- for names $ internalize globalTable
+  runReaderT (P.runParserT p () s t) (Ctx { scope, table = globalTable, lastEnd = end })
 
 {-# NOINLINE globalTable #-}
 globalTable :: IORef NameTable

@@ -72,7 +72,7 @@ normalizeNeutrals globals localTypes = normalizeCtx $
   EvalCtx sz locals globals
   where
   sz = length locals
-  locals = zip [0..] localTypes <&> \(i, _ty) -> neutralVar (idx2lvl sz (Index i))
+  locals = zip [0..] localTypes <&> \(i, _ty) -> neutralVar (Level i)
 
 -- Normalization by Evaluation
 -- - Much more efficient: avoids retraversing terms when possible
