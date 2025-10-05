@@ -11,17 +11,34 @@ import GHC.StableName (StableName)
 import qualified Data.List as List
 import Data.Maybe (fromMaybe)
 
-captureClosure :: Binder -> ScopedTerm -> EvalCtx -> Closure
-captureClosure = flip . Closure
-
-instantiateClosure :: Closure -> Eval -> Eval
-instantiateClosure (Closure binder savedCtx (Scoped savedBody)) providedArg =
-  evaling savedBody $ snoc savedCtx binder providedArg
-
 eval :: EvalCtx -> Term -> Eval
 eval = flip evaling
 quote :: QuoteCtx -> Eval -> Term
 quote = flip quoting
+
+-- Turn a `Term` context into an `Eval` context, evaluating from the root
+-- (global scope) to the top of the stack.
+evalCtx :: Ctx Term -> Ctx Eval
+evalCtx ctx@(Ctx { ctxStack = [] }) = ctx { ctxSize = 0, ctxStack = [] }
+evalCtx ctx0@(Ctx { ctxStack = (bdr, one) : more }) =
+  let ctx = evalCtx ctx0 { ctxStack = more }
+  -- Patch sizes on the way out
+  in ctx { ctxSize = ctxSize ctx + 1, ctxStack = (bdr, eval ctx one) : ctxStack ctx }
+
+-- Validate the type of a term, as an evaluated type
+validate :: EvalTypeCtx -> Desc "term" Term -> Desc "type" Eval
+validate = validateOrNot seq
+-- Validate and quote back to a term
+validateQuote :: EvalTypeCtx -> Desc "term" Term -> Desc "type" Term
+validateQuote ctx = quote (void ctx) . validate ctx
+-- Validate in a context of neutrals
+validateQuoteNeutrals :: Map Name GlobalInfo -> [Desc "type" Term] -> Desc "term" Term -> Desc "type" Term
+validateQuoteNeutrals globals localTypes = validateQuote $
+  mapCtx (\(_idx, lvl) ty -> (ty, neutralVar lvl)) $ evalCtx $
+    ctxOfList globals $ (BFresh,) <$> localTypes
+-- Do not validate, but just assemble the type
+quickTermType :: EvalTypeCtx -> Desc "term" Term -> Desc "type" Eval
+quickTermType = validateOrNot (const id)
 
 -- Share partial evaluation of globals
 bootGlobals :: Map Name GlobalInfo -> Map Name GlobalInfo
@@ -39,6 +56,8 @@ bootGlobals globals = globals <&> \case
     in GlobalTerm ty (evalGlobal ty)
 
 -- If you want to fully partially evaluate (ahem, normalize) a top-level `Term`.
+-- Note that this does not handle eta expansion or eta reduction: those are
+-- handled during conversion checking.
 normalize :: Map Name GlobalInfo -> Term -> Term
 normalize globals original =
   let
@@ -57,12 +76,16 @@ normalize globals original =
   in quoted
 
 normalizeCtx :: EvalCtx -> Term -> Term
-normalizeCtx ctx = quote (mapCtx (\_ _ -> ()) ctx) . eval ctx
+normalizeCtx ctx = quote (void ctx) . eval ctx
 
 normalizeNeutrals :: Map Name GlobalInfo -> [Desc "type" Term] -> Term -> Term
 normalizeNeutrals globals localTypes = normalizeCtx $
   mapCtx (\(_idx, lvl) _ty -> neutralVar lvl) $
     ctxOfList globals $ (BFresh,) <$> localTypes
+
+------------------------------
+-- Various helper functions --
+------------------------------
 
 -- Do a projection on `Eval`
 doPrj :: Eval -> NeutPrj -> Eval
@@ -93,27 +116,40 @@ etaPair ty e = EPair mempty ty (doPrj e (NFst mempty)) (doPrj e (NSnd mempty))
 -- Inline the global if it has reached its arity and its arguments are not all
 -- neutrals themselves, otherwise keep it “neutral”.
 checkGlobal :: forall t. Ctx t -> Eval -> Eval
-checkGlobal ctx e@(ENeut (Neutral (NGlobal arity _ name) prjs))
-  | arity <= List.length prjs && not (idlePrjs prjs) =
-    case Map.lookup name (ctxGlobals ctx) of
-      -- We already have a shared lazy evaluation for a global definition
-      Just (GlobalDefn _ _ (GlobalTerm _ evaled)) -> doPrjs evaled prjs
-      _ -> e
+checkGlobal ctx e@(ENeut (Neutral (NGlobal arity _ _name) prjs))
+  | arity <= List.length prjs && not (idlePrjs prjs)
+    = fromMaybe e (forceGlobal ctx e)
   where
-  idlePrjs [] = True
+  -- Neutral argument: see what happens with the rest
   idlePrjs (NApp _ (ENeut _) : prjs') = idlePrjs prjs'
-  -- Have a concrete argument: reduce now
+  -- Have a concrete argument: reduce now, hopefully it simplifies
   idlePrjs (NApp _ _ : _) = False
   -- Have a different kind of projection: reduce now
   idlePrjs (_ : _) = False
+  -- All arguments were neutral
+  idlePrjs [] = True
 checkGlobal _ e = e
 
+-- Just evaluate a neutral global
 forceGlobal :: forall t. Ctx t -> Eval -> Maybe Eval
 forceGlobal ctx (ENeut (Neutral (NGlobal _ _ name) prjs)) =
   case Map.lookup name (ctxGlobals ctx) of
     Just (GlobalDefn _ _ (GlobalTerm _ evaled)) -> Just (doPrjs evaled prjs)
     _ -> Nothing
 forceGlobal _ _ = Nothing
+
+-- Capture a closure during evaluation
+captureClosure :: Binder -> ScopedTerm -> EvalCtx -> Closure
+captureClosure = flip . Closure
+
+-- Instantiate a closure
+instantiateClosure :: Closure -> Eval -> Eval
+instantiateClosure (Closure binder savedCtx (Scoped savedBody)) providedArg =
+  evaling savedBody $ snoc savedCtx binder providedArg
+
+--------------------------------------------------------------------------------
+-- Implementations                                                            --
+--------------------------------------------------------------------------------
 
 -- Normalization by Evaluation
 -- - Much more efficient: avoids retraversing terms when possible
@@ -147,7 +183,11 @@ evaling = \case
     case Map.lookup name (ctxGlobals ctx) of
       -- We already have a shared lazy evaluation for a global definition
       Just (GlobalDefn arity _ (GlobalTerm _ evaled)) ->
-        if arity == 0 then evaled else ENeut (Neutral (NGlobal arity meta name) [])
+        if arity == 0 then evaled else
+          -- If it has a positive number of immediate arguments, then we let
+          -- it block evaluation until they are filled with at least one non-
+          -- neutral argument
+          ENeut (Neutral (NGlobal arity meta name) [])
       -- Constructors are a bit tricky
       Just _ -> error "Not implemented yet"
       Nothing -> error $ "Could not find global " <> show name
@@ -194,15 +234,18 @@ evaling = \case
       -- can actually reconstruct the syntax around the neutral
       ENeut (Neutral focus prjs) ->
         checkGlobal ctx $ ENeut (Neutral focus (NFst meta : prjs))
-      _ -> error "Type error: cannot apply to non-function"
+      _ -> error "Type error: cannot project from non-sigma"
   TSnd meta term -> \ctx ->
     -- Again, we look to beta reduce, or add a projection to a neutral
     case undeferred $ evaling term ctx of
       EPair _ _ _ right -> right
       ENeut (Neutral focus prjs) ->
         checkGlobal ctx $ ENeut (Neutral focus (NSnd meta : prjs))
-      _ -> error "Type error: cannot apply to non-function"
+      _ -> error "Type error: cannot project from non-sigma"
   TUniv meta univ -> pure $ EUniv meta univ
+  -- A hole is a neutral: we do not know its value yet. Thus we have to block
+  -- on it and record its arguments or projections. This is contrary to the
+  -- neutrals for abstract variables, which are introduced *outside* of eval.
   THole meta hole -> pure $ ENeut (Neutral (NHole meta hole) [])
   where
   undeferred (EDeferred _ _ _ _ tm) = undeferred tm
@@ -273,7 +316,11 @@ quotingClosure (Closure bdr savedCtx (Scoped savedBody)) argTy ctx =
 -- eval2term :: Eval -> QuoteCtx -> Term
 -- eval2term = eval2termWith \(Closure savedCtx savedBody) _ _ -> term
 
-
+-- Conversion checking is the algorithm for definitional equality used during
+-- typechecking: specifically it refers to the process of finding out if a term
+-- can be converted from one type to another, but with dependent types, it needs
+-- to be a general algorithm for definitional equality.
+--
 -- Note: we care that the happy path is fast, more than failing fast for
 -- mismatches.
 conversionCheck :: Ctx () -> Eval -> Eval -> Bool
@@ -294,14 +341,15 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
   (EPair _ _ leftL rightL, EPair _ _ leftR rightR) ->
     cc leftL leftR && cc rightL rightR
 
-  -- Handle some eta conversions (but not unit-type eta)
+  -- Handle some eta conversions (but not unit-type eta, which needs to be
+  -- type-directed)
   (EPair _ ty _ _, _) -> cc evalL (etaPair ty evalR)
   (_, EPair _ ty _ _) -> cc (etaPair ty evalL) evalR
   (ELambda _ _ bdr _ body, _) ->
-    let arg = nextNeutral ctx in
+    let !arg = nextNeutral ctx in
     conversionCheck (snoc ctx bdr ()) (instantiateClosure body arg) (doApp evalR arg)
   (_, ELambda _ _ bdr _ body) ->
-    let arg = nextNeutral ctx in
+    let !arg = nextNeutral ctx in
     conversionCheck (snoc ctx bdr ()) (doApp evalL arg) (instantiateClosure body arg)
 
   -- The default case of neutrals (variables) is easy to check: check projections
@@ -328,7 +376,7 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
   cc = conversionCheck ctx
   ccScoped bdrL tyL bodyL bdrR tyR bodyR =
     let
-      var = neutralVar $ Level $ ctxSize ctx
+      !var = nextNeutral ctx
       ctx' = snoc ctx (BMulti bdrL bdrR) ()
     in cc tyL tyR && conversionCheck ctx'
       (instantiateClosure bodyL var) (instantiateClosure bodyR var)
@@ -370,11 +418,14 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
     -- If we do not make progress on either as a global, then conversion checking
     -- fails: they were different constructors in the AST and semantically
     (Nothing, Nothing) -> False
+    -- Retry with one or both being inlined now
     (forcedL, forcedR) -> cc (fromMaybe evalL forcedL) (fromMaybe evalR forcedR)
 
--- Infer the type of the term, checking the whole tree as it goes.
-validate :: EvalTypeCtx -> Desc "term" Term -> Desc "type" Eval
-validate ctx = \case
+-- Infer the type of the term, either checking the whole tree as it goes if
+-- `seqOrConst = seq`, or just doing the minimal work to return the inferred
+-- type if `seqOrConst = const id`.
+validateOrNot :: (forall a b. a -> b -> b) -> EvalTypeCtx -> Desc "term" Term -> Desc "type" Eval
+validateOrNot seqOrConst ctx = \case
   TVar _ idx -> fst $ indexCtx idx ctx
   TGlobal _ name -> case Map.lookup name (ctxGlobals ctx) of
     Nothing -> error $ "Undefined global " <> show name
@@ -389,40 +440,40 @@ validate ctx = \case
   TLambda meta p b ty body ->
     case validateScoped b ty body of
       (argTy, bodyTy) ->
-        EPi meta p b argTy $ Closure b evalCtx $
+        EPi meta p b argTy $ Closure b evalCtxHere $
           -- We have to quote it back into a `Term`, mostly for when the
           -- neutral variable we used for typechecking is actually instantiated
           -- at an application site
-          Scoped $ quote (snoc quoteCtx b ()) bodyTy
+          Scoped $ quote (snoc quoteCtxHere b ()) bodyTy
   TPi _ _ b ty body ->
     -- Π(x : ty : U), (body : U)
-    case (validate ctx ty, snd $ validateScoped b ty body) of
+    case (vv ty, snd $ validateScoped b ty body) of
       (EUniv m1 u1, EUniv m2 u2) -> EUniv (m1 <> m2) (umax u1 u2)
       _ -> error "Bad pi type"
   TSigma _ _ b ty body ->
-    case (validate ctx ty, snd $ validateScoped b ty body) of
+    case (vv ty, snd $ validateScoped b ty body) of
       (EUniv m1 u1, EUniv m2 u2) -> EUniv (m1 <> m2) (umax u1 u2)
       _ -> error "Bad sigma type"
   TPair _ ty left right ->
-    validateType ty `seq` case evalHere ty of
+    validateType ty `seqOrConst` case evalHere ty of
       tyVal@(ESigma _ _ _ fstTy body) ->
-        cc "fst type mismatch" fstTy (validate ctx left) `seq`
-        cc "snd type mismatch" (instantiateClosure body (evalHere left)) (validate ctx right) `seq`
+        cc "fst type mismatch" fstTy (vv left) `seqOrConst`
+        cc "snd type mismatch" (instantiateClosure body (evalHere left)) (vv right) `seqOrConst`
         tyVal
       _ -> error "bad pair type"
-  TFst _ tm -> case validate ctx tm of
+  TFst _ tm -> case vv tm of
     ESigma _ _ _ ty _ -> ty
     _ -> error "Bad fst"
-  TSnd _ tm -> case validate ctx tm of
+  TSnd _ tm -> case vv tm of
     ESigma _ _ _ _ body ->
       instantiateClosure body (doPrj (evalHere tm) (NFst mempty))
     _ -> error "Bad snd"
-  TApp _ fun arg -> case (validate ctx fun, validate ctx arg) of
+  TApp _ fun arg -> case (vv fun, vv arg) of
     (EPi _ _ _ argTyExpected body, argTyActual) ->
       cc "argument type mismatch" argTyExpected argTyActual `seq` instantiateClosure body (evalHere arg)
     _ -> error "Bad app"
   where
-  validateType ty = case validate ctx ty of
+  validateType ty = case vv ty of
     EUniv _ _ -> evalHere ty
     _ -> error "Expected a valid type"
 
@@ -431,16 +482,18 @@ validate ctx = \case
     True -> l
     False -> error err
 
+  vv = validateOrNot seqOrConst ctx
+
   validateScoped :: Binder -> Desc "arg type" Term -> ScopedTerm -> (Desc "arg type" Eval, Desc "body type" Eval)
   validateScoped bdr ty (Scoped body) =
     let
       tyVal = validateType ty
-      ctx' = snoc ctx bdr (tyVal, neutralVar $ Level $ ctxSize ctx)
-    in (tyVal, tyVal `seq` validate ctx' body)
+      ctx' = snoc ctx bdr (tyVal, nextNeutral ctx)
+    in (tyVal, tyVal `seq` validateOrNot seqOrConst ctx' body)
 
-  evalHere = eval evalCtx
-  evalCtx = mapCtx (\_ (_, tm) -> tm) ctx :: EvalCtx
-  quoteCtx = mapCtx (\_ _ -> ()) ctx :: QuoteCtx
+  evalHere = eval evalCtxHere
+  evalCtxHere = mapCtx (\_ (_, tm) -> tm) ctx :: EvalCtx
+  quoteCtxHere = mapCtx (\_ _ -> ()) ctx :: QuoteCtx
 
 
 type TypeCtx = Ctx Term

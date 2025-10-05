@@ -490,8 +490,10 @@ instance HasMetadata Neutral where
 instance HasMetadata NeutFocus where
   onMetadata f (NVar old lvl) | new <- f old = (old, NVar new lvl, new)
   onMetadata f (NHole old hole) | new <- f old = (old, NHole new hole, new)
+  onMetadata f (NGlobal arity old name) | new <- f old = (old, NGlobal arity new name, new)
   traverseMetadata f (NVar old lvl) = (\new -> NVar new lvl) <$> f old
   traverseMetadata f (NHole old hole) = (\new -> NHole new hole) <$> f old
+  traverseMetadata f (NGlobal arity old name) = (\new -> NGlobal arity new name) <$> f old
 
 instance HasMetadata NeutPrj where
   onMetadata f = \case
