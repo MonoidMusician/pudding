@@ -26,8 +26,8 @@ substitute target subst = \case
 
 partialEval :: Term -> Term
 partialEval = \case
-  TFst _ (TPair _ _ left _ right) -> left
-  TSnd _ (TPair _ _ left _ right) -> right
+  TFst _ (TPair _ _ left right) -> left
+  TSnd _ (TPair _ _ left right) -> right
   TApp _ (TLambda _ _ _ _ body) arg ->
     shift (-1) $ substitute (Index 0) (shift 1 arg) body
   _ -> undefined

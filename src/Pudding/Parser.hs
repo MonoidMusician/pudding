@@ -79,12 +79,12 @@ term = var <|> (lp *> (P.choice terms <|> app) <* rp)
         t <- term
         return $ \meta -> which meta t
     , trackMeta do
-        p <- kwPlicit ["pair"]
+        _ <- keyword ["pair"]
         P.spaces
         l <- term
         dep <- term
         r <- term
-        return $ \meta -> TPair meta p l dep r
+        return $ \meta -> TPair meta l dep r
     , trackMeta $ do keyword ["U0"] $> \meta -> TUniv meta (UBase 0)
     , trackMeta $ do keyword ["U1"] $> \meta -> TUniv meta (UMeta 0)
     ]

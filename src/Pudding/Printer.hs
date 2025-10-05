@@ -40,19 +40,19 @@ formatCore style term = format style $ printCore term (0, QuoteCtx 0)
 printCore :: Term -> Printer
 printCore = \case
   TVar _m idx -> \(_, ctx) -> mconcat
-    [ "$" <> Doc.pretty (idx2lvl (quoteSize ctx) idx)
+    [ "_" <> Doc.pretty (idx2lvl (quoteSize ctx) idx)
     -- , "." <> Doc.pretty idx
     ]
   TGlobal _m name -> pure $ Doc.pretty name
   THole _m fresh -> pure $ Doc.pretty fresh
   TUniv _m univ -> pure $ Doc.pretty $ case univ of
-    UBase lvl -> "(U0 " <> show lvl <> ")" -- (U0 0), (U0 1), ...
-    UMeta lvl -> "(U1 " <> show lvl <> ")" -- (U1 0), ...
-    UVar fresh incr -> "(U?" <> show fresh <> "+" <> show incr <> ")"
+    UBase lvl -> "(Type0 " <> show lvl <> ")" -- (Type0 0), (Type0 1), ...
+    UMeta lvl -> "(Type1 " <> show lvl <> ")" -- (Type1 0), ...
+    UVar fresh incr -> "(Type?" <> show fresh <> "+" <> show incr <> ")"
   TLambda _m p binder ty body -> sexp
     [ pure $ "λ" <> if p == Implicit then "?" else ""
     , sexp
-      [ \(_, ctx) -> "$" <> Doc.pretty (quoteSize ctx)
+      [ \(_, ctx) -> "_" <> Doc.pretty (quoteSize ctx)
       , printCore ty
       ]
     , pure Doc.hardline
@@ -61,7 +61,7 @@ printCore = \case
   TPi _m p binder ty body -> sexp
     [ pure $ "Π" <> if p == Implicit then "?" else ""
     , sexp
-      [ \(_, ctx) -> "$" <> Doc.pretty (quoteSize ctx)
+      [ \(_, ctx) -> "_" <> Doc.pretty (quoteSize ctx)
       , printCore ty
       ]
     , pure Doc.hardline
@@ -73,16 +73,16 @@ printCore = \case
   TSigma _m p binder ty body -> sexp
     [ pure $ "Σ" <> if p == Implicit then "?" else ""
     , sexp
-      [ \(_, ctx) -> "$" <> Doc.pretty (quoteSize ctx)
+      [ \(_, ctx) -> "_" <> Doc.pretty (quoteSize ctx)
       , printCore ty
       ]
     , pure Doc.hardline
     , bound binder $ printCore body
     ]
-  TPair _m p left ltr right -> sexp
-    [ pure $ "pair" <> if p == Implicit then "?" else ""
+  TPair _m ty left right -> sexp
+    [ pure "pair"
+    , printCore ty
     , printCore left
-    , printCore ltr
     , printCore right
     ]
   TFst _m term -> sexp [ pure "fst", printCore term ]

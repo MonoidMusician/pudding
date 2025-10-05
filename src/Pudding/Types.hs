@@ -95,7 +95,9 @@ data Term
   | TGlobal Metadata !Name
   -- | TLet Metadata Binder (Desc "value" Term) (Desc "body" Term)
   | TLambda
-      -- Metadata
+      -- Metadata: not relevant to equality/unification
+      -- Every argument is explicit in the core and every core binder only binds
+      -- one variable, but we keep this information around for pretty printing
       Metadata !Plicit Binder
       -- Actual core data (influences equality, etc.)
       (Desc "domain type" Term) (Desc "body" Term)
@@ -108,10 +110,9 @@ data Term
       Metadata !Plicit Binder
       (Desc "fst type" Term) (Desc "snd type under fst type" Term)
   -- A pair of a sigma type
-  | TPair Metadata !Plicit
+  | TPair Metadata
+      (Desc "sigma type" Term)
       (Desc "fst value" Term)
-        -- e.g. TSigma (T) (P) |-> TLambda (T) (P)
-        (Desc "dependence as a functor" Term)
       (Desc "snd value" Term)
   | TFst Metadata Term
   | TSnd Metadata Term
@@ -147,7 +148,7 @@ data Eval
   | ESigma
       Metadata !Plicit Binder
       (Desc "fst type" Eval) (Desc "snd type under fst type" Closure)
-  | EPair Metadata !Plicit (Desc "fst value" Eval) (Desc "snd type functor" Eval) (Desc "snd value" Eval)
+  | EPair Metadata (Desc "sigma type" Eval) (Desc "fst value" Eval) (Desc "snd value" Eval)
   | EDeferred (Desc "reason" (Meta Text)) (Desc "type" Eval) !(Desc "sharing" (Maybe (StableName Eval))) Metadata (Desc "deferred term" Eval)
   deriving (Generic, NFData)
 
@@ -341,7 +342,7 @@ instance HasMetadata Term where
     TPi old p b ty body | new <- f old -> (old, TPi new p b ty body, new)
     TApp old fun arg | new <- f old -> (old, TApp new fun arg, new)
     TSigma old p b ty body | new <- f old -> (old, TSigma new p b ty body, new)
-    TPair old p l t r | new <- f old -> (old, TPair new p l t r, new)
+    TPair old t l r | new <- f old -> (old, TPair new t l r, new)
     TFst old t | new <- f old -> (old, TFst new t, new)
     TSnd old t | new <- f old -> (old, TSnd new t, new)
   traverseMetadata f = \case
@@ -365,10 +366,10 @@ instance HasMetadata Term where
       <$> f old
       <*> traverseMetadata f ty
       <*> traverseMetadata f body
-    TPair old p l t r -> (\new -> TPair new p)
+    TPair old t l r -> TPair
       <$> f old
-      <*> traverseMetadata f l
       <*> traverseMetadata f t
+      <*> traverseMetadata f l
       <*> traverseMetadata f r
     TFst old t -> TFst <$> f old <*> traverseMetadata f t
     TSnd old t -> TSnd <$> f old <*> traverseMetadata f t
@@ -380,7 +381,7 @@ instance HasMetadata Eval where
     ELambda old p b ty body | new <- f old -> (old, ELambda new p b ty body, new)
     EPi old p b ty body | new <- f old -> (old, EPi new p b ty body, new)
     ESigma old p b ty body | new <- f old -> (old, ESigma new p b ty body, new)
-    EPair old p l t r | new <- f old -> (old, EPair new p l t r, new)
+    EPair old t l r | new <- f old -> (old, EPair new t l r, new)
     EDeferred reason ty ref old term | new <- f old -> (old, EDeferred reason ty ref new (setMetadata term new), new)
   traverseMetadata f = \case
     ENeut neutral -> ENeut <$> traverseMetadata f neutral
@@ -397,10 +398,10 @@ instance HasMetadata Eval where
       <$> f old
       <*> traverseMetadata f ty
       <*> traverseMetadata f body
-    EPair old p l t r -> (\new -> EPair new p)
+    EPair old t l r -> EPair
       <$> f old
-      <*> traverseMetadata f l
       <*> traverseMetadata f t
+      <*> traverseMetadata f l
       <*> traverseMetadata f r
     EDeferred reason ty ref _ term ->
       (\term' ty' -> EDeferred reason ty' ref (getMetadata term') term')

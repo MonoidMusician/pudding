@@ -139,13 +139,13 @@ evaling = \case
       (ENeut (Neutral focus prjs), evalingArg) ->
         ENeut (Neutral focus (NApp metaApp evalingArg : prjs))
       _ -> error "Type error: cannot apply to non-function"
-  TPair meta plicit left ltr right ->
-    EPair meta plicit <$> evaling left <*> evaling ltr <*> evaling right
+  TPair meta ty left right ->
+    EPair meta <$> evaling ty <*> evaling left <*> evaling right
   TFst meta term -> \ctx ->
     -- Again, we look to beta reduce, or add a projection to a neutral
     case evaling term ctx of
       -- If it reduces to a literal, it must be a pair by type correctness
-      EPair _ _ left _ _ -> left
+      EPair _ _ left _ -> left
       -- Otherwise it must be a neutral: it does not have an actual value yet
       -- (it is waiting for a variable / hole), so we *record* that we want to
       -- apply `fst` to it when it does reduce -> this means that in quoting we
@@ -156,7 +156,7 @@ evaling = \case
   TSnd meta term -> \ctx ->
     -- Again, we look to beta reduce, or add a projection to a neutral
     case evaling term ctx of
-      EPair _ _ _ _ right -> right
+      EPair _ _ _ right -> right
       ENeut (Neutral focus prjs) ->
         ENeut (Neutral focus (NSnd meta : prjs))
       _ -> error "Type error: cannot apply to non-function"
@@ -193,8 +193,8 @@ eval2termWith handleClosure = \case
     TPi meta plicit binder <$> e2t ty <*> handleClosure body ty
   ESigma meta plicit binder ty body ->
     TSigma meta plicit binder <$> e2t ty <*> handleClosure body ty
-  EPair meta plicit left ltr right ->
-    TPair meta plicit <$> e2t left <*> e2t ltr <*> e2t right
+  EPair meta ty left right ->
+    TPair meta <$> e2t ty <*> e2t left <*> e2t right
   EDeferred _ _ _ _ tm -> e2t tm
   where
   e2t = eval2termWith handleClosure
@@ -215,8 +215,12 @@ quotingClosure (Closure savedCtx savedBody) argTy ctx =
 -- If we don't want to fully normalize, we can turn `Eval` back into a `Term`
 -- in the simplest way: copying the `Term` out of the `Closure` without any
 -- further evaluation.
-eval2term :: Eval -> QuoteCtx -> Term
-eval2term = eval2termWith \(Closure _ term) _ _ -> term
+--
+-- This actually needs more thought... the saved `Term` is an open term from a
+-- different context, so `EvalCtx` would need to be converted and inlined at
+-- least, with quoting at the correct level.
+-- eval2term :: Eval -> QuoteCtx -> Term
+-- eval2term = eval2termWith \(Closure savedCtx savedBody) _ _ -> term
 
 
 data SimpleCtx item = SimpleCtx
@@ -265,25 +269,7 @@ typeof ctx = \case
     case (typeof ctx ty, typeof (into ty) body) of
       (TUniv m1 u1, TUniv m2 u2) -> TUniv (m1 <> m2) (umax u1 u2)
       _ -> error "Bad sigma type"
-  TPair meta p left dep _right ->
-    -- A bit tricky: `dep` is the dependency of the type of `right` on `left`:
-    -- because we can infer `left` (and we could infer `right`), but we can't
-    -- infer their exact dependency as `left` varies: so `dep` itself should have
-    -- type `(typeof left) -> Type`
-    --
-    -- so we make it back into syntax by applying the variable we just bound
-    -- (... potentially not great because it is unevaluated, but yeah)
-    case dep of
-      -- Shortcut: if it is a lambda, then we can transmogrify it into a TSigma
-      TLambda _ _ b ty body ->
-        TSigma
-          -- take metadata and plicity from the pair/sigma
-          meta p
-          -- take the binder from the lambda, trust the type, and insert the body
-          b ty body
-      -- Otherwise we just use `TApp` to apply the variable we just bound
-      _ ->
-        TSigma meta p (BVar noName) (typeof ctx left) (TApp mempty dep (TVar mempty (Index 0)))
+  TPair _meta ty _left _right -> ty
   TFst _ tm -> case typeof ctx tm of
     TSigma _ _ _ ty _body -> ty
     _ -> error "Bad fst"
@@ -305,8 +291,8 @@ typeof ctx = \case
 
 doPrj :: Eval -> NeutPrj -> Eval
 doPrj (ENeut (Neutral blocker prjs)) prj = ENeut (Neutral blocker (prj : prjs))
-doPrj (EPair _ _ left _ _) (NFst _) = left
-doPrj (EPair _ _ _ _ right) (NSnd _) = right
+doPrj (EPair _ _ left _) (NFst _) = left
+doPrj (EPair _ _ _ right) (NSnd _) = right
 doPrj (ELambda _ _ _ _ body) (NApp _ arg) = instantiateClosure body arg
 doPrj _ _ = error "Type error in doPrj"
 
@@ -335,8 +321,8 @@ shiftFrom base delta = \case
     TPi meta p b (go ty) (into body)
   TSigma meta p b ty body ->
     TSigma meta p b (go ty) (into body)
-  TPair meta p left dep right ->
-    TPair meta p (go left) (go dep) (go right)
+  TPair meta ty left right ->
+    TPair meta (go ty) (go left) (go right)
   TFst meta tm -> TFst meta $ go tm
   TSnd meta tm -> TSnd meta $ go tm
   TApp meta fun arg -> TApp meta (go fun) (go arg)
