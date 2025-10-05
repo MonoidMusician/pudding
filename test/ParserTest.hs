@@ -50,7 +50,7 @@ termTest = TestSuite "TermTest" do
     testParser' "(lambda2)"
   testCase "TypeofIdentity" do
     TPi _ _ _ _ (Scoped (TPi _ _ _ (TVar _ i1) (Scoped (TVar _ i2)))) <-
-      testParser "(Pi (t (U0)) (Pi (x t) t))"
+      testParser "(Pi (t (Type0)) (Pi (x t) t))"
     expectEq (Index 0) i1
     expectEq (Index 1) i2
 

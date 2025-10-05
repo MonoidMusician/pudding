@@ -8,7 +8,7 @@ import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import qualified Data.List as L
 import Data.Set (singleton)
 import Data.Text (Text)
-import Data.Functor (void, ($>))
+import Data.Functor (void)
 import qualified Data.Text as T
 
 import Pudding.Types
@@ -66,6 +66,9 @@ ident = do
   tbl <- asks table
   internalize tbl $ T.pack t
 
+int :: Parser Int
+int = read <$> P.many1 P.digit <* spaces
+
 term :: Parser Term
 term = var <|> (lp *> (P.choice terms <|> app) <* rp)
   where
@@ -85,8 +88,10 @@ term = var <|> (lp *> (P.choice terms <|> app) <* rp)
         dep <- term
         r <- term
         return $ \meta -> TPair meta l dep r
-    , trackMeta $ do keyword ["U0"] $> \meta -> TUniv meta (UBase 0)
-    , trackMeta $ do keyword ["U1"] $> \meta -> TUniv meta (UMeta 0)
+    , trackMeta do
+        univKind <- UBase <$ keyword ["Type0"] <|> UMeta <$ keyword ["Type1"]
+        lvl <- P.option 0 int
+        pure \meta -> TUniv meta (univKind lvl)
     ]
 
 data ParseCtx = ParseCtx
