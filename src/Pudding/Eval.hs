@@ -2,7 +2,6 @@ module Pudding.Eval where
 
 import Pudding.Types
 import qualified Data.Map as Map
-import Data.Map (Map)
 import Data.Functor (void)
 import qualified Data.List as List
 import Data.Maybe (fromMaybe)
@@ -25,7 +24,7 @@ evalCtx ctx0@(Ctx { ctxStack = (bdr, one) : more }) =
 -- If you want to fully partially evaluate (ahem, normalize) a top-level `Term`.
 -- Note that this does not handle eta expansion or eta reduction: those are
 -- handled during conversion checking.
-normalize :: Map Name GlobalInfo -> Term -> Term
+normalize :: Globals -> Term -> Term
 normalize globals original =
   let
     -- First we use `eval` to partially evaluate `Term` into `Eval`
@@ -45,7 +44,7 @@ normalize globals original =
 normalizeCtx :: EvalCtx -> Term -> Term
 normalizeCtx ctx = quote (void ctx) . eval ctx
 
-normalizeNeutrals :: Map Name GlobalInfo -> [Desc "type" Term] -> Term -> Term
+normalizeNeutrals :: Globals -> [Desc "type" Term] -> Term -> Term
 normalizeNeutrals globals localTypes = normalizeCtx $
   mapCtx (\(_idx, lvl) _ty -> neutralVar lvl) $
     ctxOfList globals $ (BFresh,) <$> localTypes
@@ -186,7 +185,7 @@ evaling = \case
       -- If it was stuck as a neutral, we need to preserve the argument on the
       -- stack of projections to apply to the neutral variable
       (ENeut (Neutral focus prjs), evalingArg) ->
-        checkGlobal ctx $ ENeut (Neutral focus (NApp metaApp evalingArg : prjs))
+        checkGlobal ctx $ ENeut (Neutral { neutralBlocking = focus, neutralSpine = NApp metaApp evalingArg : prjs })
       _ -> error "Type error: cannot apply to non-function"
   TPair meta ty left right ->
     EPair meta <$> evaling ty <*> evaling left <*> evaling right
@@ -214,6 +213,8 @@ evaling = \case
   -- on it and record its arguments or projections. This is contrary to the
   -- neutrals for abstract variables, which are introduced *outside* of eval.
   THole meta hole -> pure $ ENeut (Neutral (NHole meta hole) [])
+  TTyCtor meta name params indices -> ETyCtor meta name <$> traverse evaling params <*> traverse evaling indices
+  TConstr meta name params args -> EConstr meta name <$> traverse evaling params <*> traverse evaling args
   where
   undeferred (EDeferred _ _ _ _ tm) = undeferred tm
   undeferred tm = tm
@@ -256,6 +257,10 @@ eval2termWith forceGlobals handleClosure = \case
     TSigma meta plicit binder <$> e2t ty <*> handleClosure body ty
   EPair meta ty left right ->
     TPair meta <$> e2t ty <*> e2t left <*> e2t right
+  ETyCtor meta name params indices ->
+    TTyCtor meta name <$> traverse e2t params <*> traverse e2t indices
+  EConstr meta name params args ->
+    TConstr meta name <$> traverse e2t params <*> traverse e2t args
   EDeferred _ _ _ _ tm -> e2t tm
   where
   e2t = eval2termWith forceGlobals handleClosure
@@ -321,6 +326,8 @@ shiftFrom base delta = \case
   TFst meta tm -> TFst meta $ go tm
   TSnd meta tm -> TSnd meta $ go tm
   TApp meta fun arg -> TApp meta (go fun) (go arg)
+  TTyCtor meta name params indices -> TTyCtor meta name (go <$> params) (go <$> indices)
+  TConstr meta name params args -> TConstr meta name (go <$> params) (go <$> args)
   where
   go = shiftFrom base delta
   into = shiftFrom (base+1) delta

@@ -10,6 +10,7 @@ import qualified Data.Text as T
 import Data.Coerce (coerce)
 import GHC.StableName (StableName)
 import qualified Data.List as List
+import qualified Data.Vector as Vector
 import Data.Maybe (fromMaybe)
 
 -- Validate the type of a term, as an evaluated type
@@ -19,7 +20,7 @@ validate = validateOrNot seq
 validateQuote :: EvalTypeCtx -> Desc "term" Term -> Desc "type" Term
 validateQuote ctx = quote (void ctx) . validate ctx
 -- Validate in a context of neutrals
-validateQuoteNeutrals :: Map Name GlobalInfo -> [Desc "type" Term] -> Desc "term" Term -> Desc "type" Term
+validateQuoteNeutrals :: Globals -> [Desc "type" Term] -> Desc "term" Term -> Desc "type" Term
 validateQuoteNeutrals globals localTypes = validateQuote $
   mapCtx (\(_idx, lvl) ty -> (ty, neutralVar lvl)) $ evalCtx $
     ctxOfList globals $ (BFresh,) <$> localTypes
@@ -31,7 +32,7 @@ quickTermType = validateOrNot (const id)
 -- Typecheck and share partial evaluation of globals
 --
 -- TODO: make sure definitions are acyclic!
-bootGlobals :: Map Name GlobalInfo -> Map Name GlobalInfo
+bootGlobals :: Globals -> Globals
 bootGlobals globals = globals <&> \case
   GlobalDefn _ _ tm@(GlobalTerm defn _) ->
     let !ty = typeofGlobal tm in
@@ -76,6 +77,18 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
     ccScoped bdrL tyL bodyL bdrR tyR bodyR
   (EPair _ _ leftL rightL, EPair _ _ leftR rightR) ->
     cc leftL leftR && cc rightL rightR
+  (ETyCtor _ nameL paramsL indicesL, ETyCtor _ nameR paramsR indicesR) ->
+    nameL == nameR
+      && List.length paramsL == List.length paramsR
+      && all (uncurry cc) (Vector.zip paramsL paramsR)
+      && List.length indicesL == List.length indicesR
+      && all (uncurry cc) (Vector.zip indicesL indicesR)
+  (EConstr _ nameL paramsL argsL, EConstr _ nameR paramsR argsR) ->
+    nameL == nameR
+      && List.length paramsL == List.length paramsR
+      && all (uncurry cc) (Vector.zip paramsL paramsR)
+      && List.length argsL == List.length argsR
+      && all (uncurry cc) (Vector.zip argsL argsR)
 
   -- Handle some eta conversions (but not unit-type eta, which needs to be
   -- type-directed)
@@ -215,6 +228,23 @@ validateOrNot seqOrConst ctx = \case
     (EPi _ _ _ argTyExpected body, argTyActual) ->
       cc "argument type mismatch" argTyExpected argTyActual `seq` instantiateClosure body (evalHere arg)
     _ -> error "Bad app"
+  TTyCtor meta tyName params indices -> case Map.lookup tyName (ctxGlobals ctx) of
+    Just (GlobalType (GlobalTypeInfo { typeParams, typeIndices })) ->
+      checkFor "Wrong number of parameters" (Vector.length params == Vector.length typeParams) `seqOrConst`
+      checkFor "Wrong number of indices" (Vector.length indices == Vector.length typeIndices) `seqOrConst`
+      validateTelescope "Invalid type constructor parameter" ctx params typeParams \ctx' ->
+      validateTelescope "Invalid type constructor index" ctx' indices typeIndices \ctx'' ->
+      -- FIXME: do a proper universe check
+      EUniv mempty (UBase 0)
+    _ -> error "Bad type constructor name"
+  TConstr meta (tyName, conName) params args -> case Map.lookup tyName (ctxGlobals ctx) of
+    Just (GlobalType (GlobalTypeInfo { typeParams, typeIndices, typeConstrs }))
+      | Just (ConstructorInfo { ctorArguments, ctorIndices }) <- Map.lookup conName typeConstrs ->
+      checkFor "Wrong number of parameters" (Vector.length params == Vector.length typeParams) `seqOrConst`
+      validateTelescope "Invalid constructor parameter" ctx params typeParams \ctx' ->
+      validateTelescope "Invalid constructor argument" ctx' args ctorArguments \ctx'' ->
+      eval (mapCtx (\_ (_, tm) -> tm) ctx) 
+    _ -> error "Bad type constructor name"
   where
   validateType ty = case vv ty of
     EUniv _ _ -> evalHere ty
@@ -226,6 +256,9 @@ validateOrNot seqOrConst ctx = \case
     False -> error err
 
   vv = validateOrNot seqOrConst ctx
+
+  checkFor _ True = ()
+  checkFor err False = error err
 
   validateScoped :: Binder -> Desc "arg type" Term -> ScopedTerm -> (Desc "arg type" Eval, Desc "body type" Eval)
   validateScoped bdr ty (Scoped body) =

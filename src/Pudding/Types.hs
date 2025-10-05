@@ -13,7 +13,6 @@ import Text.Parsec.Pos (SourcePos)
 import Control.DeepSeq (NFData(rnf))
 import GHC.Generics (Generic)
 import Pudding.Name (Name(..), newTable, initTable, internalize)
-import Control.Applicative.Backwards (Backwards (forwards, Backwards))
 import Prettyprinter (Pretty)
 import GHC.StableName (StableName)
 import Data.Text (Text)
@@ -37,23 +36,26 @@ data GlobalTerm = GlobalTerm !Term Eval
   deriving (Generic, NFData)
 
 data GlobalInfo
-  -- A function or global constant or whatever
+  -- A function or global constant or whatever.
+  -- These also get generated for the names introduced by inductive types:
+  -- the type name becomes a definition and so does each constructor.
   = GlobalDefn !(Desc "arity" Int) (Desc "type" GlobalTerm) (Desc "term" GlobalTerm)
-  -- An inductive type declaration
+  -- An inductive type declaration.
   | GlobalType GlobalTypeInfo
   deriving (Generic, NFData)
 
 type Globals = Map Name GlobalInfo
 
 data GlobalTypeInfo = GlobalTypeInfo
-  { typeArgs :: !(Vector (Plicit, Binder, Term))
-  , typeCons :: !(Map Name ConstructorInfo)
+  { typeParams :: !(Vector (Plicit, Binder, Term))
+  , typeIndices :: !(Vector (Plicit, Binder, Term))
+  , typeConstrs :: !(Map Name ConstructorInfo)
   }
   deriving (Generic, NFData)
 
 data ConstructorInfo = ConstructorInfo
-  { arguments :: !(Vector (Plicit, Binder, Term))
-  , indices :: !(Vector Term)
+  { ctorArguments :: !(Vector (Plicit, Binder, Term))
+  , ctorIndices :: !(Vector Term)
   }
   deriving (Generic, NFData)
 
@@ -118,6 +120,18 @@ data Term
       (Desc "snd value" Term)
   | TFst Metadata Term
   | TSnd Metadata Term
+  -- A type constructor: the name of an inductive type applied to parameters
+  -- and indices
+  | TTyCtor Metadata !(Desc "type name" Name)
+      (Desc "params" (Vector Term))
+      (Desc "indices" (Vector Term))
+  -- A term constructor: the actual constructor of the inductive type applied
+  -- to its arguments (from which the indices are also derived)
+  | TConstr Metadata !(Desc "type name" Name, Desc "constr name" Name)
+      (Desc "params" (Vector Term))
+      -- args are the actual data stored in the constructor, from which the
+      -- indices are inferred based on the constructor declaration
+      (Desc "args" (Vector Term))
   deriving (Generic, NFData)
 newtype ScopedTerm = Scoped Term
   deriving newtype (NFData)
@@ -153,6 +167,12 @@ data Eval
       Metadata !Plicit Binder
       (Desc "fst type" Eval) (Desc "snd type under fst type" Closure)
   | EPair Metadata (Desc "sigma type" Eval) (Desc "fst value" Eval) (Desc "snd value" Eval)
+  | ETyCtor Metadata !(Desc "type name" Name)
+      (Desc "params" (Vector Eval))
+      (Desc "indices" (Vector Eval))
+  | EConstr Metadata !(Desc "type name" Name, Desc "constr name" Name)
+      (Desc "params" (Vector Eval))
+      (Desc "args" (Vector Eval))
   | EDeferred (Desc "reason" (Meta Text)) (Desc "type" Eval) !(Desc "sharing" (Maybe (StableName Eval))) Metadata (Desc "deferred term" Eval)
   deriving (Generic, NFData)
 
@@ -228,7 +248,7 @@ arityOfTerm = go 0
 
 
 data Ctx t = Ctx
-  { ctxGlobals :: Map Name GlobalInfo
+  { ctxGlobals :: Globals
   , ctxSize :: !Int
   , ctxStack :: ![(Binder, t)]
   }
@@ -240,17 +260,17 @@ type EvalCtx = Ctx Eval
 -- Context used for `quote`: `ctxSize` is just used to convert `Level` back to `Index`
 type QuoteCtx = Ctx ()
 
-ctxOfStack :: forall t. Map Name GlobalInfo -> Desc "stack" [(Binder, t)] -> Ctx t
+ctxOfStack :: forall t. Globals -> Desc "stack" [(Binder, t)] -> Ctx t
 ctxOfStack globals stack =
   Ctx globals (length stack) stack
 
-ctxOfList :: forall t. Map Name GlobalInfo -> Desc "list in order" [(Binder, t)] -> Ctx t
+ctxOfList :: forall t. Globals -> Desc "list in order" [(Binder, t)] -> Ctx t
 ctxOfList globals = ctxOfStack globals . reverse
 
-ctxOfGlobals :: forall t. Map Name GlobalInfo -> Ctx t
+ctxOfGlobals :: forall t. Globals -> Ctx t
 ctxOfGlobals globals = ctxOfStack globals []
 
-ctxOfSize :: Map Name GlobalInfo -> Desc "size" Int -> Ctx ()
+ctxOfSize :: Globals -> Desc "size" Int -> Ctx ()
 ctxOfSize globals 0 = ctxOfGlobals globals
 ctxOfSize globals sz = ctxOfStack globals $ (BFresh, ()) <$ [0..(sz - 1)]
 
@@ -408,6 +428,8 @@ instance HasMetadata Term where
     TPair old t l r | new <- f old -> (old, TPair new t l r, new)
     TFst old t | new <- f old -> (old, TFst new t, new)
     TSnd old t | new <- f old -> (old, TSnd new t, new)
+    TTyCtor old name params indices | new <- f old -> (old, TTyCtor new name params indices, new)
+    TConstr old name params args | new <- f old -> (old, TConstr new name params args, new)
   traverseMetadata f = \case
     TVar old idx -> (\new -> TVar new idx) <$> f old
     THole old hole -> (\new -> THole new hole) <$> f old
@@ -436,6 +458,14 @@ instance HasMetadata Term where
       <*> traverseMetadata f r
     TFst old t -> TFst <$> f old <*> traverseMetadata f t
     TSnd old t -> TSnd <$> f old <*> traverseMetadata f t
+    TTyCtor old name params indices -> (\new -> TTyCtor new name)
+      <$> f old
+      <*> traverse (traverseMetadata f) params
+      <*> traverse (traverseMetadata f) indices
+    TConstr old name params args -> (\new -> TConstr new name)
+      <$> f old
+      <*> traverse (traverseMetadata f) params
+      <*> traverse (traverseMetadata f) args
 instance HasMetadata ScopedTerm where
   onMetadata f (Scoped term) | (old, term', new) <- onMetadata f term = (old, Scoped term', new)
   traverseMetadata f (Scoped term) = Scoped <$> traverseMetadata f term
@@ -448,6 +478,8 @@ instance HasMetadata Eval where
     EPi old p b ty body | new <- f old -> (old, EPi new p b ty body, new)
     ESigma old p b ty body | new <- f old -> (old, ESigma new p b ty body, new)
     EPair old t l r | new <- f old -> (old, EPair new t l r, new)
+    ETyCtor old name params indices | new <- f old -> (old, ETyCtor new name params indices, new)
+    EConstr old name params args | new <- f old -> (old, EConstr new name params args, new)
     EDeferred reason ty ref old term | new <- f old -> (old, EDeferred reason ty ref new (setMetadata term new), new)
   traverseMetadata f = \case
     ENeut neutral -> ENeut <$> traverseMetadata f neutral
@@ -469,6 +501,14 @@ instance HasMetadata Eval where
       <*> traverseMetadata f t
       <*> traverseMetadata f l
       <*> traverseMetadata f r
+    ETyCtor old name params indices -> (\new -> ETyCtor new name)
+      <$> f old
+      <*> traverse (traverseMetadata f) params
+      <*> traverse (traverseMetadata f) indices
+    EConstr old name params args -> (\new -> EConstr new name)
+      <$> f old
+      <*> traverse (traverseMetadata f) params
+      <*> traverse (traverseMetadata f) args
     EDeferred reason ty ref _ term ->
       (\term' ty' -> EDeferred reason ty' ref (getMetadata term') term')
       <$> traverseMetadata f term
@@ -481,11 +521,11 @@ instance HasMetadata Neutral where
   onMetadata f (Neutral focus (prj : prjs))
     | (old, prj', new) <- onMetadata f prj
     = (old, Neutral focus (prj' : prjs), new)
-  traverseMetadata f (Neutral focus prjs) = forwards $
-    Neutral <$> Backwards (traverseMetadata f focus) <*> bwd prjs
+  traverseMetadata f (Neutral focus prjs) =
+    Neutral <$> traverseMetadata f focus <*> bwd prjs
     where
     bwd [] = pure []
-    bwd (one : more) = flip (:) <$> bwd more <*> Backwards (traverseMetadata f one)
+    bwd (one : more) = flip (:) <$> bwd more <*> traverseMetadata f one
 
 instance HasMetadata NeutFocus where
   onMetadata f (NVar old lvl) | new <- f old = (old, NVar new lvl, new)

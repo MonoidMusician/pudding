@@ -1,7 +1,7 @@
 module Pudding (someFunc, parseAndBootGlobals) where
 
 import Data.Text (Text)
-import Pudding.Types (GlobalInfo, Name)
+import Pudding.Types (GlobalInfo, Name, Globals)
 import Data.Map (Map)
 import Pudding.Parser (declarations, runParser)
 import Pudding.Unify (bootGlobals)
@@ -11,7 +11,7 @@ someFunc :: IO ()
 someFunc = do
   putStrLn "someFunc"
 
-parseAndBootGlobals :: Text -> Map Name GlobalInfo
+parseAndBootGlobals :: Text -> Globals
 parseAndBootGlobals source = unsafePerformIO do
   parsed <- runParser (bootGlobals <$> declarations) "<globals>" source
   case parsed of

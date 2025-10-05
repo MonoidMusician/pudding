@@ -123,6 +123,9 @@ Normalization by evaluation
 
     Links: [GitHub: Elaboration Zoo in Haskell](https://github.com/AndrasKovacs/elaboration-zoo), [List of resources](https://github.com/etiamz/NbE-resources/blob/master/README.md)
 
+Telescope
+:   A stack of binders, each dependent on the previous one.
+
 Abstract Syntax Tree
 :   The syntax of a programming language encoded as a tree-shaped data type (e.g. an ADT in Haskell, inductive types in proof assistants), where all the semantic nodes are easily distinguished.
     This is the representation that all of the algorithms work with: typechecking, evaluation, et cetera.

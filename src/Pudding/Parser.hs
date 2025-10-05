@@ -18,6 +18,7 @@ import qualified Data.Map as Map
 import Control.Monad (when)
 import GHC.IO (unsafePerformIO)
 import Data.Traversable (for)
+import qualified Data.Vector as Vector
 
 type Parser = P.ParsecT Text () (ReaderT ParseCtx IO)
 
@@ -59,6 +60,11 @@ word p = P.try (p <* P.notFollowedBy P.alphaNum) <* spaces
 
 parens :: forall a. Parser a -> Parser a
 parens p = lp *> p <* rp
+
+manyParens :: Parser a -> Parser [a]
+manyParens = many . parens
+parensMany :: Parser a -> Parser [a]
+parensMany = parens . many
 
 ident :: Parser Name
 ident = do
@@ -137,9 +143,12 @@ abstraction kw mk = do
     plicit <- kw
     (name, ty) <- binder
     body <- local (bindIdent name) term
-    let b = BVar (Meta (CanonicalName name (singleton name)))
+    let b = bName name
     return $ \meta -> mk meta plicit b ty (Scoped body)
   return (finish (Metadata (singleton s)))
+
+bName :: Name -> Binder
+bName name = BVar (Meta (CanonicalName name (singleton name)))
 
 app :: Parser Term
 app = do
@@ -152,6 +161,53 @@ app = do
       let s = s1 <> s2 in
         Tracked s (TApp (Metadata (singleton s)) a b)
 
+-- List is in stack order, not binding order
+type Binding = (Plicit, Binder, Term)
+binderList :: forall r. ([Binding] -> Parser r) -> Parser r
+binderList cont = parens $ go []
+  where
+  go acc = P.optionMaybe oneBinder >>= \case
+    Nothing -> cont acc
+    Just (pbty, lcl) -> lcl do go (pbty : acc)
+  oneBinder = do
+    p <- P.option Explicit (Implicit <$ P.char '?' <* spaces)
+    (name, ty) <- binder
+    let b = bName name
+    pure ((p, b, ty), local (bindIdent name))
+
+assembleInductive :: Name -> [Binding] -> [Binding] -> [(Name, ([Binding], [Term]))] -> Parser GlobalTypeInfo
+assembleInductive typeName parameters indices constrs = do
+  constructors <- checkMap "constructors" constrs >>= Map.traverseWithKey \conName (args, chosen) -> do
+    when (L.length chosen /= L.length indices) do
+      fail $ mconcat
+        [ "Gave "
+        , show $ L.length chosen
+        , " indices in constructor "
+        , show conName
+        , " but needed "
+        , show $ L.length indices
+        ]
+    pure $ ConstructorInfo
+      { ctorArguments = Vector.reverse $ Vector.fromList args
+      , ctorIndices = Vector.fromList $ chop chosen
+      }
+  pure $ GlobalTypeInfo
+    { typeParams = Vector.reverse $ Vector.fromList parameters
+    , typeIndices = Vector.reverse $ Vector.fromList indices
+    , typeConstrs = constructors
+    }
+  where
+  chop :: [Term] -> [Term]
+  chop (TGlobal _ name : chosen) | name == typeName = chosen
+  chop chosen = chosen
+
+checkMap :: forall t. String -> [(Name, t)] -> Parser (Map Name t)
+checkMap desc items = do
+  let gathered = Map.fromList items
+  when (Map.size gathered /= length items) do
+    fail $ "Duplicate " <> desc
+  pure gathered
+
 declaration :: Parser (Name, GlobalInfo)
 declaration = parens $ P.choice
   [ do
@@ -159,8 +215,24 @@ declaration = parens $ P.choice
       n <- ident
       t <- term
       pure (n, GlobalDefn (arityOfTerm t) undefined (GlobalTerm t undefined))
+  , do
+      keyword ["inductive"]
+      typeName <- ident
+      -- Parameters do not vary between constructors: this lets the universe
+      -- level be lower, and also saves on typing-as-in-keystrokes haha
+      binderList \parameters -> do
+        -- Indices can vary between constructors
+        indices <- binderList pure
+        constructors <- many $ parens do
+          conName <- ident
+          -- So each constructor binds data arguments
+          fmap (conName,) $ P.option ([], []) $ binderList \args ->
+            -- And says what each index should be
+            fmap (args,) $ P.option [] $ parensMany term
+        info <- assembleInductive typeName parameters indices constructors
+        pure (typeName, GlobalType info)
   ]
-declarations :: Parser (Map Name GlobalInfo)
+declarations :: Parser Globals
 declarations = P.many declaration >>= \decls -> do
   let globals = Map.fromList decls
   when (Map.size globals /= length decls) do
