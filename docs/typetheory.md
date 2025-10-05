@@ -20,9 +20,9 @@ substitute target subst = \case
 -- ...
 -- newest : arg
 
--- De Bruijn Indices work well: a Lambda term (\0 -> 0) is stable in different
--- contexts, you can move around the syntax tree. And this is useful during
--- typechecking.
+-- De Bruijn Indices work well: a closed term (\0 -> 0) is stable in different
+-- contexts, you can move it around the syntax tree. And this is useful for
+-- manipulating syntax.
 
 partialEval :: Term -> Term
 partialEval = \case

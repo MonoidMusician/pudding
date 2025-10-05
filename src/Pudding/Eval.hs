@@ -1,4 +1,3 @@
-{-# LANGUAGE DataKinds #-}
 module Pudding.Eval where
 
 import Pudding.Types
@@ -8,11 +7,11 @@ import Data.Functor ((<&>))
 import Pudding.Printer (Style (Ansi), format, printCore)
 import qualified Data.Text as T
 
-captureClosure :: Term -> EvalCtx -> Closure
+captureClosure :: ScopedTerm -> EvalCtx -> Closure
 captureClosure = flip Closure
 
 instantiateClosure :: Closure -> Eval -> Eval
-instantiateClosure (Closure savedCtx savedBody) providedArg =
+instantiateClosure (Closure savedCtx (Scoped savedBody)) providedArg =
   evaling savedBody $ cons providedArg savedCtx
 
 neutralVar :: Level -> Eval
@@ -172,7 +171,7 @@ quoting = eval2termWith quotingClosure
 -- itself is not too painful, but having to add 500 new cases every time you
 -- add an AST node is painful.)
 eval2termWith ::
-  (Closure -> Desc "type" Eval -> QuoteCtx -> Term) ->
+  (Closure -> Desc "type" Eval -> QuoteCtx -> ScopedTerm) ->
   Eval -> QuoteCtx -> Term
 eval2termWith handleClosure = \case
   ENeut (Neutral focus prjs) -> \ctx ->
@@ -205,12 +204,12 @@ eval2termWith handleClosure = \case
 -- normalizing it.
 --
 -- Note: this calls directly into `quoting`.
-quotingClosure :: Closure -> Eval -> QuoteCtx -> Term
-quotingClosure (Closure savedCtx savedBody) argTy ctx =
+quotingClosure :: Closure -> Eval -> QuoteCtx -> ScopedTerm
+quotingClosure (Closure savedCtx (Scoped savedBody)) argTy ctx =
   let
     -- This is the (only-ish) place that we create neutrals: when quoting.
     evalingArg = ENeut (Neutral (NVar mempty (Level (quoteSize ctx))) [])
-  in quoting ((evaling savedBody $ cons evalingArg savedCtx) :: Eval) ctx { quoteSize = quoteSize ctx + 1 }
+  in Scoped $ quoting ((evaling savedBody $ cons evalingArg savedCtx) :: Eval) ctx { quoteSize = quoteSize ctx + 1 }
 
 -- If we don't want to fully normalize, we can turn `Eval` back into a `Term`
 -- in the simplest way: copying the `Term` out of the `Closure` without any
@@ -257,15 +256,15 @@ typeof ctx = \case
     UMeta lvl -> UMeta (lvl + 1)
     -- This is why `UVar` has an `Int`: increment to get the typeof
     UVar fresh incr -> UVar fresh (incr + 1)
-  TLambda meta p b ty body ->
-    TPi meta p b ty (typeof (into ty) body)
-  TPi _ _ _ ty body ->
+  TLambda meta p b ty (Scoped body) ->
+    TPi meta p b ty (Scoped (typeof (into ty) body))
+  TPi _ _ _ ty (Scoped body) ->
     -- Π(x : ty : U), (body : U)
     case (typeof ctx ty, typeof (into ty) body) of
       (TUniv m1 u1, TUniv m2 u2) -> TUniv (m1 <> m2) (umax u1 u2)
       (_, r) -> error $ "Bad pi type: " <> T.unpack do
         format Ansi $ printCore r (0, QuoteCtx $ scSize ctx)
-  TSigma _ _ _ ty body ->
+  TSigma _ _ _ ty (Scoped body) ->
     case (typeof ctx ty, typeof (into ty) body) of
       (TUniv m1 u1, TUniv m2 u2) -> TUniv (m1 <> m2) (umax u1 u2)
       _ -> error "Bad sigma type"
@@ -285,9 +284,6 @@ typeof ctx = \case
   where
   into :: Term -> TypeCtx
   into ty = ctx { scStack = ty : scStack ctx }
-
-  noName :: Meta CanonicalName
-  noName = Meta $ CanonicalName { chosenName = undefined, allNames = mempty }
 
 doPrj :: Eval -> NeutPrj -> Eval
 doPrj (ENeut (Neutral blocker prjs)) prj = ENeut (Neutral blocker (prj : prjs))
@@ -315,12 +311,12 @@ shiftFrom base delta = \case
   TGlobal meta name -> TGlobal meta name
   THole meta fresh -> THole meta fresh
   TUniv meta univ -> TUniv meta univ
-  TLambda meta p b ty body ->
-    TLambda meta p b (go ty) (into body)
-  TPi meta p b ty body ->
-    TPi meta p b (go ty) (into body)
-  TSigma meta p b ty body ->
-    TSigma meta p b (go ty) (into body)
+  TLambda meta p b ty (Scoped body) ->
+    TLambda meta p b (go ty) (Scoped (into body))
+  TPi meta p b ty (Scoped body) ->
+    TPi meta p b (go ty) (Scoped (into body))
+  TSigma meta p b ty (Scoped body) ->
+    TSigma meta p b (go ty) (Scoped (into body))
   TPair meta ty left right ->
     TPair meta (go ty) (go left) (go right)
   TFst meta tm -> TFst meta $ go tm

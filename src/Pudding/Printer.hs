@@ -31,8 +31,8 @@ spaced [] = mempty
 spaced [x] = x
 spaced (x : y : zs) = x <> const Doc.softline <> spaced (y : zs)
 
-bound :: Binder -> Printer -> Printer
-bound _ f (i, QuoteCtx lvl) = f (i, QuoteCtx (lvl + 1))
+bound :: Binder -> (Term -> Printer) -> (ScopedTerm -> Printer)
+bound _ f (Scoped term) (i, QuoteCtx lvl) = f term (i, QuoteCtx (lvl + 1))
 
 formatCore :: Style -> Term -> Text
 formatCore style term = format style $ printCore term (0, QuoteCtx 0)
@@ -56,7 +56,7 @@ printCore = \case
       , printCore ty
       ]
     , pure Doc.hardline
-    , bound binder $ printCore body
+    , bound binder printCore body
     ]
   TPi _m p binder ty body -> sexp
     [ pure $ "Π" <> if p == Implicit then "?" else ""
@@ -65,7 +65,7 @@ printCore = \case
       , printCore ty
       ]
     , pure Doc.hardline
-    , bound binder $ printCore body
+    , bound binder printCore body
     ]
   app@(TApp _m _ _) ->
     let (fun, args) = spine app in
@@ -77,7 +77,7 @@ printCore = \case
       , printCore ty
       ]
     , pure Doc.hardline
-    , bound binder $ printCore body
+    , bound binder printCore body
     ]
   TPair _m ty left right -> sexp
     [ pure "pair"

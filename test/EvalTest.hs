@@ -116,9 +116,9 @@ termEquiv (TVar _ i1) (TVar _ i2) = i1 == i2
 termEquiv (THole _ f1) (THole _ f2) = f1 == f2
 termEquiv (TUniv _ l1) (TUniv _ l2) = l1 == l2
 termEquiv (TGlobal _ n1) (TGlobal _ n2) = n1 == n2
-termEquiv (TLambda _ p1 _ t1 b1) (TLambda _ p2 _ t2 b2) =
+termEquiv (TLambda _ p1 _ t1 (Scoped b1)) (TLambda _ p2 _ t2 (Scoped b2)) =
   p1 == p2 && t1 `termEquiv` t2 && b1 `termEquiv` b2
-termEquiv (TPi _ p1 _ t1 b1) (TPi _ p2 _ t2 b2) =
+termEquiv (TPi _ p1 _ t1 (Scoped b1)) (TPi _ p2 _ t2 (Scoped b2)) =
   p1 == p2 && t1 `termEquiv` t2 && b1 `termEquiv` b2
 termEquiv (TApp _ a1 b1) (TApp _ a2 b2) =
   a1 `termEquiv` a2 && b1 `termEquiv` b2

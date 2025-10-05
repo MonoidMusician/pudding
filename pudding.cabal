@@ -51,6 +51,7 @@ common defaults
         GeneralizedNewtypeDeriving
         LambdaCase
         BlockArguments
+        DataKinds
 
     -- Other library packages from which modules are imported.
     -- (Slightly trimmed from PureScript)

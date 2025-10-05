@@ -49,7 +49,7 @@ termTest = TestSuite "TermTest" do
   testCase "Keyword" do
     testParser' "(lambda2)"
   testCase "TypeofIdentity" do
-    TPi _ _ _ _ (TPi _ _ _ (TVar _ i1) (TVar _ i2)) <-
+    TPi _ _ _ _ (Scoped (TPi _ _ _ (TVar _ i1) (Scoped (TVar _ i2)))) <-
       testParser "(Pi (t (U0)) (Pi (x t) t))"
     expectEq (Index 0) i1
     expectEq (Index 1) i2
@@ -87,7 +87,7 @@ sourceSpanTest = TestSuite "SourceSpanTest" do
   [t1, t2] <- assertRight res
   testCase "TVar" do
     -- The final "x" in the term (f x x x)
-    TLambda _ _ _ _ (TApp _ _ (TVar meta _)) <- pure t1
+    TLambda _ _ _ _ (Scoped (TApp _ _ (TVar meta _))) <- pure t1
     expectSpan ((2, 10), (2, 11)) meta
   testCase "TGlobal" do
     -- The type "A" in (lambda (x A) ...)
@@ -103,7 +103,7 @@ sourceSpanTest = TestSuite "SourceSpanTest" do
     expectSpan ((4, 16), (4, 33)) meta
   testCase "TApp" do
     -- The term (eq (Loop z) (refl z))
-    TLambda _ _ _ _ (TApp meta (TApp lmeta _ _) (TApp rmeta _ _)) <- pure t2
+    TLambda _ _ _ _ (Scoped (TApp meta (TApp lmeta _ _) (TApp rmeta _ _))) <- pure t2
     expectSpan ((5, 4), (5, 24)) meta
     expectSpan ((5, 4), (5, 15)) lmeta
     expectSpan ((5, 17), (5, 23)) rmeta

@@ -1,4 +1,3 @@
-{-# LANGUAGE DataKinds #-}
 module Pudding.Types
   ( module Pudding.Types -- Export the default exports of this module
   , module Pudding.Name -- Export more
@@ -29,6 +28,8 @@ data Binder
   = BVar !(Meta CanonicalName)
   | BMulti !Binder !Binder -- Bind two to the same value
   | BPair !Binder !Binder -- Bind to fst and snd projections
+  | BFresh -- Assign a name to it during pretty printing
+  | BUnused
   deriving (Generic, NFData)
 
 data GlobalTerm = GlobalTerm !Term Eval
@@ -100,15 +101,15 @@ data Term
       -- one variable, but we keep this information around for pretty printing
       Metadata !Plicit Binder
       -- Actual core data (influences equality, etc.)
-      (Desc "domain type" Term) (Desc "body" Term)
+      (Desc "domain type" Term) (Desc "body" ScopedTerm)
   | TPi
       Metadata !Plicit Binder
-      (Desc "domain type" Term) (Desc "codomain" Term)
+      (Desc "domain type" Term) (Desc "codomain" ScopedTerm)
   | TApp Metadata
       (Desc "function" Term) (Desc "argument" Term)
   | TSigma
       Metadata !Plicit Binder
-      (Desc "fst type" Term) (Desc "snd type under fst type" Term)
+      (Desc "fst type" Term) (Desc "snd type under fst type" ScopedTerm)
   -- A pair of a sigma type
   | TPair Metadata
       (Desc "sigma type" Term)
@@ -117,6 +118,8 @@ data Term
   | TFst Metadata Term
   | TSnd Metadata Term
   deriving (Generic, NFData)
+newtype ScopedTerm = Scoped Term
+  deriving newtype (NFData)
 
 spine :: Term -> (Term, [Term])
 spine = go []
@@ -191,7 +194,7 @@ data NeutPrj
 --
 -- `(\x -> x + 1) 2` will evaluate the `Closure` immediately, but
 -- `(\x -> x) (\y -> y)` leaves `(\y -> y)` for quoting
-data Closure = Closure (Desc "saved external context" EvalCtx) (Desc "body" Term)
+data Closure = Closure (Desc "saved external context" EvalCtx) (Desc "body" ScopedTerm)
   deriving (Generic, NFData)
 
 data EvalCtx = EvalCtx
@@ -218,8 +221,8 @@ data QuoteCtx = QuoteCtx
 data Plicit = Explicit | Implicit
   deriving (Eq, Ord, Generic, NFData)
 
--- DeBruijn index: 0 is the most recently bound variable (inner scope). Used for
--- syntax manipulation.
+-- DeBruijn index: 0 is the most recently bound variable (inner scope). Useful
+-- for syntax manipulation: closed terms have well-defined semantics with `Index`.
 newtype Index = Index Int
   deriving newtype (Eq, Ord, Show, Pretty, NFData)
 
@@ -373,6 +376,9 @@ instance HasMetadata Term where
       <*> traverseMetadata f r
     TFst old t -> TFst <$> f old <*> traverseMetadata f t
     TSnd old t -> TSnd <$> f old <*> traverseMetadata f t
+instance HasMetadata ScopedTerm where
+  onMetadata f (Scoped term) | (old, term', new) <- onMetadata f term = (old, Scoped term', new)
+  traverseMetadata f (Scoped term) = Scoped <$> traverseMetadata f term
 
 instance HasMetadata Eval where
   onMetadata f = \case

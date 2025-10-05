@@ -121,7 +121,7 @@ kwPlicit kw = keyword kw *> plicity
 plicity :: Parser Plicit
 plicity = P.option Explicit (Implicit <$ P.char '?') <* P.spaces
 
-type Abstraction = Metadata -> Plicit -> Binder -> Term -> Term -> Term
+type Abstraction = Metadata -> Plicit -> Binder -> Term -> ScopedTerm -> Term
 
 binder :: Parser (Name, Term)
 binder = lp *> ((,) <$> ident <*> term) <* rp
@@ -133,7 +133,7 @@ abstraction kw mk = do
     (name, ty) <- binder
     body <- local (bindIdent name) term
     let b = BVar (Meta (CanonicalName name (singleton name)))
-    return $ \meta -> mk meta plicit b ty body
+    return $ \meta -> mk meta plicit b ty (Scoped body)
   return (finish (Metadata (singleton s)))
 
 app :: Parser Term
