@@ -38,7 +38,7 @@ data GlobalTerm = GlobalTerm !Term Eval
 
 data GlobalInfo
   -- A function or global constant or whatever
-  = GlobalDefn (Desc "type" GlobalTerm) (Desc "term" GlobalTerm)
+  = GlobalDefn !(Desc "arity" Int) (Desc "type" GlobalTerm) (Desc "term" GlobalTerm)
   -- An inductive type declaration
   | GlobalType GlobalTypeInfo
   deriving (Generic, NFData)
@@ -172,6 +172,10 @@ data Neutral = Neutral
 data NeutFocus
   = NVar Metadata !Level
   | NHole Metadata !Fresh -- needs some scoping information(?)
+  -- this is a kind of weak neutral: it will be evaluated when it reaches the
+  -- arity of function arguments and they are not all neutrals, and it can
+  -- also be evaluated during conversion checking
+  | NGlobal !(Desc "arity" Int) Metadata Name
   deriving (Generic, NFData)
 data NeutPrj
   = NApp Metadata (Desc "arg" Eval)
@@ -201,12 +205,34 @@ data Closure = Closure
   (Desc "body" ScopedTerm)
   deriving (Generic, NFData)
 
+----------------------------------
+-- Functions for the core types --
+----------------------------------
+
+neutralVar :: Level -> Eval
+neutralVar lvl = ENeut (Neutral (NVar mempty lvl) [])
+
+nextNeutral :: forall t. Ctx t -> Eval
+nextNeutral = neutralVar . Level . ctxSize
+
+arityOfTerm :: Term -> Int
+arityOfTerm = go 0
+  where
+  go !acc (TLambda _ _ _ _ (Scoped body)) = go (1 + acc) body
+  go !acc _ = acc
+
+
+--------------------------
+-- The type of contexts --
+--------------------------
+
+
 data Ctx t = Ctx
   { ctxGlobals :: Map Name GlobalInfo
   , ctxSize :: !Int
   , ctxStack :: ![(Binder, t)]
   }
-  deriving (Generic, NFData)
+  deriving (Functor, Generic, NFData)
 
 -- Context used for `eval`
 type EvalCtx = Ctx Eval

@@ -1,0 +1,4 @@
+Tricks:
+
+- `EDeferred`
+- `NGlobal`

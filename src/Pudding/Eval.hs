@@ -3,12 +3,13 @@ module Pudding.Eval where
 import Pudding.Types
 import qualified Data.Map as Map
 import Data.Map (Map)
-import Data.Functor ((<&>))
+import Data.Functor ((<&>), void)
 import Pudding.Printer (Style (Ansi), format, printCore)
 import qualified Data.Text as T
 import Data.Coerce (coerce)
 import GHC.StableName (StableName)
 import qualified Data.List as List
+import Data.Maybe (fromMaybe)
 
 captureClosure :: Binder -> ScopedTerm -> EvalCtx -> Closure
 captureClosure = flip . Closure
@@ -16,9 +17,6 @@ captureClosure = flip . Closure
 instantiateClosure :: Closure -> Eval -> Eval
 instantiateClosure (Closure binder savedCtx (Scoped savedBody)) providedArg =
   evaling savedBody $ snoc savedCtx binder providedArg
-
-neutralVar :: Level -> Eval
-neutralVar lvl = ENeut (Neutral (NVar mempty lvl) [])
 
 eval :: EvalCtx -> Term -> Eval
 eval = flip evaling
@@ -28,7 +26,8 @@ quote = flip quoting
 -- Share partial evaluation of globals
 bootGlobals :: Map Name GlobalInfo -> Map Name GlobalInfo
 bootGlobals globals = globals <&> \case
-  GlobalDefn _ tm -> GlobalDefn (typeofGlobal tm) (globalTerm tm)
+  GlobalDefn _ _ tm@(GlobalTerm defn _) ->
+    GlobalDefn (arityOfTerm defn) (typeofGlobal tm) (globalTerm tm)
   global -> global
   where
   ctx = ctxOfGlobals globals
@@ -63,7 +62,58 @@ normalizeCtx ctx = quote (mapCtx (\_ _ -> ()) ctx) . eval ctx
 normalizeNeutrals :: Map Name GlobalInfo -> [Desc "type" Term] -> Term -> Term
 normalizeNeutrals globals localTypes = normalizeCtx $
   mapCtx (\(_idx, lvl) _ty -> neutralVar lvl) $
-    ctxOfList globals $ (\ty -> (BFresh, ty)) <$> localTypes
+    ctxOfList globals $ (BFresh,) <$> localTypes
+
+-- Do a projection on `Eval`
+doPrj :: Eval -> NeutPrj -> Eval
+doPrj (ENeut (Neutral blocker prjs)) prj = ENeut (Neutral blocker (prj : prjs))
+doPrj (EPair _ _ left _) (NFst _) = left
+doPrj (EPair _ _ _ right) (NSnd _) = right
+doPrj (ELambda _ _ _ _ body) (NApp _ arg) = instantiateClosure body arg
+doPrj _ _ = error "Type error in doPrj"
+
+doApp :: Desc "fun" Eval -> Desc "arg" Eval -> Eval
+doApp fun arg = doPrj fun (NApp mempty arg)
+
+doFst :: Eval -> Eval
+doFst tgt = doPrj tgt (NFst mempty)
+
+doSnd :: Eval -> Eval
+doSnd tgt = doPrj tgt (NSnd mempty)
+
+-- Do a stack of projections on `Eval`
+doPrjs :: Eval -> [NeutPrj] -> Eval
+doPrjs focus (prj : prjs) = doPrj (doPrjs focus prjs) prj
+doPrjs focus [] = focus
+
+-- Eta expand the pair constructor, for sigma types
+etaPair :: Desc "type" Eval -> Desc "pair" Eval -> Eval
+etaPair ty e = EPair mempty ty (doPrj e (NFst mempty)) (doPrj e (NSnd mempty))
+
+-- Inline the global if it has reached its arity and its arguments are not all
+-- neutrals themselves, otherwise keep it “neutral”.
+checkGlobal :: forall t. Ctx t -> Eval -> Eval
+checkGlobal ctx e@(ENeut (Neutral (NGlobal arity _ name) prjs))
+  | arity <= List.length prjs && not (idlePrjs prjs) =
+    case Map.lookup name (ctxGlobals ctx) of
+      -- We already have a shared lazy evaluation for a global definition
+      Just (GlobalDefn _ _ (GlobalTerm _ evaled)) -> doPrjs evaled prjs
+      _ -> e
+  where
+  idlePrjs [] = True
+  idlePrjs (NApp _ (ENeut _) : prjs') = idlePrjs prjs'
+  -- Have a concrete argument: reduce now
+  idlePrjs (NApp _ _ : _) = False
+  -- Have a different kind of projection: reduce now
+  idlePrjs (_ : _) = False
+checkGlobal _ e = e
+
+forceGlobal :: forall t. Ctx t -> Eval -> Maybe Eval
+forceGlobal ctx (ENeut (Neutral (NGlobal _ _ name) prjs)) =
+  case Map.lookup name (ctxGlobals ctx) of
+    Just (GlobalDefn _ _ (GlobalTerm _ evaled)) -> Just (doPrjs evaled prjs)
+    _ -> Nothing
+forceGlobal _ _ = Nothing
 
 -- Normalization by Evaluation
 -- - Much more efficient: avoids retraversing terms when possible
@@ -92,11 +142,12 @@ evaling = \case
       -- the variable has done its job
       e -> e
   -- If we are looking at evaluating a global
-  TGlobal _ name -> \ctx ->
+  TGlobal meta name -> \ctx ->
     -- The global info is already looked up
     case Map.lookup name (ctxGlobals ctx) of
       -- We already have a shared lazy evaluation for a global definition
-      Just (GlobalDefn _ (GlobalTerm _ evaled)) -> evaled
+      Just (GlobalDefn arity _ (GlobalTerm _ evaled)) ->
+        if arity == 0 then evaled else ENeut (Neutral (NGlobal arity meta name) [])
       -- Constructors are a bit tricky
       Just _ -> error "Not implemented yet"
       Nothing -> error $ "Could not find global " <> show name
@@ -117,7 +168,7 @@ evaling = \case
     -- want to evaluate that and see what it does: thus evaluating `fun` as
     -- `evaling fun ctx` and casing on it immediately, *not* examining the raw
     -- `fun :: Term` because that would just be inefficient at that point.
-    case (evaling fun ctx, evaling arg ctx) of
+    case (undeferred $ evaling fun ctx, evaling arg ctx) of
       -- Beta redex: we can resume the body closure now that we know the value
       -- it was waiting for: `evalingArg`
       --
@@ -128,13 +179,13 @@ evaling = \case
       -- If it was stuck as a neutral, we need to preserve the argument on the
       -- stack of projections to apply to the neutral variable
       (ENeut (Neutral focus prjs), evalingArg) ->
-        ENeut (Neutral focus (NApp metaApp evalingArg : prjs))
+        checkGlobal ctx $ ENeut (Neutral focus (NApp metaApp evalingArg : prjs))
       _ -> error "Type error: cannot apply to non-function"
   TPair meta ty left right ->
     EPair meta <$> evaling ty <*> evaling left <*> evaling right
   TFst meta term -> \ctx ->
     -- Again, we look to beta reduce, or add a projection to a neutral
-    case evaling term ctx of
+    case undeferred $ evaling term ctx of
       -- If it reduces to a literal, it must be a pair by type correctness
       EPair _ _ left _ -> left
       -- Otherwise it must be a neutral: it does not have an actual value yet
@@ -142,35 +193,44 @@ evaling = \case
       -- apply `fst` to it when it does reduce -> this means that in quoting we
       -- can actually reconstruct the syntax around the neutral
       ENeut (Neutral focus prjs) ->
-        ENeut (Neutral focus (NFst meta : prjs))
+        checkGlobal ctx $ ENeut (Neutral focus (NFst meta : prjs))
       _ -> error "Type error: cannot apply to non-function"
   TSnd meta term -> \ctx ->
     -- Again, we look to beta reduce, or add a projection to a neutral
-    case evaling term ctx of
+    case undeferred $ evaling term ctx of
       EPair _ _ _ right -> right
       ENeut (Neutral focus prjs) ->
-        ENeut (Neutral focus (NSnd meta : prjs))
+        checkGlobal ctx $ ENeut (Neutral focus (NSnd meta : prjs))
       _ -> error "Type error: cannot apply to non-function"
   TUniv meta univ -> pure $ EUniv meta univ
   THole meta hole -> pure $ ENeut (Neutral (NHole meta hole) [])
+  where
+  undeferred (EDeferred _ _ _ _ tm) = undeferred tm
+  undeferred tm = tm
 
 -- Quoting takes a term that was evaluated to depth 1 (`Eval`) and turns it back
 -- into a `Term`, calling `eval` on all closures to evaluate it fully.
 quoting :: Eval -> QuoteCtx -> Term
-quoting = eval2termWith quotingClosure
+quoting = eval2termWith False quotingClosure
 
 -- We implement it via a generic function, to avoid duplication. (Duplication
 -- itself is not too painful, but having to add 500 new cases every time you
 -- add an AST node is painful.)
 eval2termWith ::
+  Desc "force globals" Bool ->
   (Closure -> Desc "type" Eval -> QuoteCtx -> ScopedTerm) ->
   Eval -> QuoteCtx -> Term
-eval2termWith handleClosure = \case
+eval2termWith forceGlobals handleClosure = \case
   ENeut (Neutral focus prjs) -> \ctx ->
     let
       base = case focus of
         NVar meta lvl -> TVar meta (lvl2idx (ctxSize ctx) lvl)
         NHole meta hole -> THole meta hole
+        NGlobal _ _ name
+          | forceGlobals
+          , Just (GlobalDefn _ _ (GlobalTerm term _)) <-
+              Map.lookup name (ctxGlobals ctx) -> term
+        NGlobal _arity meta name -> TGlobal meta name
       go (prj : more) soFar = go more case prj of
         NApp meta arg -> TApp meta soFar (e2t arg ctx)
         NFst meta -> TFst meta soFar
@@ -188,7 +248,7 @@ eval2termWith handleClosure = \case
     TPair meta <$> e2t ty <*> e2t left <*> e2t right
   EDeferred _ _ _ _ tm -> e2t tm
   where
-  e2t = eval2termWith handleClosure
+  e2t = eval2termWith forceGlobals handleClosure
 
 -- Quote a closure back into a syntactic term: this generates a neutral to be
 -- a placeholder for the bound variable during evaluation, and then it restarts
@@ -214,26 +274,16 @@ quotingClosure (Closure bdr savedCtx (Scoped savedBody)) argTy ctx =
 -- eval2term = eval2termWith \(Closure savedCtx savedBody) _ _ -> term
 
 
-conversionCheck :: EvalTypeCtx -> Eval -> Eval -> Bool
+-- Note: we care that the happy path is fast, more than failing fast for
+-- mismatches.
+conversionCheck :: Ctx () -> Eval -> Eval -> Bool
 conversionCheck ctx evalL evalR = case (evalL, evalR) of
+  -- We unravel `EDeferred` slowly, to check if any names match up, before
+  -- continuing with the main cases.
   (EDeferred {}, _) -> deferred [] [] evalL evalR
   (_, EDeferred {}) -> deferred [] [] evalL evalR
-  (ENeut (Neutral focusL prjsL), ENeut (Neutral focusR prjsR)) ->
-    let
-      base = case (focusL, focusR) of
-        (NVar _ lvlL, NVar _ lvlR) -> lvlL == lvlR
-        (NHole _ holeL, NHole _ holeR) -> holeL == holeR
-        (_, _) -> False -- FIXME
-      go = \case
-        (NApp _ argL : moreL, NApp _ argR : moreR) ->
-          cc argL argR && go (moreL, moreR)
-        (NFst _ : moreL, NFst _ : moreR) ->
-          go (moreL, moreR)
-        (NSnd _ : moreL, NSnd _ : moreR) ->
-          go (moreL, moreR)
-        ([], []) -> True
-        (_, _) -> False
-    in base && List.length prjsL == List.length prjsR && go (prjsL, prjsR)
+
+  -- Conversion checking for the main constructors is straightforward:
   (EUniv _ univL, EUniv _ univR) -> univL == univR
   (ELambda _ _ bdrL tyL bodyL, ELambda _ _ bdrR tyR bodyR) ->
     ccScoped bdrL tyL bodyL bdrR tyR bodyR
@@ -243,15 +293,65 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
     ccScoped bdrL tyL bodyL bdrR tyR bodyR
   (EPair _ _ leftL rightL, EPair _ _ leftR rightR) ->
     cc leftL leftR && cc rightL rightR
-  (_, _) -> False
+
+  -- Handle some eta conversions (but not unit-type eta)
+  (EPair _ ty _ _, _) -> cc evalL (etaPair ty evalR)
+  (_, EPair _ ty _ _) -> cc (etaPair ty evalL) evalR
+  (ELambda _ _ bdr _ body, _) ->
+    let arg = nextNeutral ctx in
+    conversionCheck (snoc ctx bdr ()) (instantiateClosure body arg) (doApp evalR arg)
+  (_, ELambda _ _ bdr _ body) ->
+    let arg = nextNeutral ctx in
+    conversionCheck (snoc ctx bdr ()) (doApp evalL arg) (instantiateClosure body arg)
+
+  -- The default case of neutrals (variables) is easy to check: check projections
+  -- pairwise. Dealing with lazily inlined globals requires checking via
+  -- inlining if the normal approach failed to unify them. Finally, dealing with
+  -- holes will require some particular thought.
+  (ENeut (Neutral focusL prjsL), ENeut (Neutral focusR prjsR))
+    | checkFocus focusL focusR
+    -- We do care that this is fast, so check that everything matches up
+    -- before recursing into arguments
+    , checkPrjs (\_ _ -> True) (prjsL, prjsR)
+    , checkPrjs cc (prjsL, prjsR)
+      -> True
+    -- otherwise fall through
+
+  -- Finally we are left with alternate strategies
+
+  -- TODO: holes
+  -- If one or both sides are globals, they can still match by inlining
+  _ | conversionCheckGlobal -> True
+  -- TODO: Finally we handle eta for subsingleton types
+  _ -> False
   where
   cc = conversionCheck ctx
   ccScoped bdrL tyL bodyL bdrR tyR bodyR =
     let
       var = neutralVar $ Level $ ctxSize ctx
-      ctx' = snoc ctx (BMulti bdrL bdrR) (tyL, var)
+      ctx' = snoc ctx (BMulti bdrL bdrR) ()
     in cc tyL tyR && conversionCheck ctx'
       (instantiateClosure bodyL var) (instantiateClosure bodyR var)
+
+  -- Check what the neutral is blocked on: if it is a neutral variable,
+  -- they *must* be the same variable (à la skolem variables)
+  checkFocus focusL focusR = case (focusL, focusR) of
+    (NVar _ lvlL, NVar _ lvlR) -> lvlL == lvlR
+    (NHole _ holeL, NHole _ holeR) -> holeL == holeR
+    -- We also check globals separately if it fails
+    (NGlobal _ _ nameL, NGlobal _ _ nameR) -> nameL == nameR
+    (_, _) -> False -- FIXME: handle holes via unification!!
+  checkPrjs shouldCC = \case
+    (NApp _ argL : moreL, NApp _ argR : moreR) ->
+      shouldCC argL argR && checkPrjs shouldCC (moreL, moreR)
+    (NFst _ : moreL, NFst _ : moreR) ->
+      checkPrjs shouldCC (moreL, moreR)
+    (NSnd _ : moreL, NSnd _ : moreR) ->
+      checkPrjs shouldCC (moreL, moreR)
+    ([], []) -> True
+    -- Differing lengths or differing projections
+    (_, _) -> False
+
   -- TODO: use IntSet or something
   deferred :: [StableName Eval] -> [StableName Eval] -> Eval -> Eval -> Bool
   -- Short circuit on matching `EDeferred` stable names!
@@ -266,13 +366,19 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
   -- No stable names matched, force the terms and do regular conversion checking
   deferred _ _ tmL tmR = cc tmL tmR
 
+  conversionCheckGlobal = case (forceGlobal ctx evalL, forceGlobal ctx evalR) of
+    -- If we do not make progress on either as a global, then conversion checking
+    -- fails: they were different constructors in the AST and semantically
+    (Nothing, Nothing) -> False
+    (forcedL, forcedR) -> cc (fromMaybe evalL forcedL) (fromMaybe evalR forcedR)
+
 -- Infer the type of the term, checking the whole tree as it goes.
 validate :: EvalTypeCtx -> Desc "term" Term -> Desc "type" Eval
 validate ctx = \case
   TVar _ idx -> fst $ indexCtx idx ctx
   TGlobal _ name -> case Map.lookup name (ctxGlobals ctx) of
     Nothing -> error $ "Undefined global " <> show name
-    Just (GlobalDefn (GlobalTerm _ ty) _) -> ty
+    Just (GlobalDefn _ (GlobalTerm _ ty) _) -> ty
     Just _ -> error "Not implemented"
   THole _ fresh -> error "typeof hole not implemented"
   TUniv meta univ -> EUniv meta $ case univ of
@@ -321,7 +427,7 @@ validate ctx = \case
     _ -> error "Expected a valid type"
 
   -- TODO: subsumption
-  cc err l r = case conversionCheck ctx l r of
+  cc err l r = case conversionCheck (void ctx) l r of
     True -> l
     False -> error err
 
@@ -351,7 +457,7 @@ typeof ctx = \case
   TVar _ idx -> getShifted idx (snd <$> ctxStack ctx)
   TGlobal _ name -> case Map.lookup name (ctxGlobals ctx) of
     Nothing -> error $ "Undefined global " <> show name
-    Just (GlobalDefn (GlobalTerm ty _) _) -> ty
+    Just (GlobalDefn _ (GlobalTerm ty _) _) -> ty
     Just _ -> error "Not implemented"
   THole _ fresh -> error "typeof hole not implemented"
   TUniv meta univ -> TUniv meta case univ of
@@ -387,13 +493,6 @@ typeof ctx = \case
   where
   into :: Binder -> Term -> TypeCtx
   into bdr ty = snoc ctx bdr ty
-
-doPrj :: Eval -> NeutPrj -> Eval
-doPrj (ENeut (Neutral blocker prjs)) prj = ENeut (Neutral blocker (prj : prjs))
-doPrj (EPair _ _ left _) (NFst _) = left
-doPrj (EPair _ _ _ right) (NSnd _) = right
-doPrj (ELambda _ _ _ _ body) (NApp _ arg) = instantiateClosure body arg
-doPrj _ _ = error "Type error in doPrj"
 
 -- We are lazy with shifting terms: they enter the context completely unshifted,
 -- and then when we want to pull one out, we shift by the appropriate amount

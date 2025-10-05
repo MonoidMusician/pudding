@@ -153,7 +153,7 @@ declaration = parens $ P.choice
       keyword ["define"]
       n <- ident
       t <- term
-      pure (n, GlobalDefn undefined (GlobalTerm t undefined))
+      pure (n, GlobalDefn (arityOfTerm t) undefined (GlobalTerm t undefined))
   ]
 declarations :: Parser (Map Name GlobalInfo)
 declarations = P.many declaration >>= \decls -> do

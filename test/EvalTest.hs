@@ -24,6 +24,9 @@ evalTest = TestSuite "EvalTest" do
       ]
     normUnder = normalizeNeutrals globals
     u0 = TUniv mempty $ UBase 0
+    neutralCtx localTypes =
+      mapCtx (\(_idx, lvl) _ty -> neutralVar lvl) $
+        ctxOfList globals $ (BFresh,) <$> localTypes
   testCase "Globals" do
     for_ globals \case
     --   GlobalDefn (GlobalTerm ty _) _ -> do
@@ -46,19 +49,35 @@ evalTest = TestSuite "EvalTest" do
     let t3' = normUnder [] t3
     expectEquiv Term' t12' t3'
   testCase "EtaEquivalence" do
-    t1 <- parseTermWith ["A", "B"] $ T.unlines
-      [ "(lambda (f (Pi (x A) B))"
-      , "  f)"
-      ]
-    t2 <- parseTermWith ["A", "B"] $ T.unlines
-      [ "(lambda (f (Pi (x A) B))"
-      , "  (lambda (x A)"
-      , "    (f x)))"
-      ]
-    -- liftIO $ putStrLn $ show $ Term' t1
-    let t1' = normUnder [u0, u0] t1
-    let t2' = normUnder [u0, u0] t2
-    expectEquiv (SubTerm' 2) t1' t2'
+    testCase "Lambdas" do
+      t1 <- parseTermWith ["A", "B"] $ T.unlines
+        [ "(lambda (f (Pi (x A) B))"
+        , "  f)"
+        ]
+      t2 <- parseTermWith ["A", "B"] $ T.unlines
+        [ "(lambda (f (Pi (x A) B))"
+        , "  (lambda (x A)"
+        , "    (f x)))"
+        ]
+      let e1 = evaling t1 $ neutralCtx [u0, u0]
+      let e2 = evaling t2 $ neutralCtx [u0, u0]
+      -- liftIO $ print $ SubTerm' 2 $ quote (ctxOfSize globals 2) e1
+      -- liftIO $ print $ SubTerm' 2 $ quote (ctxOfSize globals 2) e2
+      expect (conversionCheck (ctxOfSize globals 2) e1 e2) "Terms are equal under the conversion check"
+    testCase "Pairs" do
+      t1 <- parseTermWith ["A", "B"] $ T.unlines
+        [ "(lambda (p (Sigma (x A) B))"
+        , "  p)"
+        ]
+      t2 <- parseTermWith ["A", "B"] $ T.unlines
+        [ "(lambda (p (Sigma (x A) B))"
+        , "  (pair (Sigma (x A) B) (fst p) (snd p)))"
+        ]
+      let e1 = evaling t1 $ neutralCtx [u0, u0]
+      let e2 = evaling t2 $ neutralCtx [u0, u0]
+      -- liftIO $ print $ SubTerm' 2 $ quote (ctxOfSize globals 2) e1
+      -- liftIO $ print $ SubTerm' 2 $ quote (ctxOfSize globals 2) e2
+      expect (conversionCheck (ctxOfSize globals 2) e1 e2) "Terms are equal under the conversion check"
   testCase "AlreadyNormalized" do
     let
       alreadyNormalized s = do
