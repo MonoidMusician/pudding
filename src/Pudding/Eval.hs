@@ -6,26 +6,17 @@ import Data.Map (Map)
 import Data.Functor ((<&>))
 import Pudding.Printer (Style (Ansi), format, printCore)
 import qualified Data.Text as T
+import Data.Coerce (coerce)
 
-captureClosure :: ScopedTerm -> EvalCtx -> Closure
-captureClosure = flip Closure
+captureClosure :: Binder -> ScopedTerm -> EvalCtx -> Closure
+captureClosure = flip . Closure
 
 instantiateClosure :: Closure -> Eval -> Eval
-instantiateClosure (Closure savedCtx (Scoped savedBody)) providedArg =
-  evaling savedBody $ cons providedArg savedCtx
+instantiateClosure (Closure binder savedCtx (Scoped savedBody)) providedArg =
+  evaling savedBody $ snoc savedCtx binder providedArg
 
 neutralVar :: Level -> Eval
 neutralVar lvl = ENeut (Neutral (NVar mempty lvl) [])
-
-cons :: Eval -> EvalCtx -> EvalCtx
-cons value ctx@(EvalCtx { evalSize = sz, evalValues = stack }) =
-  ctx { evalSize = sz+1, evalValues = value:stack }
-
-evalIndex :: Index -> EvalCtx -> Eval
-evalIndex (Index idx) ctx = evalValues ctx !! idx
-
-evalLevel :: Level -> EvalCtx -> Eval
-evalLevel lvl ctx = evalIndex (lvl2idx (evalSize ctx) lvl) ctx
 
 eval :: EvalCtx -> Term -> Eval
 eval = flip evaling
@@ -38,11 +29,12 @@ bootGlobals globals = globals <&> \case
   GlobalDefn _ tm -> GlobalDefn (typeofGlobal tm) (globalTerm tm)
   global -> global
   where
+  ctx = ctxOfGlobals globals
   globalTerm (GlobalTerm tm _) = GlobalTerm tm (evalGlobal tm)
-  evalGlobal = eval (EvalCtx 0 [] globals)
+  evalGlobal = eval ctx
   typeofGlobal :: GlobalTerm -> GlobalTerm
   typeofGlobal (GlobalTerm tm _) =
-    let ty = typeof (simpleCtx globals []) tm
+    let ty = typeof ctx tm
     in GlobalTerm ty (evalGlobal ty)
 
 -- If you want to fully partially evaluate (ahem, normalize) a top-level `Term`.
@@ -50,12 +42,12 @@ normalize :: Map Name GlobalInfo -> Term -> Term
 normalize globals original =
   let
     -- First we use `eval` to partially evaluate `Term` into `Eval`
-    evaluated = eval (EvalCtx 0 [] globals) original
+    evaluated = eval (ctxOfGlobals globals) original
     -- Now we are left with something that is evaluated to depth 1
     -- (so it might have applied some functions and ended up with a `EPair` or
     -- something), but now we need to recursively normalize under binders:
     -- which is what `quote` does.
-    quoted = quote (QuoteCtx { quoteSize = 0 }) evaluated
+    quoted = quote (ctxOfGlobals globals) evaluated
     -- And now it is a `Term` again: core syntax that we can manipulate as a
     -- self-contained thing. (Whereas the `Closure`s in `Eval` contain
     -- frozen contexts that we can't deal with in any sensible way.)
@@ -64,14 +56,12 @@ normalize globals original =
   in quoted
 
 normalizeCtx :: EvalCtx -> Term -> Term
-normalizeCtx ctx = quote (QuoteCtx { quoteSize = evalSize ctx }) . eval ctx
+normalizeCtx ctx = quote (mapCtx (\_ _ -> ()) ctx) . eval ctx
 
 normalizeNeutrals :: Map Name GlobalInfo -> [Desc "type" Term] -> Term -> Term
 normalizeNeutrals globals localTypes = normalizeCtx $
-  EvalCtx sz locals globals
-  where
-  sz = length locals
-  locals = zip [0..] localTypes <&> \(i, _ty) -> neutralVar (Level i)
+  mapCtx (\(_idx, lvl) _ty -> neutralVar lvl) $
+    ctxOfList globals $ (\ty -> (BFresh, ty)) <$> localTypes
 
 -- Normalization by Evaluation
 -- - Much more efficient: avoids retraversing terms when possible
@@ -92,7 +82,7 @@ evaling = \case
     -- Note that we do not generate neutrals here: they are put in the context
     -- only during *quoting* and *conversion checking*, where we must handle
     -- open terms (digging down below binders (λ, Π, Σ)) by seeding neutrals
-    case evalIndex idx ctx of
+    case indexCtx idx ctx of
       -- If it is a neutral, we should add metadata...
       ENeut (Neutral (NVar metaNeut lvl) []) ->
         ENeut (Neutral (NVar (metaNeut <> moreMeta) lvl) [])
@@ -102,7 +92,7 @@ evaling = \case
   -- If we are looking at evaluating a global
   TGlobal _ name -> \ctx ->
     -- The global info is already looked up
-    case Map.lookup name (evalGlobals ctx) of
+    case Map.lookup name (ctxGlobals ctx) of
       -- We already have a shared lazy evaluation for a global definition
       Just (GlobalDefn _ (GlobalTerm _ evaled)) -> evaled
       -- Constructors are a bit tricky
@@ -112,13 +102,13 @@ evaling = \case
   TLambda meta plicit binder ty body ->
     -- We eval the type, but capture the body as a closure in *this* environment
     -- to restart evaluation later, when the argument's value is known (or neutral)
-    ELambda meta plicit binder <$> evaling ty <*> captureClosure body
+    ELambda meta plicit binder <$> evaling ty <*> captureClosure binder body
   -- Similar story
   TPi meta plicit binder ty body ->
-    EPi meta plicit binder <$> evaling ty <*> captureClosure body
+    EPi meta plicit binder <$> evaling ty <*> captureClosure binder body
   -- Similar story
   TSigma meta plicit binder ty body ->
-    ESigma meta plicit binder <$> evaling ty <*> captureClosure body
+    ESigma meta plicit binder <$> evaling ty <*> captureClosure binder body
   -- Application is interesting
   TApp metaApp fun arg -> \ctx ->
     -- `($) :: (a -> b) -> a -> b` is strict in its first argument: we always
@@ -177,7 +167,7 @@ eval2termWith handleClosure = \case
   ENeut (Neutral focus prjs) -> \ctx ->
     let
       base = case focus of
-        NVar meta lvl -> TVar meta (lvl2idx (quoteSize ctx) lvl)
+        NVar meta lvl -> TVar meta (lvl2idx (ctxSize ctx) lvl)
         NHole meta hole -> THole meta hole
       go (prj : more) soFar = go more case prj of
         NApp meta arg -> TApp meta soFar (e2t arg ctx)
@@ -205,11 +195,11 @@ eval2termWith handleClosure = \case
 --
 -- Note: this calls directly into `quoting`.
 quotingClosure :: Closure -> Eval -> QuoteCtx -> ScopedTerm
-quotingClosure (Closure savedCtx (Scoped savedBody)) argTy ctx =
+quotingClosure (Closure bdr savedCtx (Scoped savedBody)) argTy ctx =
   let
     -- This is the (only-ish) place that we create neutrals: when quoting.
-    evalingArg = ENeut (Neutral (NVar mempty (Level (quoteSize ctx))) [])
-  in Scoped $ quoting ((evaling savedBody $ cons evalingArg savedCtx) :: Eval) ctx { quoteSize = quoteSize ctx + 1 }
+    evalingArg = ENeut (Neutral (NVar mempty (Level (ctxSize ctx))) [])
+  in Scoped $ quoting ((evaling savedBody $ snoc savedCtx bdr evalingArg) :: Eval) (snoc ctx bdr ())
 
 -- If we don't want to fully normalize, we can turn `Eval` back into a `Term`
 -- in the simplest way: copying the `Term` out of the `Closure` without any
@@ -222,20 +212,8 @@ quotingClosure (Closure savedCtx (Scoped savedBody)) argTy ctx =
 -- eval2term = eval2termWith \(Closure savedCtx savedBody) _ _ -> term
 
 
-data SimpleCtx item = SimpleCtx
-  { scSize :: !Int
-  , scStack :: [item]
-  , scGlobals :: Map Name GlobalInfo
-  }
-type TypeCtx = SimpleCtx Term
-type EvalTypeCtx = SimpleCtx (Desc "type" Eval, Desc "value" Eval)
-
-simpleCtx :: forall item. Map Name GlobalInfo -> [item] -> SimpleCtx item
-simpleCtx globals stack = SimpleCtx (length stack) stack globals
-
-snocSimple :: forall item. SimpleCtx item -> item -> SimpleCtx item
-snocSimple ctx item = ctx
-  { scSize = scSize ctx + 1, scStack = item : scStack ctx }
+type TypeCtx = Ctx Term
+type EvalTypeCtx = Ctx (Desc "type" Eval, Desc "value" Eval)
 
 umax :: ULevel -> ULevel -> ULevel
 umax (UBase l1) (UBase l2) = UBase (max l1 l2)
@@ -245,8 +223,8 @@ umax _ _ = error "Bad umax / unimplemented"
 -- This functions as a proof that terms are intrinsically typed
 typeof :: TypeCtx -> Term -> Term
 typeof ctx = \case
-  TVar _ idx -> getShifted idx (scStack ctx)
-  TGlobal _ name -> case Map.lookup name (scGlobals ctx) of
+  TVar _ idx -> getShifted idx (snd <$> ctxStack ctx)
+  TGlobal _ name -> case Map.lookup name (ctxGlobals ctx) of
     Nothing -> error $ "Undefined global " <> show name
     Just (GlobalDefn (GlobalTerm ty _) _) -> ty
     Just _ -> error "Not implemented"
@@ -257,15 +235,15 @@ typeof ctx = \case
     -- This is why `UVar` has an `Int`: increment to get the typeof
     UVar fresh incr -> UVar fresh (incr + 1)
   TLambda meta p b ty (Scoped body) ->
-    TPi meta p b ty (Scoped (typeof (into ty) body))
-  TPi _ _ _ ty (Scoped body) ->
+    TPi meta p b ty (Scoped (typeof (into b ty) body))
+  TPi _ _ b ty (Scoped body) ->
     -- Π(x : ty : U), (body : U)
-    case (typeof ctx ty, typeof (into ty) body) of
+    case (typeof ctx ty, typeof (into b ty) body) of
       (TUniv m1 u1, TUniv m2 u2) -> TUniv (m1 <> m2) (umax u1 u2)
       (_, r) -> error $ "Bad pi type: " <> T.unpack do
-        format Ansi $ printCore r (0, QuoteCtx $ scSize ctx)
-  TSigma _ _ _ ty (Scoped body) ->
-    case (typeof ctx ty, typeof (into ty) body) of
+        format Ansi $ printCore r (0, coerce $ ctxSize ctx)
+  TSigma _ _ b ty (Scoped body) ->
+    case (typeof ctx ty, typeof (into b ty) body) of
       (TUniv m1 u1, TUniv m2 u2) -> TUniv (m1 <> m2) (umax u1 u2)
       _ -> error "Bad sigma type"
   TPair _meta ty _left _right -> ty
@@ -282,8 +260,8 @@ typeof ctx = \case
     TPi meta p b ty body -> TApp mempty (TLambda meta p b ty body) arg
     _ -> error "Bad app"
   where
-  into :: Term -> TypeCtx
-  into ty = ctx { scStack = ty : scStack ctx }
+  into :: Binder -> Term -> TypeCtx
+  into bdr ty = snoc ctx bdr ty
 
 doPrj :: Eval -> NeutPrj -> Eval
 doPrj (ENeut (Neutral blocker prjs)) prj = ENeut (Neutral blocker (prj : prjs))

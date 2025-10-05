@@ -3,6 +3,7 @@ module Pudding.Types
   , module Pudding.Name -- Export more
   ) where
 
+import Data.Functor ((<&>))
 import Data.Functor.Const (Const(..))
 import Data.Set (Set)
 import Data.Map (Map)
@@ -194,21 +195,54 @@ data NeutPrj
 --
 -- `(\x -> x + 1) 2` will evaluate the `Closure` immediately, but
 -- `(\x -> x) (\y -> y)` leaves `(\y -> y)` for quoting
-data Closure = Closure (Desc "saved external context" EvalCtx) (Desc "body" ScopedTerm)
+data Closure = Closure
+  Binder
+  (Desc "saved external context" EvalCtx)
+  (Desc "body" ScopedTerm)
   deriving (Generic, NFData)
 
-data EvalCtx = EvalCtx
-  { evalSize :: !Int
-  , evalValues :: ![Eval]
-  , evalGlobals :: Map Name GlobalInfo
+data Ctx t = Ctx
+  { ctxGlobals :: Map Name GlobalInfo
+  , ctxSize :: !Int
+  , ctxStack :: ![(Binder, t)]
   }
   deriving (Generic, NFData)
 
-data QuoteCtx = QuoteCtx
-  { quoteSize :: !Int
-  -- ^ `quoteSize` is just used to convert `Level` back to `Index`
-  }
-  deriving (Generic, NFData)
+-- Context used for `eval`
+type EvalCtx = Ctx Eval
+
+-- Context used for `quote`: `ctxSize` is just used to convert `Level` back to `Index`
+type QuoteCtx = Ctx ()
+
+ctxOfStack :: forall t. Map Name GlobalInfo -> Desc "stack" [(Binder, t)] -> Ctx t
+ctxOfStack globals stack =
+  Ctx globals (length stack) stack
+
+ctxOfList :: forall t. Map Name GlobalInfo -> Desc "list in order" [(Binder, t)] -> Ctx t
+ctxOfList globals = ctxOfStack globals . reverse
+
+ctxOfGlobals :: forall t. Map Name GlobalInfo -> Ctx t
+ctxOfGlobals globals = ctxOfStack globals []
+
+ctxOfSize :: Map Name GlobalInfo -> Desc "size" Int -> Ctx ()
+ctxOfSize globals 0 = ctxOfGlobals globals
+ctxOfSize globals sz = ctxOfStack globals $ (BFresh, ()) <$ [0..(sz - 1)]
+
+snoc :: forall t. Ctx t -> Binder -> t -> Ctx t
+snoc (Ctx globals sz stack) binder item =
+  Ctx globals (sz + 1) ((binder, item) : stack)
+
+indexCtx :: forall t. Index -> Ctx t -> t
+indexCtx (Index idx) (Ctx { ctxStack }) = snd (ctxStack !! idx)
+
+levelCtx :: forall t. Level -> Ctx t -> t
+levelCtx lvl ctx@Ctx { ctxSize } = indexCtx (lvl2idx ctxSize lvl) ctx
+
+mapCtx :: forall t t'. ((Index, Level) -> t -> t') -> Ctx t -> Ctx t'
+mapCtx f ctx = Ctx (ctxGlobals ctx) (ctxSize ctx) $
+  zip indices (ctxStack ctx) <&> \(idx, (bdr, t)) -> (bdr, f idx t)
+  where
+  indices = [0..] <&> \i -> (Index i, idx2lvl (ctxSize ctx) (Index i))
 
 --------------------------------------------------------------------------------
 -- Helper types!                                                              --
@@ -446,5 +480,8 @@ instance HasMetadata NeutPrj where
     NSnd old -> NSnd <$> f old
 
 instance HasMetadata Closure where
-  onMetadata f (Closure ctx term) | (old, term', new) <- onMetadata f term = (old, Closure ctx term', new)
-  traverseMetadata f (Closure ctx term) = Closure ctx <$> traverseMetadata f term
+  onMetadata f (Closure bdr ctx term) | (old, term', new) <- onMetadata f term = (old, Closure bdr ctx term', new)
+  -- This is somewhat a judgment call on whether to recurse into `ctx`:
+  -- fully remapping `Metadata` would require it, but `ctx` is not part of the
+  -- tree, really, it is just information captured from earlier.
+  traverseMetadata f (Closure bdr ctx term) = Closure bdr ctx <$> traverseMetadata f term

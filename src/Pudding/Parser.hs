@@ -19,7 +19,7 @@ import Control.Monad (when)
 import GHC.IO (unsafePerformIO)
 import Data.Traversable (for)
 
-type Parser = P.ParsecT Text () (ReaderT Ctx IO)
+type Parser = P.ParsecT Text () (ReaderT ParseCtx IO)
 
 data Tracked a = Tracked SourceSpan a
   deriving (Functor, Foldable, Traversable)
@@ -89,13 +89,13 @@ term = var <|> (lp *> (P.choice terms <|> app) <* rp)
     , trackMeta $ do keyword ["U1"] $> \meta -> TUniv meta (UMeta 0)
     ]
 
-data Ctx = Ctx
+data ParseCtx = ParseCtx
   { scope :: [Name]
   , table :: IORef NameTable
   , lastEnd :: IORef P.SourcePos
   }
 
-bindIdent :: Name -> Ctx -> Ctx
+bindIdent :: Name -> ParseCtx -> ParseCtx
 bindIdent i ctx = ctx { scope = i : scope ctx }
 
 lookupIdent :: Name -> Parser (Maybe Index)
@@ -169,7 +169,7 @@ runParserScope :: Parser a -> [Text] -> P.SourceName -> Text -> IO (Either P.Par
 runParserScope p names s t = do
   end <- newIORef undefined
   scope <- for names $ internalize globalTable
-  runReaderT (P.runParserT p () s t) (Ctx { scope, table = globalTable, lastEnd = end })
+  runReaderT (P.runParserT p () s t) (ParseCtx { scope, table = globalTable, lastEnd = end })
 
 {-# NOINLINE globalTable #-}
 globalTable :: IORef NameTable

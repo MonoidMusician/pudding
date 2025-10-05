@@ -15,7 +15,7 @@ import Pudding.Printer (formatCore, Style (Ansi), format, printCore)
 evalTest :: TestSuite
 evalTest = TestSuite "EvalTest" do
   let
-    empty = simpleCtx globals []
+    empty = ctxOfGlobals globals
     globals = parseAndBootGlobals $ T.unlines
       -- Id := \(x : U0) -> x
       [ "(define Id (lambda (x (U0)) x))"
@@ -135,7 +135,7 @@ instance Eq Term' where
 data SubTerm' = SubTerm' Int Term
 
 instance Show SubTerm' where
-  show (SubTerm' depth t) = "\n" <> T.unpack (format Ansi $ printCore t (0, QuoteCtx depth))
+  show (SubTerm' depth t) = "\n" <> T.unpack (format Ansi $ printCore t (0, Level depth))
 
 instance Eq SubTerm' where
   SubTerm' _ t1 == SubTerm' _ t2 = t1 `termEquiv` t2

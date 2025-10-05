@@ -6,9 +6,10 @@ import Pudding.Types
 import Prettyprinter.Render.Text (renderStrict)
 import qualified Prettyprinter.Render.Terminal as Ansi
 import Data.Text (Text)
+import Data.Coerce (coerce)
 
 type Print = Doc.Doc Ansi.AnsiStyle
-type Printer = (Int, QuoteCtx) -> Print
+type Printer = (Int, Level) -> Print
 
 data Style = Ansi | Plain
 
@@ -32,15 +33,15 @@ spaced [x] = x
 spaced (x : y : zs) = x <> const Doc.softline <> spaced (y : zs)
 
 bound :: Binder -> (Term -> Printer) -> (ScopedTerm -> Printer)
-bound _ f (Scoped term) (i, QuoteCtx lvl) = f term (i, QuoteCtx (lvl + 1))
+bound _ f (Scoped term) (i, Level lvl) = f term (i, Level (lvl + 1))
 
 formatCore :: Style -> Term -> Text
-formatCore style term = format style $ printCore term (0, QuoteCtx 0)
+formatCore style term = format style $ printCore term (0, Level 0)
 
 printCore :: Term -> Printer
 printCore = \case
   TVar _m idx -> \(_, ctx) -> mconcat
-    [ "_" <> Doc.pretty (idx2lvl (quoteSize ctx) idx)
+    [ "_" <> Doc.pretty (idx2lvl (coerce ctx) idx)
     -- , "." <> Doc.pretty idx
     ]
   TGlobal _m name -> pure $ Doc.pretty name
@@ -52,7 +53,7 @@ printCore = \case
   TLambda _m p binder ty body -> sexp
     [ pure $ "λ" <> if p == Implicit then "?" else ""
     , sexp
-      [ \(_, ctx) -> "_" <> Doc.pretty (quoteSize ctx)
+      [ \(_, ctx) -> "_" <> Doc.pretty ctx
       , printCore ty
       ]
     , pure Doc.hardline
@@ -61,7 +62,7 @@ printCore = \case
   TPi _m p binder ty body -> sexp
     [ pure $ "Π" <> if p == Implicit then "?" else ""
     , sexp
-      [ \(_, ctx) -> "_" <> Doc.pretty (quoteSize ctx)
+      [ \(_, ctx) -> "_" <> Doc.pretty ctx
       , printCore ty
       ]
     , pure Doc.hardline
@@ -73,7 +74,7 @@ printCore = \case
   TSigma _m p binder ty body -> sexp
     [ pure $ "Σ" <> if p == Implicit then "?" else ""
     , sexp
-      [ \(_, ctx) -> "_" <> Doc.pretty (quoteSize ctx)
+      [ \(_, ctx) -> "_" <> Doc.pretty ctx
       , printCore ty
       ]
     , pure Doc.hardline
