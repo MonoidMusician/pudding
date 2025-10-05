@@ -3,7 +3,6 @@ module Pudding.Eval where
 import Pudding.Types
 import qualified Data.Map as Map
 import Data.Map (Map)
-import qualified Data.Set as Set
 import Data.Functor ((<&>))
 import Pudding.Printer (Style (Ansi), format, printCore)
 import qualified Data.Text as T
@@ -266,6 +265,76 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
     deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) tmL tmR
   -- No stable names matched, force the terms and do regular conversion checking
   deferred _ _ tmL tmR = cc tmL tmR
+
+-- Infer the type of the term, checking the whole tree as it goes.
+validate :: EvalTypeCtx -> Desc "term" Term -> Desc "type" Eval
+validate ctx = \case
+  TVar _ idx -> fst $ indexCtx idx ctx
+  TGlobal _ name -> case Map.lookup name (ctxGlobals ctx) of
+    Nothing -> error $ "Undefined global " <> show name
+    Just (GlobalDefn (GlobalTerm _ ty) _) -> ty
+    Just _ -> error "Not implemented"
+  THole _ fresh -> error "typeof hole not implemented"
+  TUniv meta univ -> EUniv meta $ case univ of
+    UBase lvl -> UBase (lvl + 1)
+    UMeta lvl -> UMeta (lvl + 1)
+    -- This is why `UVar` has an `Int`: increment to get the typeof
+    UVar fresh incr -> UVar fresh (incr + 1)
+  TLambda meta p b ty body ->
+    case validateScoped b ty body of
+      (argTy, bodyTy) ->
+        EPi meta p b argTy $ Closure b evalCtx $
+          -- We have to quote it back into a `Term`, mostly for when the
+          -- neutral variable we used for typechecking is actually instantiated
+          -- at an application site
+          Scoped $ quote (snoc quoteCtx b ()) bodyTy
+  TPi _ _ b ty body ->
+    -- Π(x : ty : U), (body : U)
+    case (validate ctx ty, snd $ validateScoped b ty body) of
+      (EUniv m1 u1, EUniv m2 u2) -> EUniv (m1 <> m2) (umax u1 u2)
+      _ -> error "Bad pi type"
+  TSigma _ _ b ty body ->
+    case (validate ctx ty, snd $ validateScoped b ty body) of
+      (EUniv m1 u1, EUniv m2 u2) -> EUniv (m1 <> m2) (umax u1 u2)
+      _ -> error "Bad sigma type"
+  TPair _ ty left right ->
+    validateType ty `seq` case evalHere ty of
+      tyVal@(ESigma _ _ _ fstTy body) ->
+        cc "fst type mismatch" fstTy (validate ctx left) `seq`
+        cc "snd type mismatch" (instantiateClosure body (evalHere left)) (validate ctx right) `seq`
+        tyVal
+      _ -> error "bad pair type"
+  TFst _ tm -> case validate ctx tm of
+    ESigma _ _ _ ty _ -> ty
+    _ -> error "Bad fst"
+  TSnd _ tm -> case validate ctx tm of
+    ESigma _ _ _ _ body ->
+      instantiateClosure body (doPrj (evalHere tm) (NFst mempty))
+    _ -> error "Bad snd"
+  TApp _ fun arg -> case (validate ctx fun, validate ctx arg) of
+    (EPi _ _ _ argTyExpected body, argTyActual) ->
+      cc "argument type mismatch" argTyExpected argTyActual `seq` instantiateClosure body (evalHere arg)
+    _ -> error "Bad app"
+  where
+  validateType ty = case validate ctx ty of
+    EUniv _ _ -> evalHere ty
+    _ -> error "Expected a valid type"
+
+  -- TODO: subsumption
+  cc err l r = case conversionCheck ctx l r of
+    True -> l
+    False -> error err
+
+  validateScoped :: Binder -> Desc "arg type" Term -> ScopedTerm -> (Desc "arg type" Eval, Desc "body type" Eval)
+  validateScoped bdr ty (Scoped body) =
+    let
+      tyVal = validateType ty
+      ctx' = snoc ctx bdr (tyVal, neutralVar $ Level $ ctxSize ctx)
+    in (tyVal, tyVal `seq` validate ctx' body)
+
+  evalHere = eval evalCtx
+  evalCtx = mapCtx (\_ (_, tm) -> tm) ctx :: EvalCtx
+  quoteCtx = mapCtx (\_ _ -> ()) ctx :: QuoteCtx
 
 
 type TypeCtx = Ctx Term
