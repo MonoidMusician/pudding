@@ -4,7 +4,7 @@ import Data.Text (Text)
 import Pudding.Types (GlobalInfo, Name)
 import Data.Map (Map)
 import Pudding.Parser (declarations, runParser)
-import Pudding.Eval (bootGlobals)
+import Pudding.Unify (bootGlobals)
 import GHC.IO (unsafePerformIO)
 
 someFunc :: IO ()

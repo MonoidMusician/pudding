@@ -105,6 +105,7 @@ library
         Pudding.Types,
         Pudding.Name,
         Pudding.Eval,
+        Pudding.Unify,
 
     -- Modules included in this library but not exported.
     -- other-modules:

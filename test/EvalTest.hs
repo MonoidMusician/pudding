@@ -4,6 +4,7 @@ import Control.Monad.IO.Class (liftIO)
 import qualified Data.Text as T
 
 import Pudding.Eval
+import Pudding.Unify
 import Pudding.Parser
 import Pudding.Types
 import Testing
