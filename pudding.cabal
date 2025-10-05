@@ -52,6 +52,7 @@ common defaults
         LambdaCase
         BlockArguments
         DataKinds
+        MagicHash
 
     -- Other library packages from which modules are imported.
     -- (Slightly trimmed from PureScript)

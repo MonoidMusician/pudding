@@ -3,10 +3,13 @@ module Pudding.Eval where
 import Pudding.Types
 import qualified Data.Map as Map
 import Data.Map (Map)
+import qualified Data.Set as Set
 import Data.Functor ((<&>))
 import Pudding.Printer (Style (Ansi), format, printCore)
 import qualified Data.Text as T
 import Data.Coerce (coerce)
+import GHC.StableName (StableName)
+import qualified Data.List as List
 
 captureClosure :: Binder -> ScopedTerm -> EvalCtx -> Closure
 captureClosure = flip . Closure
@@ -210,6 +213,59 @@ quotingClosure (Closure bdr savedCtx (Scoped savedBody)) argTy ctx =
 -- least, with quoting at the correct level.
 -- eval2term :: Eval -> QuoteCtx -> Term
 -- eval2term = eval2termWith \(Closure savedCtx savedBody) _ _ -> term
+
+
+conversionCheck :: EvalTypeCtx -> Eval -> Eval -> Bool
+conversionCheck ctx evalL evalR = case (evalL, evalR) of
+  (EDeferred {}, _) -> deferred [] [] evalL evalR
+  (_, EDeferred {}) -> deferred [] [] evalL evalR
+  (ENeut (Neutral focusL prjsL), ENeut (Neutral focusR prjsR)) ->
+    let
+      base = case (focusL, focusR) of
+        (NVar _ lvlL, NVar _ lvlR) -> lvlL == lvlR
+        (NHole _ holeL, NHole _ holeR) -> holeL == holeR
+        (_, _) -> False -- FIXME
+      go = \case
+        (NApp _ argL : moreL, NApp _ argR : moreR) ->
+          cc argL argR && go (moreL, moreR)
+        (NFst _ : moreL, NFst _ : moreR) ->
+          go (moreL, moreR)
+        (NSnd _ : moreL, NSnd _ : moreR) ->
+          go (moreL, moreR)
+        ([], []) -> True
+        (_, _) -> False
+    in base && List.length prjsL == List.length prjsR && go (prjsL, prjsR)
+  (EUniv _ univL, EUniv _ univR) -> univL == univR
+  (ELambda _ _ bdrL tyL bodyL, ELambda _ _ bdrR tyR bodyR) ->
+    ccScoped bdrL tyL bodyL bdrR tyR bodyR
+  (EPi _ _ bdrL tyL bodyL, EPi _ _ bdrR tyR bodyR) ->
+    ccScoped bdrL tyL bodyL bdrR tyR bodyR
+  (ESigma _ _ bdrL tyL bodyL, ESigma _ _ bdrR tyR bodyR) ->
+    ccScoped bdrL tyL bodyL bdrR tyR bodyR
+  (EPair _ _ leftL rightL, EPair _ _ leftR rightR) ->
+    cc leftL leftR && cc rightL rightR
+  (_, _) -> False
+  where
+  cc = conversionCheck ctx
+  ccScoped bdrL tyL bodyL bdrR tyR bodyR =
+    let
+      var = neutralVar $ Level $ ctxSize ctx
+      ctx' = snoc ctx (BMulti bdrL bdrR) (tyL, var)
+    in cc tyL tyR && conversionCheck ctx'
+      (instantiateClosure bodyL var) (instantiateClosure bodyR var)
+  -- TODO: use IntSet or something
+  deferred :: [StableName Eval] -> [StableName Eval] -> Eval -> Eval -> Bool
+  -- Short circuit on matching `EDeferred` stable names!
+  deferred namesL namesR _ _ | not (List.null (List.intersect namesL namesR)) = True
+  -- Force the terms pairwise if possible
+  deferred namesL namesR (EDeferred _ _ mnameL _ tmL) (EDeferred _ _ mnameR _ tmR) =
+    deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) tmL tmR
+  deferred namesL namesR (EDeferred _ _ mnameL _ tmL) tmR | mnameR <- Nothing =
+    deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) tmL tmR
+  deferred namesL namesR tmL (EDeferred _ _ mnameR _ tmR) | mnameL <- Nothing =
+    deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) tmL tmR
+  -- No stable names matched, force the terms and do regular conversion checking
+  deferred _ _ tmL tmR = cc tmL tmR
 
 
 type TypeCtx = Ctx Term
