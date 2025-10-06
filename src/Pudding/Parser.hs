@@ -164,9 +164,9 @@ app = do
 -- List is in stack order, not binding order
 type Binding = (Plicit, Binder, Term)
 binderList :: forall r. ([Binding] -> Parser r) -> Parser r
-binderList cont = parens $ go []
+binderList cont = lp *> go []
   where
-  go acc = P.optionMaybe oneBinder >>= \case
+  go acc = (Just <$> oneBinder <|> Nothing <$ rp) >>= \case
     Nothing -> cont acc
     Just (pbty, lcl) -> lcl do go (pbty : acc)
   oneBinder = do
@@ -245,7 +245,7 @@ runParser p s t = runParserScope p [] s t
 runParserScope :: Parser a -> [Text] -> P.SourceName -> Text -> IO (Either P.ParseError a)
 runParserScope p names s t = do
   end <- newIORef undefined
-  scope <- for names $ internalize globalTable
+  scope <- for (reverse names) $ internalize globalTable
   runReaderT (P.runParserT p () s t) (ParseCtx { scope, table = globalTable, lastEnd = end })
 
 {-# NOINLINE globalTable #-}

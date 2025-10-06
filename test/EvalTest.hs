@@ -12,6 +12,7 @@ import Pudding (parseAndBootGlobals)
 import Data.Text (Text)
 import Data.Foldable (for_)
 import Pudding.Printer (formatCore, Style (Ansi), format, printCore)
+import Control.DeepSeq (force)
 
 evalTest :: TestSuite
 evalTest = TestSuite "EvalTest" do
@@ -24,18 +25,25 @@ evalTest = TestSuite "EvalTest" do
       -- Polymorphic identity function
       , "(define identity (lambda (t (Type0)) (lambda (x t) x)))"
       , "(define identity1 (lambda (t (Type0 1)) (lambda (x t) x)))"
-      -- , "(inductive maybe ((t (Type0))) () (nothing) (just ((v t)) ()))"
+      -- Basic ADTs
+      , "(inductive Void () ())"
+      , "(inductive Unit () () (unit))"
+      , "(inductive Bool () () (True) (False))"
+      , "(inductive Maybe ((t (Type0))) () (Nothing) (Just ((v t)) ()))"
+      , "(inductive Either ((l (Type0)) (r (Type0))) ()"
+      , "  (Left ((v l))) (Right ((v r)) ()))"
       ]
     normUnder = normalizeNeutrals globals
     type0 = TUniv mempty $ UBase 0
     neutralCtx localTypes =
       mapCtx (\(_idx, lvl) _ty -> neutralVar lvl) $
         ctxOfList globals $ (BFresh,) <$> localTypes
+    typecheckUnder localTypes = force . validateQuoteNeutrals globals localTypes
   testCase "Globals" do
     for_ globals \case
-      GlobalDefn _ (GlobalTerm ty _) _ -> do
-        liftIO $ putStrLn $ T.unpack $ formatCore Ansi ty
-        liftIO $ putStrLn $ T.unpack $ formatCore Ansi $ typeof empty ty
+      -- GlobalDefn _ (GlobalTerm ty _) _ -> do
+      --   liftIO $ putStrLn $ T.unpack $ formatCore Ansi ty
+      --   liftIO $ putStrLn $ T.unpack $ formatCore Ansi $ typecheckUnder [] ty
       _ -> pure ()
     testCase "Id" do
       expectType empty "Id1" "(Pi (t (Type0 1)) (Type0 1))"
@@ -115,6 +123,20 @@ evalTest = TestSuite "EvalTest" do
       , "      (lambda (x A)"
       , "        (f x)))))"
       ]
+  testCase "Constructor" do
+    tm <- parseTermWith ["t"] "(Nothing t)"
+    let ty = typecheckUnder [type0] tm
+    liftIO $ print $ SubTerm' 1 ty
+
+    tmL <- parseTermWith ["l", "r"] "(Left l r)"
+    let tyL = typecheckUnder [type0, type0] tmL
+    liftIO $ print $ SubTerm' 2 tmL
+    liftIO $ print $ SubTerm' 2 tyL
+
+    tmR <- parseTermWith [] "(Right Void Unit unit)"
+    let tyR = typecheckUnder [type0, type0] tmR
+    liftIO $ print $ SubTerm' 2 tmR
+    liftIO $ print $ SubTerm' 2 tyR
 
 parseTerm :: Text -> Test Term
 parseTerm s = do

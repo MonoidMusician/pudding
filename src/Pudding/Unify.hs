@@ -52,7 +52,7 @@ bootGlobalTypes globals =
   globals `disjointUnion` constructors globals
   where
   disjointUnion = Map.unionWithKey \k _ _ -> error $ "Duplicate global: " <> show k
-  fakeGlobal tm = GlobalDefn undefined undefined (GlobalTerm tm undefined)
+  fakeGlobal tm = GlobalDefn (arityOfTerm tm) undefined (GlobalTerm tm undefined)
   constructors = foldMap id . Map.mapWithKey \tyName -> \case
     GlobalType (GlobalTypeInfo { typeParams, typeConstrs }) ->
       flip Map.mapWithKey typeConstrs \conName (ConstructorInfo { ctorArguments }) -> fakeGlobal $
@@ -211,7 +211,8 @@ validateOrNot seqOrConst ctx = \case
   TGlobal _ name -> case Map.lookup name (ctxGlobals ctx) of
     Nothing -> error $ "Undefined global " <> show name
     Just (GlobalDefn _ (GlobalTerm _ ty) _) -> ty
-    Just _ -> error "Not implemented"
+    -- FIXME a bit lazy
+    Just (GlobalType info) -> validateOrNot seqOrConst ctx $ mkTypeConstructor name info
   THole _ fresh -> error "typeof hole not implemented"
   TUniv meta univ -> EUniv meta $ case univ of
     UBase lvl -> UBase (lvl + 1)
