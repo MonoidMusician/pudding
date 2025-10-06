@@ -31,8 +31,10 @@ quickTermType = validateOrNot (const id)
 -- Typecheck and share partial evaluation of globals
 --
 -- TODO: make sure definitions are acyclic!
-bootGlobals :: Globals -> Globals
-bootGlobals globals = globals <&> \case
+bootGlobals, bootGlobalDefns, bootGlobalTypes :: Globals -> Globals
+bootGlobals = bootGlobalDefns . bootGlobalTypes
+
+bootGlobalDefns globals = globals <&> \case
   GlobalDefn _ _ tm@(GlobalTerm defn _) ->
     let !ty = typeofGlobal tm in
     GlobalDefn (arityOfTerm defn) ty (globalTerm tm)
@@ -46,6 +48,30 @@ bootGlobals globals = globals <&> \case
     let !ty = validate ctx tm in
     GlobalTerm (quote (void ctx) ty) ty
 
+bootGlobalTypes globals =
+  globals `disjointUnion` constructors globals
+  where
+  disjointUnion = Map.unionWithKey \k _ _ -> error $ "Duplicate global: " <> show k
+  fakeGlobal tm = GlobalDefn undefined undefined (GlobalTerm tm undefined)
+  constructors = foldMap id . Map.mapWithKey \tyName -> \case
+    GlobalType (GlobalTypeInfo { typeParams, typeConstrs }) ->
+      flip Map.mapWithKey typeConstrs \conName (ConstructorInfo { ctorArguments }) -> fakeGlobal $
+        abstract (Vector.toList typeParams <> Vector.toList ctorArguments) $
+          TConstr mempty (tyName, conName) (toVars (Vector.length ctorArguments) typeParams) (toVars 0 ctorArguments)
+    _ -> Map.empty
+  -- Form repeated lambdas to turn the raw constructor into a curried function
+  abstract ((p, b, paramType) : more) focus =
+    TLambda mempty p b paramType $ Scoped $ abstract more focus
+  abstract [] focus = focus
+
+  toVars :: forall i. Int -> Vector.Vector i -> Vector.Vector Term
+  toVars skipped template =
+    -- ugh why no mapWithIndex
+    Vector.zipWith mk (Level <$> Vector.fromList [0..]) template
+    where
+    mk lvl _ =
+      let Index idx = lvl2idx (Vector.length template) lvl in
+      TVar mempty $ Index $ idx + skipped
 
 --------------------------------------------------------------------------------
 -- Conversion checking: the algorithm for definitional equality / unification --

@@ -24,6 +24,7 @@ evalTest = TestSuite "EvalTest" do
       -- Polymorphic identity function
       , "(define identity (lambda (t (Type0)) (lambda (x t) x)))"
       , "(define identity1 (lambda (t (Type0 1)) (lambda (x t) x)))"
+      -- , "(inductive maybe ((t (Type0))) () (nothing) (just ((v t)) ()))"
       ]
     normUnder = normalizeNeutrals globals
     type0 = TUniv mempty $ UBase 0

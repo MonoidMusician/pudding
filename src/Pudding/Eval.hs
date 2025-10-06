@@ -5,6 +5,7 @@ import qualified Data.Map as Map
 import Data.Functor (void)
 import qualified Data.List as List
 import Data.Maybe (fromMaybe)
+import qualified Data.Vector as Vector
 
 eval :: EvalCtx -> Term -> Eval
 eval = flip evaling
@@ -113,6 +114,26 @@ instantiateClosure :: Closure -> Eval -> Eval
 instantiateClosure (Closure binder savedCtx (Scoped savedBody)) providedArg =
   evaling savedBody $ snoc savedCtx binder providedArg
 
+
+mkTypeConstructor :: Desc "type name" Name -> GlobalTypeInfo -> Term
+mkTypeConstructor tyName (GlobalTypeInfo { typeParams, typeIndices }) =
+  abstract (Vector.toList typeParams <> Vector.toList typeIndices) $
+    TTyCtor mempty tyName (toVars (Vector.length typeIndices) typeParams) (toVars 0 typeIndices)
+  where
+  -- Form repeated lambdas to turn the raw constructor into a curried function
+  abstract ((p, b, paramType) : more) focus =
+    TLambda mempty p b paramType $ Scoped $ abstract more focus
+  abstract [] focus = focus
+
+  toVars :: forall i. Int -> Vector.Vector i -> Vector.Vector Term
+  toVars skipped template =
+    -- ugh why no mapWithIndex
+    Vector.zipWith mk (Level <$> Vector.fromList [0..]) template
+    where
+    mk lvl _ =
+      let Index idx = lvl2idx (Vector.length template) lvl in
+      TVar mempty $ Index $ idx + skipped
+
 --------------------------------------------------------------------------------
 -- Implementations                                                            --
 --------------------------------------------------------------------------------
@@ -155,7 +176,8 @@ evaling = \case
           -- neutral argument
           ENeut (Neutral (NGlobal arity meta name) [])
       -- Constructors are a bit tricky
-      Just _ -> error "Not implemented yet"
+      Just (GlobalType info) ->
+        evaling (mkTypeConstructor name info) ctx
       Nothing -> error $ "Could not find global " <> show name
   -- For a lambda
   TLambda meta plicit binder ty body ->
