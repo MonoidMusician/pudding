@@ -225,6 +225,8 @@ data Closure = Closure
   (Desc "body" ScopedTerm)
   deriving (Generic, NFData)
 
+data Telescope = Telescope Eval Closure
+
 ----------------------------------
 -- Functions for the core types --
 ----------------------------------

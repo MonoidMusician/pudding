@@ -4,3 +4,9 @@ Tricks:
 
 - `EDeferred`
 - `NGlobal`
+
+Non-goals (for now):
+
+- Coinductive types
+- HoTT/Cubical/HITs, although it would be nice to be compatible with univalence
+- Formal proof of consistency

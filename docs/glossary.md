@@ -146,4 +146,23 @@ propositional resizing [1Lab](https://1lab.dev/1Lab.Resizing.html)
 
 Propositions as types
 
+Green slime
+:   The return indices for inductive types require some care: they work best if they are filled with constructors that the unifier can match on (and neutral variables).
+    “Green slime” is when nontrivial functions are involved in those return indices:
+    If the unifier cannot make progress, it does not know which cases should exist or not, among other problems.
+    One solution is to take an equality between a fresh variable and the desired index as an additional argument, e.g. `P b → P c → b ∨ c = d → P d`, which can be explicitly eliminated with `refl` if it computes.
+
+    [Example](https://proofassistants.stackexchange.com/questions/1609/what-are-some-good-bad-examples-of-green-slime):
+
+    ```agda
+    variable b c : Bool
+
+    data P : Bool → Set where
+      base : P false
+      slime : P b → P c → P (b ∨ c)
+
+    f : P false → _
+    f p = {!p!}
+    ```
+
 

@@ -7,6 +7,8 @@ import Prettyprinter.Render.Text (renderStrict)
 import qualified Prettyprinter.Render.Terminal as Ansi
 import Data.Text (Text)
 import Data.Coerce (coerce)
+import qualified Data.Vector as Vector
+import Control.Monad (join)
 
 type Print = Doc.Doc Ansi.AnsiStyle
 type Printer = (Int, Level) -> Print
@@ -88,4 +90,16 @@ printCore = \case
     ]
   TFst _m term -> sexp [ pure "fst", printCore term ]
   TSnd _m term -> sexp [ pure "snd", printCore term ]
+  TTyCtor _m name params indices ->
+    sexp $ join
+      [ pure $ pure $ Doc.pretty name
+      , printCore <$> Vector.toList params
+      , printCore <$> Vector.toList indices
+      ]
+  TConstr _m (_, name) params args ->
+    sexp $ join
+      [ pure $ pure $ Doc.pretty name
+      , printCore <$> Vector.toList params
+      , printCore <$> Vector.toList args
+      ]
 

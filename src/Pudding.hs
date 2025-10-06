@@ -1,11 +1,10 @@
 module Pudding (someFunc, parseAndBootGlobals) where
 
 import Data.Text (Text)
-import Pudding.Types (GlobalInfo, Name, Globals)
-import Data.Map (Map)
 import Pudding.Parser (declarations, runParser)
 import Pudding.Unify (bootGlobals)
 import GHC.IO (unsafePerformIO)
+import Pudding.Types (Globals)
 
 someFunc :: IO ()
 someFunc = do

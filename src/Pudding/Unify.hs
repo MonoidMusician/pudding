@@ -3,7 +3,6 @@ module Pudding.Unify where
 import Pudding.Types
 import Pudding.Eval
 import qualified Data.Map as Map
-import Data.Map (Map)
 import Data.Functor ((<&>), void)
 import Pudding.Printer (Style (Ansi), format, printCore)
 import qualified Data.Text as T
@@ -228,23 +227,29 @@ validateOrNot seqOrConst ctx = \case
     (EPi _ _ _ argTyExpected body, argTyActual) ->
       cc "argument type mismatch" argTyExpected argTyActual `seq` instantiateClosure body (evalHere arg)
     _ -> error "Bad app"
-  TTyCtor meta tyName params indices -> case Map.lookup tyName (ctxGlobals ctx) of
-    Just (GlobalType (GlobalTypeInfo { typeParams, typeIndices })) ->
+  TTyCtor _ tyName params indices -> case Map.lookup tyName (ctxGlobals ctx) of
+    Just (GlobalType (GlobalTypeInfo { typeParams, typeIndices, typeConstrs = _ })) ->
       checkFor "Wrong number of parameters" (Vector.length params == Vector.length typeParams) `seqOrConst`
       checkFor "Wrong number of indices" (Vector.length indices == Vector.length typeIndices) `seqOrConst`
-      validateTelescope "Invalid type constructor parameter" ctx params typeParams \ctx' ->
-      validateTelescope "Invalid type constructor index" ctx' indices typeIndices \ctx'' ->
+      validateTelescope "Invalid type constructor parameter" 0 ctx params (ctxOfGlobals $ ctxGlobals ctx) typeParams \ctxParams ->
+      validateTelescope "Invalid type constructor index" 0 ctx indices ctxParams typeIndices \_ctxIndices ->
       -- FIXME: do a proper universe check
       EUniv mempty (UBase 0)
     _ -> error "Bad type constructor name"
-  TConstr meta (tyName, conName) params args -> case Map.lookup tyName (ctxGlobals ctx) of
-    Just (GlobalType (GlobalTypeInfo { typeParams, typeIndices, typeConstrs }))
+  TConstr _ (tyName, conName) params args -> case Map.lookup tyName (ctxGlobals ctx) of
+    Just (GlobalType (GlobalTypeInfo { typeParams, typeIndices = _, typeConstrs }))
       | Just (ConstructorInfo { ctorArguments, ctorIndices }) <- Map.lookup conName typeConstrs ->
       checkFor "Wrong number of parameters" (Vector.length params == Vector.length typeParams) `seqOrConst`
-      validateTelescope "Invalid constructor parameter" ctx params typeParams \ctx' ->
-      validateTelescope "Invalid constructor argument" ctx' args ctorArguments \ctx'' ->
-      eval (mapCtx (\_ (_, tm) -> tm) ctx) 
-    _ -> error "Bad type constructor name"
+      validateTelescope "Invalid constructor parameter" 0 ctx params (ctxOfGlobals $ ctxGlobals ctx) typeParams \ctxParams ->
+      validateTelescope "Invalid constructor argument" 0 ctx args ctxParams ctorArguments \ctxArgs ->
+        let
+          -- the parameters were already evaluated onto the first stack
+          paramValues = Vector.fromList $ reverse $ snd <$> ctxStack ctxParams
+          -- then we need to evaluate the indices, now that the arguments are
+          -- all bound as well
+          indexValues = eval ctxArgs <$> ctorIndices
+        in ETyCtor mempty tyName paramValues indexValues
+    _ -> error "Bad constructor name"
   where
   validateType ty = case vv ty of
     EUniv _ _ -> evalHere ty
@@ -268,8 +273,35 @@ validateOrNot seqOrConst ctx = \case
     in (tyVal, tyVal `seq` validateOrNot seqOrConst ctx' body)
 
   evalHere = eval evalCtxHere
-  evalCtxHere = mapCtx (\_ (_, tm) -> tm) ctx :: EvalCtx
+  toEvalCtx = mapCtx (\_ (_, tm) -> tm)
+  evalCtxHere = toEvalCtx ctx :: EvalCtx
   quoteCtxHere = mapCtx (\_ _ -> ()) ctx :: QuoteCtx
+
+  -- Validating a dependent telescope is a little more tricky, but mostly it is
+  -- just a lot of data to plumb around.
+  validateTelescope ::
+    Desc "error" String ->
+    Desc "current index" Int ->
+    Desc "eval/result ctx" EvalTypeCtx ->
+    Desc "values" Vector.Vector Term ->
+    Desc "telescope value ctx" EvalCtx ->
+    Desc "telescope" Vector.Vector (Plicit, Binder, Term) ->
+    (Desc "new telescope value ctx" EvalCtx -> r) -> r
+  validateTelescope mismatchError i ctorCtx valueVector typeCtx typeVector continuation =
+    case (valueVector Vector.!? i, typeVector Vector.!? i) of
+      (Just value, Just (_, binder, tyTerm)) ->
+        let
+          -- Eval the telescope type first, in the context reserved for the
+          -- inductive type, starting from the global context
+          tyEval = eval typeCtx tyTerm
+          -- Next we typecheck `value` against `tyEval`
+          valueTy = cc (mismatchError <> " " <> show i) (validateOrNot seqOrConst ctorCtx value) tyEval
+          -- Now we extend `typeCtx` with the new value (laziness is nice here)
+          typeCtx' = valueTy `seqOrConst` snoc typeCtx binder (eval (toEvalCtx ctorCtx) value)
+        in valueTy `seqOrConst`
+          -- Proceed with the next index `i+1`
+          validateTelescope mismatchError (i+1) ctorCtx valueVector typeCtx' typeVector continuation
+      _ -> continuation typeCtx
 
 
 
@@ -312,6 +344,29 @@ typeof ctx = \case
     -- typeof ((f : Π(x : ty), body) (arg : ty)) = body@[x := arg] = (λ(x : ty), body)(arg)
     TPi meta p b ty body -> TApp mempty (TLambda meta p b ty body) arg
     _ -> error "Bad app"
+  TTyCtor _ tyName params indices -> case Map.lookup tyName (ctxGlobals ctx) of
+    Just (GlobalType (GlobalTypeInfo { typeParams, typeIndices, typeConstrs = _ })) ->
+      -- FIXME: do a proper universe check
+      TUniv mempty (UBase 0)
+    _ -> error "Bad type constructor name"
+  TConstr _ (tyName, conName) params args -> case Map.lookup tyName (ctxGlobals ctx) of
+    Just (GlobalType (GlobalTypeInfo { typeParams, typeIndices = _, typeConstrs }))
+      | Just (ConstructorInfo { ctorArguments, ctorIndices }) <- Map.lookup conName typeConstrs ->
+      let
+        -- Don't bother with actual substitution: do it via lambdas and apps
+        localize =
+          adstract (Vector.toList params <> Vector.toList args)
+            . abstract (Vector.toList typeParams <> Vector.toList ctorArguments)
+        -- First we form repeated lambdas to back out the scope
+        abstract ((p, b, paramType) : more) focus =
+          TLambda mempty p b paramType $ Scoped $ abstract more focus
+        abstract [] focus = focus
+        -- Then we apply each parameter in turn
+        adstract (param : more) abstracted =
+          adstract more $ TApp mempty abstracted param
+        adstract [] substituted = substituted
+      in TTyCtor mempty tyName params (localize <$> ctorIndices)
+    _ -> error "Bad constructor name"
   where
   into :: Binder -> Term -> TypeCtx
   into bdr ty = snoc ctx bdr ty
