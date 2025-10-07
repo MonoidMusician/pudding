@@ -52,7 +52,11 @@ Type universes
     Other type universes may serve to contain special types, like the interval type `I` in cubical Agda is contained in its own universe [`IUniv : SSet₁`](https://1lab.dev/Prim.Interval.html).
     There may be several parallel hierarchies, like with 2LTT: the universe hierarchy `U0,m` of the “base” type theory, and the universe hiearchy `U1,n` of the “meta” type theory.
 
-    [nLab](https://ncatlab.org/nlab/show/type+universe)
+    [Agda docs](https://agda.readthedocs.io/en/latest/language/sort-system.html) + [more](https://agda.readthedocs.io/en/latest/language/universe-levels.html), [nLab](https://ncatlab.org/nlab/show/type+universe)
+
+Motive (à la Mc Bride)
+:   For recursors, pattern matching, and the like, the motive is the return type, indexed by what it is matching on.
+    It is the goal that the computation is headed towards: what it has motive to prove.
 
 ## Flavours of type theory
 
@@ -104,8 +108,12 @@ Other flavours/implementations:
 
 [sixten](https://github.com/ollef/sixten)/[sixty](https://github.com/ollef/sixty) (datatypes with unboxed representation polymorphism: sixten is System F-like while sixty has dependent types),
 [Dhall](https://github.com/dhall-lang/dhall-lang/tree/master/standard) (a dependently typed language (essentially a core language) intended for configuration files),
-[cooltt](https://github.com/RedPRL/cooltt) (cubical type theory implementation),
-[epigram](http://www.e-pig.org/),
+[cooltt](https://github.com/RedPRL/cooltt) (cubical type theory implementation) [et al.](https://redprl.org/),
+[polytt](https://github.com/ToposInstitute/polytt),
+[epigram](http://www.e-pig.org/) ([Epigram 2](https://github.com/mietek/epigram2)?),
+[smalltt](https://github.com/AndrasKovacs/smalltt),
+[demo of 2LTT](https://github.com/AndrasKovacs/staged/tree/main/demo),
+[elaboration-zoo](https://github.com/AndrasKovacs/elaboration-zoo),
 
 ## Implementation techniques
 
@@ -165,4 +173,7 @@ Green slime
     f p = {!p!}
     ```
 
+## ??
+
+prenex ??
 

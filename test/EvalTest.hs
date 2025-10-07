@@ -25,13 +25,16 @@ evalTest = TestSuite "EvalTest" do
       -- Polymorphic identity function
       , "(define identity (lambda (t (Type0)) (lambda (x t) x)))"
       , "(define identity1 (lambda (t (Type0 1)) (lambda (x t) x)))"
+      -- Non-dependent function type
+      , "(define Fun (lambda (i (Type0)) (lambda (o (Type0)) (Pi (x i) o))))"
       -- Basic ADTs
       , "(inductive Void () ())"
       , "(inductive Unit () () (unit))"
-      , "(inductive Bool () () (True) (False))"
-      , "(inductive Maybe ((t (Type0))) () (Nothing) (Just ((v t)) ()))"
+      , "(inductive Bool () () (true) (false))"
+      , "(inductive Maybe ((t (Type0))) () (nothing) (just ((v t)) ()))"
+      , "(inductive IsJust ((t (Type0))) ((mv (Maybe t))) (proveJust ((v t)) ((just t v))))"
       , "(inductive Either ((l (Type0)) (r (Type0))) ()"
-      , "  (Left ((v l))) (Right ((v r)) ()))"
+      , "  (left ((v l))) (right ((v r))))"
       ]
     normUnder = normalizeNeutrals globals
     type0 = TUniv mempty $ UBase 0
@@ -60,6 +63,14 @@ evalTest = TestSuite "EvalTest" do
     let t12' = normUnder [] (TApp (Metadata mempty) t1 t2)
     let t3' = normUnder [] t3
     expectEquiv Term' t12' t3'
+  testCase "BetaReduction2" do
+    t1 <- parseTerm "(Pi (t Unit) Void)"
+    t2 <- parseTerm "(Fun Unit Void)"
+    let e1 = evaling t1 $ neutralCtx []
+    let e2 = evaling t2 $ neutralCtx []
+    -- liftIO $ print $ SubTerm' 2 $ quote (ctxOfSize globals 2) e1
+    -- liftIO $ print $ SubTerm' 2 $ quote (ctxOfSize globals 2) e2
+    expect (conversionCheck (ctxOfSize globals 0) e1 e2) "Terms are equal under the conversion check"
   testCase "EtaEquivalence" do
     testCase "Lambdas" do
       t1 <- parseTermWith ["A", "B"] $ T.unlines
@@ -124,19 +135,32 @@ evalTest = TestSuite "EvalTest" do
       , "        (f x)))))"
       ]
   testCase "Constructor" do
-    tm <- parseTermWith ["t"] "(Nothing t)"
+    tm <- parseTermWith ["t"] "(nothing t)"
     let ty = typecheckUnder [type0] tm
     liftIO $ print $ SubTerm' 1 ty
 
-    tmL <- parseTermWith ["l", "r"] "(Left l r)"
+    tmL <- parseTermWith ["l", "r"] "(identity (Fun l (Either l r)) (left l r))"
     let tyL = typecheckUnder [type0, type0] tmL
     liftIO $ print $ SubTerm' 2 tmL
     liftIO $ print $ SubTerm' 2 tyL
 
-    tmR <- parseTermWith [] "(Right Void Unit unit)"
-    let tyR = typecheckUnder [type0, type0] tmR
-    liftIO $ print $ SubTerm' 2 tmR
-    liftIO $ print $ SubTerm' 2 tyR
+    tmR <- parseTermWith [] "(right Void Unit unit)"
+    let tyR = typecheckUnder [] tmR
+    liftIO $ print $ SubTerm' 0 tmR
+    liftIO $ print $ SubTerm' 0 tyR
+
+    tmT <- parseTermWith [] "(lambda (Err (Type0)) (identity (Either Err Unit) (right Err Unit unit)))"
+    let tyT = typecheckUnder [] tmT
+    liftIO $ print $ SubTerm' 0 tmT
+    liftIO $ print $ SubTerm' 0 tyT
+
+    tmP <- parseTermWith []
+      -- "(IsJust Unit (just Unit unit))"
+      -- "(proveJust Unit unit)"
+      "(identity (IsJust Unit (just Unit unit)) (proveJust Unit unit))"
+    let tyP = typecheckUnder [] tmP
+    liftIO $ print $ SubTerm' 0 tmP
+    liftIO $ print $ SubTerm' 0 tyP
 
 parseTerm :: Text -> Test Term
 parseTerm s = do

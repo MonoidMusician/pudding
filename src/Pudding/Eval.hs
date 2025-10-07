@@ -6,6 +6,9 @@ import Data.Functor (void)
 import qualified Data.List as List
 import Data.Maybe (fromMaybe)
 import qualified Data.Vector as Vector
+import Pudding.Printer (formatCore, Style (Ansi))
+import qualified Data.Text as T
+import GHC.Stack (HasCallStack)
 
 eval :: EvalCtx -> Term -> Eval
 eval = flip evaling
@@ -55,29 +58,37 @@ normalizeNeutrals globals localTypes = normalizeCtx $
 ------------------------------
 
 -- Do a projection on `Eval`
-doPrj :: Eval -> NeutPrj -> Eval
+doPrj :: HasCallStack => Eval -> NeutPrj -> Eval
 doPrj (ENeut (Neutral blocker prjs)) prj = ENeut (Neutral blocker (prj : prjs))
 doPrj (EPair _ _ left _) (NFst _) = left
 doPrj (EPair _ _ _ right) (NSnd _) = right
 doPrj (ELambda _ _ _ _ body) (NApp _ arg) = instantiateClosure body arg
-doPrj _ _ = error "Type error in doPrj"
+doPrj e prj = error $ mconcat
+  [ "Type error in doPrj "
+  , case prj of
+      NApp _ _ -> "App"
+      NFst _ -> "Fst"
+      NSnd _ -> "Snd"
+  , ":"
+  , "\n", T.unpack $ formatCore Ansi $ quote (ctxOfSize Map.empty 100) e
+  ]
 
-doApp :: Desc "fun" Eval -> Desc "arg" Eval -> Eval
+doApp :: HasCallStack => Desc "fun" Eval -> Desc "arg" Eval -> Eval
 doApp fun arg = doPrj fun (NApp mempty arg)
 
-doFst :: Eval -> Eval
+doFst :: HasCallStack => Eval -> Eval
 doFst tgt = doPrj tgt (NFst mempty)
 
-doSnd :: Eval -> Eval
+doSnd :: HasCallStack => Eval -> Eval
 doSnd tgt = doPrj tgt (NSnd mempty)
 
 -- Do a stack of projections on `Eval`
-doPrjs :: Eval -> [NeutPrj] -> Eval
+doPrjs :: HasCallStack => Eval -> [NeutPrj] -> Eval
 doPrjs focus (prj : prjs) = doPrj (doPrjs focus prjs) prj
 doPrjs focus [] = focus
 
 -- Eta expand the pair constructor, for sigma types
-etaPair :: Desc "type" Eval -> Desc "pair" Eval -> Eval
+etaPair :: HasCallStack => Desc "type" Eval -> Desc "pair" Eval -> Eval
 etaPair ty e = EPair mempty ty (doPrj e (NFst mempty)) (doPrj e (NSnd mempty))
 
 -- Inline the global if it has reached its arity and its arguments are not all
@@ -98,7 +109,7 @@ checkGlobal ctx e@(ENeut (Neutral (NGlobal arity _ _name) prjs))
 checkGlobal _ e = e
 
 -- Just evaluate a neutral global
-forceGlobal :: forall t. Ctx t -> Eval -> Maybe Eval
+forceGlobal :: forall t. HasCallStack => Ctx t -> Eval -> Maybe Eval
 forceGlobal ctx (ENeut (Neutral (NGlobal _ _ name) prjs)) =
   case Map.lookup name (ctxGlobals ctx) of
     Just (GlobalDefn _ _ (GlobalTerm _ evaled)) -> Just (doPrjs evaled prjs)
@@ -149,7 +160,7 @@ mkTypeConstructor tyName (GlobalTypeInfo { typeParams, typeIndices }) =
 -- - Eval does as much work as it can in a single pass. Quoting makes it recur
 --   under binders (into closures), to make it into a *partial* evaluator
 --   (since `eval` handles neutrals nicely).
-evaling :: Term -> EvalCtx -> Eval
+evaling :: HasCallStack => Term -> EvalCtx -> Eval
 evaling = \case
   -- If we have a variable
   TVar moreMeta idx -> \ctx ->

@@ -11,6 +11,7 @@ import GHC.StableName (StableName)
 import qualified Data.List as List
 import qualified Data.Vector as Vector
 import Data.Maybe (fromMaybe)
+import GHC.Stack (HasCallStack)
 
 -- Validate the type of a term, as an evaluated type
 validate :: EvalTypeCtx -> Desc "term" Term -> Desc "type" Eval
@@ -34,17 +35,21 @@ quickTermType = validateOrNot (const id)
 bootGlobals, bootGlobalDefns, bootGlobalTypes :: Globals -> Globals
 bootGlobals = bootGlobalDefns . bootGlobalTypes
 
-bootGlobalDefns globals = globals <&> \case
-  GlobalDefn _ _ tm@(GlobalTerm defn _) ->
-    let !ty = typeofGlobal tm in
-    GlobalDefn (arityOfTerm defn) ty (globalTerm tm)
-  global -> global
+bootGlobalDefns globals = newGlobals
   where
-  ctx = ctxOfGlobals globals
-  globalTerm (GlobalTerm tm _) = GlobalTerm tm (evalGlobal tm)
+  newGlobals = globals <&> \case
+    GlobalDefn _ _ (GlobalTerm defn _) ->
+      let !ty = typeofGlobal defn in
+      GlobalDefn (arityOfTerm defn) ty (globalTerm defn)
+    global -> global
+  ctx :: forall t. Ctx t
+  ctx = ctxOfGlobals newGlobals
+  globalTerm :: Term -> GlobalTerm
+  globalTerm tm = GlobalTerm tm (evalGlobal tm)
+  evalGlobal :: Term -> Eval
   evalGlobal = eval ctx
-  typeofGlobal :: GlobalTerm -> GlobalTerm
-  typeofGlobal (GlobalTerm tm _) =
+  typeofGlobal :: Term -> GlobalTerm
+  typeofGlobal tm =
     let !ty = validate ctx tm in
     GlobalTerm (quote (void ctx) ty) ty
 
@@ -85,7 +90,7 @@ bootGlobalTypes globals =
 --
 -- Note: we care that the happy path is fast, more than failing fast for
 -- mismatches.
-conversionCheck :: Ctx () -> Eval -> Eval -> Bool
+conversionCheck :: HasCallStack => Ctx () -> Eval -> Eval -> Bool
 conversionCheck ctx evalL evalR = case (evalL, evalR) of
   -- We unravel `EDeferred` slowly, to check if any names match up, before
   -- continuing with the main cases.
@@ -147,6 +152,7 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
   -- TODO: Finally we handle eta for subsingleton types
   _ -> False
   where
+  cc :: HasCallStack => Eval -> Eval -> Bool
   cc = conversionCheck ctx
   ccScoped bdrL tyL bodyL bdrR tyR bodyR =
     let
@@ -205,7 +211,7 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
 -- Infer the type of the term, either checking the whole tree as it goes if
 -- `seqOrConst = seq`, or just doing the minimal work to return the inferred
 -- type if `seqOrConst = const id`.
-validateOrNot :: (forall a b. a -> b -> b) -> EvalTypeCtx -> Desc "term" Term -> Desc "type" Eval
+validateOrNot :: (forall a b. a -> b -> b) -> HasCallStack => EvalTypeCtx -> Desc "term" Term -> Desc "type" Eval
 validateOrNot seqOrConst ctx = \case
   TVar _ idx -> fst $ indexCtx idx ctx
   TGlobal _ name -> case Map.lookup name (ctxGlobals ctx) of
@@ -283,6 +289,7 @@ validateOrNot seqOrConst ctx = \case
     _ -> error "Expected a valid type"
 
   -- TODO: subsumption
+  cc :: HasCallStack => String -> Eval -> Eval -> Eval
   cc err l r = case conversionCheck (void ctx) l r of
     True -> l
     False -> error err
