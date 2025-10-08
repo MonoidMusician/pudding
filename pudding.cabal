@@ -108,6 +108,7 @@ library
         Pudding.Name,
         Pudding.Eval,
         Pudding.Unify,
+        Pudding.Semantics.Universes,
 
     -- Modules included in this library but not exported.
     -- other-modules:
