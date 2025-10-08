@@ -48,7 +48,7 @@ normalize globals original =
 normalizeCtx :: EvalCtx -> Term -> Term
 normalizeCtx ctx = quote (void ctx) . eval ctx
 
-normalizeNeutrals :: Globals -> [Desc "type" Term] -> Term -> Term
+normalizeNeutrals :: Globals -> ["type" @:: Term] -> Term -> Term
 normalizeNeutrals globals localTypes = normalizeCtx $
   mapCtx (\(_idx, lvl) _ty -> neutralVar lvl) $
     ctxOfList globals $ (BFresh,) <$> localTypes
@@ -73,7 +73,7 @@ doPrj e prj = error $ mconcat
   , "\n", T.unpack $ formatCore Ansi $ quote (ctxOfSize Map.empty 100) e
   ]
 
-doApp :: HasCallStack => Desc "fun" Eval -> Desc "arg" Eval -> Eval
+doApp :: HasCallStack => "fun" @:: Eval -> "arg" @:: Eval -> Eval
 doApp fun arg = doPrj fun (NApp mempty arg)
 
 doFst :: HasCallStack => Eval -> Eval
@@ -88,7 +88,7 @@ doPrjs focus (prj : prjs) = doPrj (doPrjs focus prjs) prj
 doPrjs focus [] = focus
 
 -- Eta expand the pair constructor, for sigma types
-etaPair :: HasCallStack => Desc "type" Eval -> Desc "pair" Eval -> Eval
+etaPair :: HasCallStack => "type" @:: Eval -> "pair" @:: Eval -> Eval
 etaPair ty e = EPair mempty ty (doPrj e (NFst mempty)) (doPrj e (NSnd mempty))
 
 -- Inline the global if it has reached its arity and its arguments are not all
@@ -126,7 +126,7 @@ instantiateClosure (Closure binder savedCtx (Scoped savedBody)) providedArg =
   evaling savedBody $ snoc savedCtx binder providedArg
 
 
-mkTypeConstructor :: Desc "type name" Name -> GlobalTypeInfo -> Term
+mkTypeConstructor :: "type name" @:: Name -> GlobalTypeInfo -> Term
 mkTypeConstructor tyName (GlobalTypeInfo { typeParams, typeIndices }) =
   abstract (Vector.toList typeParams <> Vector.toList typeIndices) $
     TTyCtor mempty tyName (toVars (Vector.length typeIndices) typeParams) (toVars 0 typeIndices)
@@ -261,8 +261,8 @@ quoting = eval2termWith False quotingClosure
 -- itself is not too painful, but having to add 500 new cases every time you
 -- add an AST node is painful.)
 eval2termWith ::
-  Desc "force globals" Bool ->
-  (Closure -> Desc "type" Eval -> QuoteCtx -> ScopedTerm) ->
+  "force globals" @:: Bool ->
+  (Closure -> "type" @:: Eval -> QuoteCtx -> ScopedTerm) ->
   Eval -> QuoteCtx -> Term
 eval2termWith forceGlobals handleClosure = \case
   ENeut (Neutral focus prjs) -> \ctx ->
@@ -322,7 +322,7 @@ quotingClosure (Closure bdr savedCtx (Scoped savedBody)) argTy ctx =
 -- eval2term = eval2termWith \(Closure savedCtx savedBody) _ _ -> term
 
 type TypeCtx = Ctx Term
-type EvalTypeCtx = Ctx (Desc "type" Eval, Desc "value" Eval)
+type EvalTypeCtx = Ctx ("type" @:: Eval, "value" @:: Eval)
 
 umax :: ULevel -> ULevel -> ULevel
 umax (UBase l1) (UBase l2) = UBase (max l1 l2)

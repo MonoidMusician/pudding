@@ -1,24 +1,22 @@
 module Pudding.Types
   ( module Pudding.Types -- Export the default exports of this module
+  , module Pudding.Types.Base
   , module Pudding.Name -- Export more
   ) where
 
+import Control.DeepSeq (NFData(rnf))
 import Data.Functor ((<&>))
 import Data.Functor.Const (Const(..))
-import Data.Set (Set)
 import Data.Map (Map)
-import Data.Vector (Vector)
-import GHC.Base (Symbol)
-import Text.Parsec.Pos (SourcePos)
-import Control.DeepSeq (NFData(rnf))
-import GHC.Generics (Generic)
-import Pudding.Name (Name(..), newTable, initTable, internalize)
-import Prettyprinter (Pretty)
-import GHC.StableName (StableName)
+import Data.Set (Set)
 import Data.Text (Text)
-
--- Just give a little description of the type
-type Desc (s :: Symbol) t = t
+import Data.Vector (Vector)
+import GHC.Generics (Generic)
+import GHC.StableName (StableName)
+import Prettyprinter (Pretty)
+import Pudding.Name (Name(..), newTable, initTable, internalize)
+import Pudding.Types.Base
+import Text.Parsec.Pos (SourcePos)
 
 --------------------------------------------------------------------------------
 -- Main semantic types!                                                       --
@@ -39,7 +37,7 @@ data GlobalInfo
   -- A function or global constant or whatever.
   -- These also get generated for the names introduced by inductive types:
   -- the type name becomes a definition and so does each constructor.
-  = GlobalDefn !(Desc "arity" Int) (Desc "type" GlobalTerm) (Desc "term" GlobalTerm)
+  = GlobalDefn !("arity" @:: Int) ("type" @:: GlobalTerm) ("term" @:: GlobalTerm)
   -- An inductive type declaration.
   | GlobalType GlobalTypeInfo
   deriving (Generic, NFData)
@@ -97,41 +95,41 @@ data Term
   | TUniv Metadata ULevel
   -- Global variables
   | TGlobal Metadata !Name
-  -- | TLet Metadata Binder (Desc "value" Term) (Desc "body" Term)
+  -- | TLet Metadata Binder ("value" @:: Term) ("body" @:: Term)
   | TLambda
       -- Metadata: not relevant to equality/unification
       -- Every argument is explicit in the core and every core binder only binds
       -- one variable, but we keep this information around for pretty printing
       Metadata !Plicit Binder
       -- Actual core data (influences equality, etc.)
-      (Desc "domain type" Term) (Desc "body" ScopedTerm)
+      ("domain type" @:: Term) ("body" @:: ScopedTerm)
   | TPi
       Metadata !Plicit Binder
-      (Desc "domain type" Term) (Desc "codomain" ScopedTerm)
+      ("domain type" @:: Term) ("codomain" @:: ScopedTerm)
   | TApp Metadata
-      (Desc "function" Term) (Desc "argument" Term)
+      ("function" @:: Term) ("argument" @:: Term)
   | TSigma
       Metadata !Plicit Binder
-      (Desc "fst type" Term) (Desc "snd type under fst type" ScopedTerm)
+      ("fst type" @:: Term) ("snd type under fst type" @:: ScopedTerm)
   -- A pair of a sigma type
   | TPair Metadata
-      (Desc "sigma type" Term)
-      (Desc "fst value" Term)
-      (Desc "snd value" Term)
+      ("sigma type" @:: Term)
+      ("fst value" @:: Term)
+      ("snd value" @:: Term)
   | TFst Metadata Term
   | TSnd Metadata Term
   -- A type constructor: the name of an inductive type applied to parameters
   -- and indices
-  | TTyCtor Metadata !(Desc "type name" Name)
-      (Desc "params" (Vector Term))
-      (Desc "indices" (Vector Term))
+  | TTyCtor Metadata !("type name" @:: Name)
+      ("params" @:: Vector Term)
+      ("indices" @:: Vector Term)
   -- A term constructor: the actual constructor of the inductive type applied
   -- to its arguments (from which the indices are also derived)
-  | TConstr Metadata !(Desc "type name" Name, Desc "constr name" Name)
-      (Desc "params" (Vector Term))
+  | TConstr Metadata !("type name" @:: Name, "constr name" @:: Name)
+      ("params" @:: Vector Term)
       -- args are the actual data stored in the constructor, from which the
       -- indices are inferred based on the constructor declaration
-      (Desc "args" (Vector Term))
+      ("args" @:: Vector Term)
   deriving (Generic, NFData)
 newtype ScopedTerm = Scoped Term
   deriving newtype (NFData)
@@ -159,21 +157,21 @@ data Eval
   | EUniv Metadata ULevel
   | ELambda
       Metadata !Plicit Binder
-      (Desc "domain type" Eval) (Desc "body" Closure)
+      ("domain type" @:: Eval) ("body" @:: Closure)
   | EPi
       Metadata !Plicit Binder
-      (Desc "domain type" Eval) (Desc "codomain" Closure)
+      ("domain type" @:: Eval) ("codomain" @:: Closure)
   | ESigma
       Metadata !Plicit Binder
-      (Desc "fst type" Eval) (Desc "snd type under fst type" Closure)
-  | EPair Metadata (Desc "sigma type" Eval) (Desc "fst value" Eval) (Desc "snd value" Eval)
-  | ETyCtor Metadata !(Desc "type name" Name)
-      (Desc "params" (Vector Eval))
-      (Desc "indices" (Vector Eval))
-  | EConstr Metadata !(Desc "type name" Name, Desc "constr name" Name)
-      (Desc "params" (Vector Eval))
-      (Desc "args" (Vector Eval))
-  | EDeferred (Desc "reason" (Meta Text)) (Desc "type" Eval) !(Desc "sharing" (Maybe (StableName Eval))) Metadata (Desc "deferred term" Eval)
+      ("fst type" @:: Eval) ("snd type under fst type" @:: Closure)
+  | EPair Metadata ("sigma type" @:: Eval) ("fst value" @:: Eval) ("snd value" @:: Eval)
+  | ETyCtor Metadata !("type name" @:: Name)
+      ("params" @:: Vector Eval)
+      ("indices" @:: Vector Eval)
+  | EConstr Metadata !("type name" @:: Name, "constr name" @:: Name)
+      ("params" @:: Vector Eval)
+      ("args" @:: Vector Eval)
+  | EDeferred ("reason" @:: Meta Text) ("type" @:: Eval) !("sharing" @:: Maybe (StableName Eval)) Metadata ("deferred term" @:: Eval)
   deriving (Generic, NFData)
 
 -- A Neutral is stuck on a variable (or hole), with some projections and eliminators applied to it.
@@ -195,15 +193,15 @@ data NeutFocus
   -- this is a kind of weak neutral: it will be evaluated when it reaches the
   -- arity of function arguments and they are not all neutrals, and it can
   -- also be evaluated during conversion checking
-  | NGlobal !(Desc "arity" Int) Metadata Name
+  | NGlobal !("arity" @:: Int) Metadata Name
   deriving (Generic, NFData)
 data NeutPrj
-  = NApp Metadata (Desc "arg" Eval)
+  = NApp Metadata ("arg" @:: Eval)
   | NFst Metadata
   | NSnd Metadata
   deriving (Generic, NFData)
 -- Alternatively: we could just implement it as a recursive type
--- Neutral = NVar Level | NFst Neutral | NApp (Desc "fun" Neutral) (Desc "arg" Eval)
+-- Neutral = NVar Level | NFst Neutral | NApp ("fun" @:: Neutral) ("arg" @:: Eval)
 
 
 -- Closure: an unevaluated term frozen in an environment of evaluated (or neutral)
@@ -221,8 +219,8 @@ data NeutPrj
 -- `(\x -> x) (\y -> y)` leaves `(\y -> y)` for quoting
 data Closure = Closure
   Binder
-  (Desc "saved external context" EvalCtx)
-  (Desc "body" ScopedTerm)
+  ("saved external context" @:: EvalCtx)
+  ("body" @:: ScopedTerm)
   deriving (Generic, NFData)
 
 data Telescope = Telescope Eval Closure
@@ -262,17 +260,17 @@ type EvalCtx = Ctx Eval
 -- Context used for `quote`: `ctxSize` is just used to convert `Level` back to `Index`
 type QuoteCtx = Ctx ()
 
-ctxOfStack :: forall t. Globals -> Desc "stack" [(Binder, t)] -> Ctx t
+ctxOfStack :: forall t. Globals -> "stack" @:: [(Binder, t)] -> Ctx t
 ctxOfStack globals stack =
   Ctx globals (length stack) stack
 
-ctxOfList :: forall t. Globals -> Desc "list in order" [(Binder, t)] -> Ctx t
+ctxOfList :: forall t. Globals -> "list in order" @:: [(Binder, t)] -> Ctx t
 ctxOfList globals = ctxOfStack globals . reverse
 
 ctxOfGlobals :: forall t. Globals -> Ctx t
 ctxOfGlobals globals = ctxOfStack globals []
 
-ctxOfSize :: Globals -> Desc "size" Int -> Ctx ()
+ctxOfSize :: Globals -> "size" @:: Int -> Ctx ()
 ctxOfSize globals 0 = ctxOfGlobals globals
 ctxOfSize globals sz = ctxOfStack globals $ (BFresh, ()) <$ [0..(sz - 1)]
 

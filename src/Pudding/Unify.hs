@@ -14,18 +14,18 @@ import Data.Maybe (fromMaybe)
 import GHC.Stack (HasCallStack)
 
 -- Validate the type of a term, as an evaluated type
-validate :: EvalTypeCtx -> Desc "term" Term -> Desc "type" Eval
+validate :: EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
 validate = validateOrNot seq
 -- Validate and quote back to a term
-validateQuote :: EvalTypeCtx -> Desc "term" Term -> Desc "type" Term
+validateQuote :: EvalTypeCtx -> "term" @:: Term -> "type" @:: Term
 validateQuote ctx = quote (void ctx) . validate ctx
 -- Validate in a context of neutrals
-validateQuoteNeutrals :: Globals -> [Desc "type" Term] -> Desc "term" Term -> Desc "type" Term
+validateQuoteNeutrals :: Globals -> ["type" @:: Term] -> "term" @:: Term -> "type" @:: Term
 validateQuoteNeutrals globals localTypes = validateQuote $
   mapCtx (\(_idx, lvl) ty -> (ty, neutralVar lvl)) $ evalCtx $
     ctxOfList globals $ (BFresh,) <$> localTypes
 -- Do not validate, but just assemble the type
-quickTermType :: EvalTypeCtx -> Desc "term" Term -> Desc "type" Eval
+quickTermType :: EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
 quickTermType = validateOrNot (const id)
 
 
@@ -211,7 +211,7 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
 -- Infer the type of the term, either checking the whole tree as it goes if
 -- `seqOrConst = seq`, or just doing the minimal work to return the inferred
 -- type if `seqOrConst = const id`.
-validateOrNot :: (forall a b. a -> b -> b) -> HasCallStack => EvalTypeCtx -> Desc "term" Term -> Desc "type" Eval
+validateOrNot :: (forall a b. a -> b -> b) -> HasCallStack => EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
 validateOrNot seqOrConst ctx = \case
   TVar _ idx -> fst $ indexCtx idx ctx
   TGlobal _ name -> case Map.lookup name (ctxGlobals ctx) of
@@ -299,7 +299,7 @@ validateOrNot seqOrConst ctx = \case
   checkFor _ True = ()
   checkFor err False = error err
 
-  validateScoped :: Binder -> Desc "arg type" Term -> ScopedTerm -> (Desc "arg type" Eval, Desc "body type" Eval)
+  validateScoped :: Binder -> "arg type" @:: Term -> ScopedTerm -> ("arg type" @:: Eval, "body type" @:: Eval)
   validateScoped bdr ty (Scoped body) =
     let
       tyVal = validateType ty
@@ -314,13 +314,13 @@ validateOrNot seqOrConst ctx = \case
   -- Validating a dependent telescope is a little more tricky, but mostly it is
   -- just a lot of data to plumb around.
   validateTelescope ::
-    Desc "error" String ->
-    Desc "current index" Int ->
-    Desc "eval/result ctx" EvalTypeCtx ->
-    Desc "values" Vector.Vector Term ->
-    Desc "telescope value ctx" EvalCtx ->
-    Desc "telescope" Vector.Vector (Plicit, Binder, Term) ->
-    (Desc "new telescope value ctx" EvalCtx -> r) -> r
+    "error" @:: String ->
+    "current index" @:: Int ->
+    "eval/result ctx" @:: EvalTypeCtx ->
+    "values" @:: Vector.Vector Term ->
+    "telescope value ctx" @:: EvalCtx ->
+    "telescope" @:: Vector.Vector (Plicit, Binder, Term) ->
+    ("new telescope value ctx" @:: EvalCtx -> r) -> r
   validateTelescope mismatchError i ctorCtx valueVector typeCtx typeVector continuation =
     case (valueVector Vector.!? i, typeVector Vector.!? i) of
       (Just value, Just (_, binder, tyTerm)) ->

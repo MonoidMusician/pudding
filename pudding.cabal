@@ -103,6 +103,7 @@ library
         Pudding.Parser,
         Pudding.Printer,
         Pudding.Types,
+        Pudding.Types.Base,
         Pudding.Name,
         Pudding.Eval,
         Pudding.Unify,
