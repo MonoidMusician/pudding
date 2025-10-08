@@ -1,14 +1,16 @@
 module Pudding.Name where
 
-import Data.Text (Text)
 import Control.DeepSeq (NFData(rnf))
-import qualified Data.Map as Map
-import GHC.StableName (StableName, hashStableName, makeStableName)
-import Data.IORef (IORef, readIORef, modifyIORef', newIORef)
-import Data.Coerce (coerce)
 import Control.Monad.IO.Class (MonadIO(liftIO))
-import Prettyprinter (Pretty(pretty))
+import Data.Coerce (coerce)
+import Data.IORef (IORef, readIORef, modifyIORef', newIORef)
+import qualified Data.Map as Map
+import Data.Set (Set)
 import qualified Data.Text as T
+import Data.Text (Text)
+import GHC.Generics (Generic)
+import GHC.StableName (StableName, hashStableName, makeStableName)
+import Prettyprinter (Pretty(pretty))
 
 data Name = Name !(StableName Text) !Text
 
@@ -47,3 +49,16 @@ internalize ref search = liftIO do
       let made = Name named search
       modifyIORef' ref $ coerce $ Map.insert search made
       pure made
+
+-- A canonical name, that is merged during unification
+data CanonicalName = CanonicalName
+  { chosenName :: Name
+  , allNames :: Set Name -- concatenated during unification
+  }
+  deriving (Generic, NFData)
+
+instance Semigroup CanonicalName where
+  l <> r = CanonicalName
+    { chosenName = chosenName l
+    , allNames = allNames l <> allNames r
+    }

@@ -9,13 +9,12 @@ import Control.DeepSeq (NFData)
 import Data.Functor ((<&>))
 import Data.Functor.Apply ((<.>), (<.*>))
 import Data.Map (Map)
-import Data.Set (Set)
 import Data.Text (Text)
 import Data.Vector (Vector)
 import GHC.Generics (Generic)
 import GHC.StableName (StableName)
 import Prettyprinter (Pretty)
-import Pudding.Name (Name(..), newTable, initTable, internalize)
+import Pudding.Name (CanonicalName(..), Name(..), newTable, initTable, internalize)
 import Pudding.Types.Base
 import Pudding.Types.Metadata
 
@@ -332,19 +331,6 @@ data ULevel
 --------------------------------------------------------------------------------
 -- Metadata types                                                             --
 --------------------------------------------------------------------------------
-
--- A canonical name, that is merged during unification
-data CanonicalName = CanonicalName
-  { chosenName :: Name
-  , allNames :: Set Name -- concatenated during unification
-  }
-  deriving (Generic, NFData)
-
-instance Semigroup CanonicalName where
-  l <> r = CanonicalName
-    { chosenName = chosenName l
-    , allNames = allNames l <> allNames r
-    }
 
 -- `Exact` values only unify with themself: otherwise it throws an error.
 newtype Exact t = Exact t
