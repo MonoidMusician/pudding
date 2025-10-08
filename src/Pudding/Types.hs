@@ -437,7 +437,7 @@ instance HasMetadata Neutral where
   traverseMetadata1 f (Neutral focus prjs) =
     Neutral
       <$> traverseMetadata1 f focus
-      <.*> traverse (traverseMetadata1 (apply f)) prjs
+      <.*> traverse (traverseMetadata1 (apply f)) (reverse prjs)
 
 instance HasMetadata NeutFocus where
   traverseMetadata1 f (NVar old lvl) = (\new -> NVar new lvl) <$> f old
