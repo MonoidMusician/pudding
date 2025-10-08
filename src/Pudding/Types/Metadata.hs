@@ -1,7 +1,9 @@
 module Pudding.Types.Metadata where
 
 import Control.DeepSeq (NFData)
-import Data.Functor.Const (Const(..))
+import Control.Lens (Lens', Traversal', Traversal1', cloneTraversal, foldMapOf, set, singular, toListOf, toNonEmptyOf, view)
+import Data.Functor.Apply (Apply, MaybeApply(..))
+import Data.List.NonEmpty (NonEmpty(..))
 import Data.Set (Set)
 import GHC.Generics (Generic)
 import Pudding.Parser.Base (SourceSpan)
@@ -27,26 +29,38 @@ instance Semigroup Metadata where
 instance Monoid Metadata where
   mempty = Metadata mempty
 
--- | Class for handling metadata in types
 class HasMetadata t where
-  -- | Non-recursive: modify the top metadata
-  onMetadata :: (Metadata -> Metadata) -> t -> (Metadata, t, Metadata)
-  -- | Recursive! Modify/aggregate all of the metadata in the tree
-  traverseMetadata :: forall f. Applicative f => (Metadata -> f Metadata) -> t -> f t
+  -- | Access the top metadata
+  metadata :: Lens' t Metadata
+  metadata = singular traverseMetadata1
+  -- | Recursively access metadata from children
+  traverseMetadata :: Traversal' t Metadata
+  traverseMetadata = cloneTraversal traverseMetadata1
+  -- | Recursively access non-empty metadata from children
+  traverseMetadata1 :: Traversal1' t Metadata
 
 -- | Get the metadata at the top
 getMetadata :: forall t. HasMetadata t => t -> Metadata
-getMetadata t = let (old, _, _) = onMetadata id t in old
+getMetadata = view metadata
 
 -- | Set the metadata at the top
 setMetadata :: forall t. HasMetadata t => t -> Metadata -> t
-setMetadata t new = let (_, t', _) = onMetadata (const new) t in t'
+setMetadata = flip (set metadata)
 
 -- | List the metadata (including the node itself)
+listMetadata1 :: forall t. HasMetadata t => t -> NonEmpty Metadata
+listMetadata1 = toNonEmptyOf traverseMetadata1
+
 listMetadata :: forall t. HasMetadata t => t -> [Metadata]
-listMetadata t = let Const r = traverseMetadata (Const . pure) t in r
+listMetadata = toListOf traverseMetadata
 
 -- | Aggregate the metadata (including the node itself)
--- TODO: should be `Semigroup`
+foldMetadata1 :: forall t m. Semigroup m => HasMetadata t => (Metadata -> m) -> t -> m
+foldMetadata1 = foldMapOf traverseMetadata1
+
 foldMetadata :: forall t m. Monoid m => HasMetadata t => (Metadata -> m) -> t -> m
-foldMetadata f t = let Const r = traverseMetadata (Const . f) t in r
+foldMetadata = foldMapOf traverseMetadata
+
+-- | Strengthen an `Apply` profunctor in to an `Applicative` profunctor
+apply :: Apply f => (a -> f b) -> a -> MaybeApply f b
+apply f = MaybeApply . Left . f
