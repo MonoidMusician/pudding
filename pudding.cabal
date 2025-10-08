@@ -101,6 +101,7 @@ library
     exposed-modules:
         Pudding,
         Pudding.Parser,
+        Pudding.Parser.Base,
         Pudding.Printer,
         Pudding.Types,
         Pudding.Types.Base,

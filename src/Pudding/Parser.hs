@@ -1,24 +1,27 @@
-module Pudding.Parser where
+module Pudding.Parser
+  ( module Pudding.Parser
+  , module Pudding.Parser.Base
+  ) where
 
 import Control.Applicative (many, (<|>))
+import Control.Monad (when)
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Control.Monad.Reader ( MonadReader(local), asks, ReaderT (runReaderT) )
-import qualified Text.Parsec as P
+import Data.Functor (void)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import qualified Data.List as L
-import Data.Set (singleton)
-import Data.Text (Text)
-import Data.Functor (void)
-import qualified Data.Text as T
-
-import Pudding.Types
-import Pudding.Name (NameTable)
-import Data.Map (Map)
 import qualified Data.Map as Map
-import Control.Monad (when)
-import GHC.IO (unsafePerformIO)
+import Data.Map (Map)
+import Data.Set (singleton)
+import qualified Data.Text as T
+import Data.Text (Text)
 import Data.Traversable (for)
 import qualified Data.Vector as Vector
+import GHC.IO (unsafePerformIO)
+import Pudding.Name (NameTable)
+import Pudding.Parser.Base
+import Pudding.Types
+import qualified Text.Parsec as P
 
 type Parser = P.ParsecT Text () (ReaderT ParseCtx IO)
 

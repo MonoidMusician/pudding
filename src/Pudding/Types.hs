@@ -15,8 +15,8 @@ import GHC.Generics (Generic)
 import GHC.StableName (StableName)
 import Prettyprinter (Pretty)
 import Pudding.Name (Name(..), newTable, initTable, internalize)
+import Pudding.Parser.Base
 import Pudding.Types.Base
-import Text.Parsec.Pos (SourcePos)
 
 --------------------------------------------------------------------------------
 -- Main semantic types!                                                       --
@@ -337,17 +337,6 @@ data ULevel
 -- Should implement `Semigroup`, so it can be unified!
 newtype Meta t = Meta t
   deriving newtype (Eq, Ord, Semigroup, NFData)
-
-
-data SourceSpan = SourceSpan
-  { spanBegin :: SourcePos
-  , spanEnd :: SourcePos
-  }
-  deriving (Eq, Ord, Generic)
-
-instance Semigroup SourceSpan where
-  SourceSpan b1 e1 <> SourceSpan b2 e2 =
-    SourceSpan (min b1 b2) (max e1 e2)
 
 -- Per-node metadata (a monoid, unlike the other `Meta`s), since synthesized nodes
 -- do not have source metadata and such.
