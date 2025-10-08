@@ -105,6 +105,7 @@ library
         Pudding.Printer,
         Pudding.Types,
         Pudding.Types.Base,
+        Pudding.Types.Metadata,
         Pudding.Name,
         Pudding.Eval,
         Pudding.Unify,
