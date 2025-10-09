@@ -305,7 +305,7 @@ mapCtx f ctx = snd (foldCtx z s ctx)
 
     s :: Ctx t -> (Binder, t) -> MapCtxAcc a -> MapCtxAcc a
     s _ (b, t) ((i, l), acc) =
-      ((i - 1, l + 1), acc :> (b, f (Index i) (Level l) t))
+      ((i - 1, l + 1), acc :> (b, f (index ctx i) (level ctx l) t))
 
 --------------------------------------------------------------------------------
 -- Helper types!                                                              --
