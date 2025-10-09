@@ -55,10 +55,10 @@ class ToIndex i where
   index :: StackLike c => c -> i -> Index
 
 instance ToIndex Index where
-  index c ix@(Index i) = assert (i < size c) ix
+  index c ix@(Index i) = assert (0 <= i && i < size c) ix
 
 instance ToIndex Int where
-  index c i = assert (i < size c) (Index i)
+  index c i = assert (0 <= i && i < size c) (Index i)
 
 instance ToIndex Level where
   index c (Level lvl) = index c ((size c - 1) - lvl)
@@ -73,10 +73,10 @@ class ToLevel l where
   level :: StackLike c => c -> l -> Level
 
 instance ToLevel Level where
-  level c lv@(Level l) = assert (l < size c) lv
+  level c lv@(Level l) = assert (0 <= l && l < size c) lv
 
 instance ToLevel Int where
-  level c l = assert (l < size c) (Level l)
+  level c l = assert (0 <= l && l < size c) (Level l)
 
 instance ToLevel Index where
   level c (Index idx) = level c ((size c - 1) - idx)
@@ -100,7 +100,7 @@ instance StackLike (Stack a) where
   type Elem (Stack a) = a
 
   s@(Stack sz elems) @@ ix = case index s ix of
-    Index i -> assert (i < sz) (elems RAL.! i)
+    Index i -> assert (0 <= i && i < sz) (elems RAL.! i)
 
   size (Stack sz _) = sz
 
