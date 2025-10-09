@@ -9,7 +9,7 @@ import GHC.Generics (Generic)
 import Prettyprinter (Pretty)
 
 -- | Finite mapping of indices `i` to elements `Elem`
-class Indexable c where
+class StackLike c where
   type Elem c
 
   infixr 8 @@
@@ -17,11 +17,22 @@ class Indexable c where
 
   size :: c -> Int
 
+  infixl 5 >:
+  (>:) :: c -> Elem c -> c
+
+  pop :: c -> Maybe (c, Elem c)
+
+push :: StackLike c => Elem c -> c -> (Level, c)
+push e c = (Level (size c), c >: e)
+
 -- Slightly silly instance for when we only care about the term depth
-instance Indexable Int where
+instance StackLike Int where
   type Elem Int = ()
   _ @@ _ = ()
   size = id
+  i >: _ = i + 1
+  pop 0 = Nothing
+  pop n = Just (n - 1, ())
 
 -- DeBruijn index: 0 is the most recently bound variable (inner scope). Useful
 -- for syntax manipulation: closed terms have well-defined semantics with
@@ -30,7 +41,7 @@ newtype Index = Index Int
   deriving newtype (Eq, Ord, Show, Pretty, NFData)
 
 class ToIndex i where
-  index :: Indexable c => c -> i -> Index
+  index :: StackLike c => c -> i -> Index
 
 instance ToIndex Index where
   index c ix@(Index i) = assert (i < size c) ix
@@ -48,7 +59,7 @@ newtype Level = Level Int
   deriving newtype (Eq, Ord, Show, Pretty, NFData)
 
 class ToLevel l where
-  level :: Indexable c => c -> l -> Level
+  level :: StackLike c => c -> l -> Level
 
 instance ToLevel Level where
   level c lv@(Level l) = assert (l < size c) lv
@@ -74,13 +85,19 @@ instance Traversable Stack where
   traverse :: Applicative f => (a -> f b) -> Stack a -> f (Stack b)
   traverse = traverseOf (from stack . traverse)
 
-instance Indexable (Stack a) where
+instance StackLike (Stack a) where
   type Elem (Stack a) = a
 
   s@(Stack sz elems) @@ ix = case index s ix of
     Index i -> assert (i < sz) (elems RAL.! i)
 
   size (Stack sz _) = sz
+
+  Stack sz elems >: x = Stack (1 + sz) (RAL.cons x elems)
+
+  pop (Stack sz elems) = do
+    (x, xs) <- RAL.uncons elems
+    return (Stack (sz - 1) xs, x)
 
 -- | Construct a stack, `head` being the outermost binder
 stack :: Iso [a] [b] (Stack a) (Stack b)
@@ -93,13 +110,3 @@ rstack :: Iso [a] [b] (Stack a) (Stack b)
 rstack = iso
   (\xs -> let elems = RAL.fromList xs in Stack (RAL.length elems) elems)
   (\(Stack _ elems) -> RAL.toList elems)
-
--- | Push a binder onto the end of the stack
-snoc :: Stack a -> a -> Stack a
-snoc (Stack sz elems) x = Stack (1 + sz) (RAL.cons x elems)
-
--- | Pop a binder off of the end of the stack
-unsnoc :: Stack a -> Maybe (Stack a, a)
-unsnoc (Stack sz elems) = do
-  (x, xs) <- RAL.uncons elems
-  return (Stack (sz - 1) xs, x)

@@ -250,10 +250,19 @@ data Ctx t = Ctx
   }
   deriving (Functor, Generic, NFData)
 
-instance Indexable (Ctx t) where
+instance StackLike (Ctx t) where
   type Elem (Ctx t) = (Binder, t)
+
   Ctx _ s @@ i = s @@ i
+
   size (Ctx _ s) = size s
+
+  Ctx globals s >: b = Ctx globals (s >: b)
+
+  pop :: Ctx t -> Maybe (Ctx t, (Binder, t))
+  pop (Ctx g s) = do
+    (s', b) <- pop s
+    return (Ctx g s', b)
 
 infixr 8 @@:
 (@@:) :: ToIndex i => Ctx t -> i -> t
@@ -279,18 +288,6 @@ ctxOfGlobals globals = Ctx globals (view stack [])
 
 ctxOfSize :: Globals -> "size" @:: Int -> Ctx ()
 ctxOfSize globals sz = Ctx globals (view stack (replicate sz (BFresh, ())))
-
-infixl 5 >:
-(>:) :: forall t. Ctx t -> (Binder, t) -> Ctx t
-Ctx globals s >: b = Ctx globals (snoc s b)
-
-push :: (Binder, t) -> Ctx t -> (Level, Ctx t)
-push b c@(Ctx _ (Stack sz _)) = (Level sz, c >: b)
-
-pop :: Ctx t -> Maybe (Ctx t, (Binder, t))
-pop (Ctx g s) = do
-  (s', b) <- unsnoc s
-  return (Ctx g s', b)
 
 foldCtx :: (Globals -> a) -> (Ctx t -> (Binder, t) -> a -> a) -> Ctx t -> a
 foldCtx z s ctx@(Ctx g _) = case pop ctx of
