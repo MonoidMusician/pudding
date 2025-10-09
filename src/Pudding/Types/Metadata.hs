@@ -1,7 +1,7 @@
 module Pudding.Types.Metadata where
 
 import Control.DeepSeq (NFData)
-import Control.Lens (Lens', Traversal', Traversal1', cloneTraversal, foldMapOf, set, singular, toListOf, toNonEmptyOf, view)
+import Control.Lens (Lens', Traversal', Traversal1', cloneTraversal, foldMapOf, singular, toListOf, toNonEmptyOf)
 import Data.Functor.Apply (Apply, MaybeApply(..))
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Set (Set)
@@ -38,14 +38,6 @@ class HasMetadata t where
   traverseMetadata = cloneTraversal traverseMetadata1
   -- | Recursively access non-empty metadata from children
   traverseMetadata1 :: Traversal1' t Metadata
-
--- | Get the metadata at the top
-getMetadata :: forall t. HasMetadata t => t -> Metadata
-getMetadata = view metadata
-
--- | Set the metadata at the top
-setMetadata :: forall t. HasMetadata t => t -> Metadata -> t
-setMetadata = flip (set metadata)
 
 -- | List the metadata (including the node itself)
 listMetadata1 :: forall t. HasMetadata t => t -> NonEmpty Metadata

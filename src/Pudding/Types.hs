@@ -278,9 +278,6 @@ type EvalCtx = Ctx Eval
 -- Context used for `quote`: `ctxSize` is just used to convert `Level` back to `Index`
 type QuoteCtx = Ctx ()
 
-ctxOfStack :: forall t. Globals -> "inner bindings first" @:: [(Binder, t)] -> Ctx t
-ctxOfStack globals s = Ctx globals (view rstack s)
-
 ctxOfList :: forall t. Globals -> "inner bindings last" @:: [(Binder, t)] -> Ctx t
 ctxOfList globals s = Ctx globals (view stack s)
 
@@ -411,7 +408,7 @@ instance HasMetadata Eval where
       <.*> traverse (traverseMetadata1 (apply f)) params
       <.*> traverse (traverseMetadata1 (apply f)) args
     EDeferred reason ty ref _ term ->
-      (\term' ty' -> EDeferred reason ty' ref (getMetadata term') term')
+      (\term' ty' -> EDeferred reason ty' ref (view metadata term') term')
       <$> traverseMetadata1 f term
       <.> traverseMetadata1 f ty
 
