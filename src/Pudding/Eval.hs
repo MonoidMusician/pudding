@@ -18,12 +18,8 @@ quote = flip quoting
 -- Turn a `Term` context into an `Eval` context, evaluating from the root
 -- (global scope) to the top of the stack.
 evalCtx :: Ctx Term -> Ctx Eval
-evalCtx ctx@(Ctx { ctxStack = [] }) = ctx { ctxSize = 0, ctxStack = [] }
-evalCtx ctx0@(Ctx { ctxStack = (bdr, one) : more }) =
-  let ctx = evalCtx ctx0 { ctxStack = more }
-  -- Patch sizes on the way out
-  in ctx { ctxSize = ctxSize ctx + 1, ctxStack = (bdr, eval ctx one) : ctxStack ctx }
-
+evalCtx = foldCtx ctxOfGlobals \_ (bdr, one) acc ->
+  acc >: (bdr, eval acc one)
 
 -- If you want to fully partially evaluate (ahem, normalize) a top-level `Term`.
 -- Note that this does not handle eta expansion or eta reduction: those are
@@ -50,7 +46,7 @@ normalizeCtx ctx = quote (void ctx) . eval ctx
 
 normalizeNeutrals :: Globals -> ["type" @:: Term] -> Term -> Term
 normalizeNeutrals globals localTypes = normalizeCtx $
-  mapCtx (\(_idx, lvl) _ty -> neutralVar lvl) $
+  mapCtx (\ctx _ty -> neutralVar (level ctx (Index 0))) $
     ctxOfList globals $ (BFresh,) <$> localTypes
 
 ------------------------------
@@ -123,7 +119,7 @@ captureClosure = flip . Closure
 -- Instantiate a closure
 instantiateClosure :: Closure -> Eval -> Eval
 instantiateClosure (Closure binder savedCtx (Scoped savedBody)) providedArg =
-  evaling savedBody $ snoc savedCtx binder providedArg
+  evaling savedBody $ savedCtx >: (binder, providedArg)
 
 
 mkTypeConstructor :: "type name" @:: Name -> GlobalTypeInfo -> Term
@@ -142,7 +138,7 @@ mkTypeConstructor tyName (GlobalTypeInfo { typeParams, typeIndices }) =
     Vector.zipWith mk (Level <$> Vector.fromList [0..]) template
     where
     mk lvl _ =
-      let Index idx = lvl2idx (Vector.length template) lvl in
+      let Index idx = index (Vector.length template) lvl in
       TVar mempty $ Index $ idx + skipped
 
 --------------------------------------------------------------------------------
@@ -168,7 +164,7 @@ evaling = \case
     -- Note that we do not generate neutrals here: they are put in the context
     -- only during *quoting* and *conversion checking*, where we must handle
     -- open terms (digging down below binders (λ, Π, Σ)) by seeding neutrals
-    case indexCtx idx ctx of
+    case ctx @@: idx of
       -- If it is a neutral, we should add metadata...
       ENeut (Neutral (NVar metaNeut lvl) []) ->
         ENeut (Neutral (NVar (metaNeut <> moreMeta) lvl) [])
@@ -268,7 +264,7 @@ eval2termWith forceGlobals handleClosure = \case
   ENeut (Neutral focus prjs) -> \ctx ->
     let
       base = case focus of
-        NVar meta lvl -> TVar meta (lvl2idx (ctxSize ctx) lvl)
+        NVar meta lvl -> TVar meta (index ctx lvl)
         NHole meta hole -> THole meta hole
         NGlobal _ _ name
           | forceGlobals
@@ -305,11 +301,12 @@ eval2termWith forceGlobals handleClosure = \case
 --
 -- Note: this calls directly into `quoting`.
 quotingClosure :: Closure -> Eval -> QuoteCtx -> ScopedTerm
-quotingClosure (Closure bdr savedCtx (Scoped savedBody)) argTy ctx =
+quotingClosure (Closure bdr savedCtx (Scoped savedBody)) _argTy ctx =
   let
+    (lvl, ctx') = push (bdr, ()) ctx
     -- This is the (only-ish) place that we create neutrals: when quoting.
-    evalingArg = ENeut (Neutral (NVar mempty (Level (ctxSize ctx))) [])
-  in Scoped $ quoting ((evaling savedBody $ snoc savedCtx bdr evalingArg) :: Eval) (snoc ctx bdr ())
+    evalingArg = ENeut (Neutral (NVar mempty lvl) [])
+  in Scoped $ quoting ((evaling savedBody $ savedCtx >: (bdr, evalingArg)) :: Eval) ctx'
 
 -- If we don't want to fully normalize, we can turn `Eval` back into a `Term`
 -- in the simplest way: copying the `Term` out of the `Closure` without any
@@ -332,11 +329,11 @@ umax _ _ = error "Bad umax / unimplemented"
 -- We are lazy with shifting terms: they enter the context completely unshifted,
 -- and then when we want to pull one out, we shift by the appropriate amount
 -- based on how much the context has grown.
-getShifted :: Index -> [Term] -> Term
+getShifted :: Index -> TypeCtx -> Term
 getShifted (Index idx) terms =
   -- We always shift at least one: index 0 is the most recent variable, but its
   -- type belongs to the context _before_ it was introduced
-  shift (idx+1) (terms !! idx)
+  shift (idx+1) (terms @@: idx)
 
 shift :: Int -> Term -> Term
 shift = shiftFrom 0

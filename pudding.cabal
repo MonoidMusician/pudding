@@ -53,6 +53,7 @@ common defaults
         BlockArguments
         DataKinds
         MagicHash
+        TypeFamilies
 
     -- Other library packages from which modules are imported.
     -- (Slightly trimmed from PureScript)
@@ -79,6 +80,7 @@ common defaults
         parsec >=3.1.17.0 && <3.2,
         prettyprinter >=1.7.1 && <1.8,
         prettyprinter-ansi-terminal >=1.1.3 && <1.2,
+        ral >=0.2.2 && <0.3,
         safe >=0.3.21 && <0.4,
         semialign >=1.3.1 && <1.4,
         semigroupoids >=6.0.1 && <6.1,
@@ -107,6 +109,7 @@ library
         Pudding.Types,
         Pudding.Types.Base,
         Pudding.Types.Metadata,
+        Pudding.Types.Stack,
         Pudding.Name,
         Pudding.Eval,
         Pudding.Unify,

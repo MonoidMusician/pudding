@@ -6,12 +6,16 @@ import Pudding.Types
 import Prettyprinter.Render.Text (renderStrict)
 import qualified Prettyprinter.Render.Terminal as Ansi
 import Data.Text (Text)
-import Data.Coerce (coerce)
 import qualified Data.Vector as Vector
 import Control.Monad (join)
 
 type Print = Doc.Doc Ansi.AnsiStyle
-type Printer = (Int, Level) -> Print
+type Printer = PrinterState -> Print
+
+data PrinterState = PS
+  { psRainbow :: Int
+  , psDepth :: Int
+  }
 
 data Style = Ansi | Plain
 
@@ -24,9 +28,9 @@ format Plain = renderStrict . Doc.layoutPretty Doc.defaultLayoutOptions
 format Ansi = Ansi.renderStrict . Doc.layoutPretty Doc.defaultLayoutOptions
 
 sexp :: [Printer] -> Printer
-sexp fs (i, ctx) = Doc.hang 1 (clr "(" <> spaced fs i' <> clr ")")
+sexp fs (PS i ctx) = Doc.hang 1 (clr "(" <> spaced fs i' <> clr ")")
   where
-  i' = (i+1, ctx)
+  i' = PS (i + 1) ctx
   clr = rainbow i
 
 spaced :: [i -> Doc.Doc ann] -> (i -> Doc.Doc ann)
@@ -35,15 +39,15 @@ spaced [x] = x
 spaced (x : y : zs) = x <> const Doc.softline <> spaced (y : zs)
 
 bound :: Binder -> (Term -> Printer) -> (ScopedTerm -> Printer)
-bound _ f (Scoped term) (i, Level lvl) = f term (i, Level (lvl + 1))
+bound _ f (Scoped term) (PS i depth) = f term (PS i (depth + 1))
 
 formatCore :: Style -> Term -> Text
-formatCore style term = format style $ printCore term (0, Level 0)
+formatCore style term = format style $ printCore term (PS 0 0)
 
 printCore :: Term -> Printer
 printCore = \case
-  TVar _m idx -> \(_, ctx) -> mconcat
-    [ "_" <> Doc.pretty (idx2lvl (coerce ctx) idx)
+  TVar _m idx -> \(PS _ ctx) -> mconcat
+    [ "_" <> Doc.pretty (level ctx idx)
     -- , "." <> Doc.pretty idx
     ]
   TGlobal _m name -> pure $ Doc.pretty name
@@ -55,7 +59,7 @@ printCore = \case
   TLambda _m p binder ty body -> sexp
     [ pure $ "λ" <> if p == Implicit then "?" else ""
     , sexp
-      [ \(_, ctx) -> "_" <> Doc.pretty ctx
+      [ \(PS _ ctx) -> "_" <> Doc.pretty ctx
       , printCore ty
       ]
     , pure Doc.hardline
@@ -64,7 +68,7 @@ printCore = \case
   TPi _m p binder ty body -> sexp
     [ pure $ "Π" <> if p == Implicit then "?" else ""
     , sexp
-      [ \(_, ctx) -> "_" <> Doc.pretty ctx
+      [ \(PS _ ctx) -> "_" <> Doc.pretty ctx
       , printCore ty
       ]
     , pure Doc.hardline
@@ -76,7 +80,7 @@ printCore = \case
   TSigma _m p binder ty body -> sexp
     [ pure $ "Σ" <> if p == Implicit then "?" else ""
     , sexp
-      [ \(_, ctx) -> "_" <> Doc.pretty ctx
+      [ \(PS _ ctx) -> "_" <> Doc.pretty ctx
       , printCore ty
       ]
     , pure Doc.hardline
@@ -102,4 +106,3 @@ printCore = \case
       , printCore <$> Vector.toList params
       , printCore <$> Vector.toList args
       ]
-

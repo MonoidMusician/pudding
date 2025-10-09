@@ -2,11 +2,11 @@ module Pudding.Types
   ( module Pudding.Types -- Export the default exports of this module
   , module Pudding.Types.Base
   , module Pudding.Types.Metadata
+  , module Pudding.Types.Stack
   , module Pudding.Name -- Export more
   ) where
 
 import Control.DeepSeq (NFData)
-import Data.Functor ((<&>))
 import Data.Functor.Apply ((<.>), (<.*>))
 import Data.Map (Map)
 import Data.Text (Text)
@@ -17,6 +17,7 @@ import Prettyprinter (Pretty)
 import Pudding.Name (CanonicalName(..), Name(..), newTable, initTable, internalize)
 import Pudding.Types.Base
 import Pudding.Types.Metadata
+import Pudding.Types.Stack
 
 --------------------------------------------------------------------------------
 -- Main semantic types!                                                       --
@@ -232,27 +233,30 @@ data Telescope = Telescope Eval Closure
 neutralVar :: Level -> Eval
 neutralVar lvl = ENeut (Neutral (NVar mempty lvl) [])
 
-nextNeutral :: forall t. Ctx t -> Eval
-nextNeutral = neutralVar . Level . ctxSize
-
 arityOfTerm :: Term -> Int
 arityOfTerm = go 0
   where
   go !acc (TLambda _ _ _ _ (Scoped body)) = go (1 + acc) body
   go !acc _ = acc
 
-
 --------------------------
 -- The type of contexts --
 --------------------------
 
-
 data Ctx t = Ctx
   { ctxGlobals :: Globals
-  , ctxSize :: !Int
-  , ctxStack :: ![(Binder, t)]
+  , ctxStack :: !(Stack (Binder, t))
   }
   deriving (Functor, Generic, NFData)
+
+instance Indexable (Ctx t) where
+  type Elem (Ctx t) = (Binder, t)
+  Ctx _ s @@ i = s @@ i
+  size (Ctx _ s) = size s
+
+infixr 8 @@:
+(@@:) :: ToIndex i => Ctx t -> i -> t
+c @@: i = snd (c @@ i)
 
 -- Context used for `eval`
 type EvalCtx = Ctx Eval
@@ -260,35 +264,41 @@ type EvalCtx = Ctx Eval
 -- Context used for `quote`: `ctxSize` is just used to convert `Level` back to `Index`
 type QuoteCtx = Ctx ()
 
-ctxOfStack :: forall t. Globals -> "stack" @:: [(Binder, t)] -> Ctx t
-ctxOfStack globals stack =
-  Ctx globals (length stack) stack
+ctxOfStack :: forall t. Globals -> "inner bindings first" @:: [(Binder, t)] -> Ctx t
+ctxOfStack globals s = Ctx globals (rstack s)
 
-ctxOfList :: forall t. Globals -> "list in order" @:: [(Binder, t)] -> Ctx t
-ctxOfList globals = ctxOfStack globals . reverse
+ctxOfList :: forall t. Globals -> "inner bindings last" @:: [(Binder, t)] -> Ctx t
+ctxOfList globals s = Ctx globals (stack s)
+
+ctxToList :: forall t. Ctx t -> "inner bindings last" @:: [(Binder, t)]
+ctxToList (Ctx _ s) = unstack s
 
 ctxOfGlobals :: forall t. Globals -> Ctx t
-ctxOfGlobals globals = ctxOfStack globals []
+ctxOfGlobals globals = Ctx globals (stack [])
 
 ctxOfSize :: Globals -> "size" @:: Int -> Ctx ()
-ctxOfSize globals 0 = ctxOfGlobals globals
-ctxOfSize globals sz = ctxOfStack globals $ (BFresh, ()) <$ [0..(sz - 1)]
+ctxOfSize globals sz = Ctx globals (stack (replicate sz (BFresh, ())))
 
-snoc :: forall t. Ctx t -> Binder -> t -> Ctx t
-snoc (Ctx globals sz stack) binder item =
-  Ctx globals (sz + 1) ((binder, item) : stack)
+infixl 5 >:
+(>:) :: forall t. Ctx t -> (Binder, t) -> Ctx t
+Ctx globals s >: b = Ctx globals (snoc s b)
 
-indexCtx :: forall t. Index -> Ctx t -> t
-indexCtx (Index idx) (Ctx { ctxStack }) = snd (ctxStack !! idx)
+push :: (Binder, t) -> Ctx t -> (Level, Ctx t)
+push b c@(Ctx _ (Stack sz _)) = (Level sz, c >: b)
 
-levelCtx :: forall t. Level -> Ctx t -> t
-levelCtx lvl ctx@Ctx { ctxSize } = indexCtx (lvl2idx ctxSize lvl) ctx
+pop :: Ctx t -> Maybe (Ctx t, (Binder, t))
+pop (Ctx g s) = do
+  (s', b) <- unsnoc s
+  return (Ctx g s', b)
 
-mapCtx :: forall t t'. ((Index, Level) -> t -> t') -> Ctx t -> Ctx t'
-mapCtx f ctx = Ctx (ctxGlobals ctx) (ctxSize ctx) $
-  zip indices (ctxStack ctx) <&> \(idx, (bdr, t)) -> (bdr, f idx t)
-  where
-  indices = [0..] <&> \i -> (Index i, idx2lvl (ctxSize ctx) (Index i))
+foldCtx :: (Globals -> a) -> (Ctx t -> (Binder, t) -> a -> a) -> Ctx t -> a
+foldCtx z s ctx@(Ctx g _) = case pop ctx of
+  Nothing -> z g
+  Just (ctx', b) -> s ctx' b (foldCtx z s ctx')
+
+mapCtx :: (Ctx t -> t -> a) -> Ctx t -> Ctx a
+mapCtx f = foldCtx ctxOfGlobals \ctx (b, t) acc ->
+  acc >: (b, f ctx t)
 
 --------------------------------------------------------------------------------
 -- Helper types!                                                              --
@@ -300,22 +310,6 @@ mapCtx f ctx = Ctx (ctxGlobals ctx) (ctxSize ctx) $
 -- surface syntax usage: f 42
 data Plicit = Explicit | Implicit
   deriving (Eq, Ord, Generic, NFData)
-
--- DeBruijn index: 0 is the most recently bound variable (inner scope). Useful
--- for syntax manipulation: closed terms have well-defined semantics with `Index`.
-newtype Index = Index Int
-  deriving newtype (Eq, Ord, Show, Pretty, NFData)
-
--- DeBruijn level: 0 is the first bound variable (outer scope). Used for
--- evaluation because they behave like variable names (they do not change once
--- introduced, unlike indices which would require shifting).
-newtype Level = Level Int
-  deriving newtype (Eq, Ord, Show, Pretty, NFData)
-
-idx2lvl :: Int -> Index -> Level
-idx2lvl size (Index idx) = Level ((size - 1) - idx)
-lvl2idx :: Int -> Level -> Index
-lvl2idx size (Level lvl) = Index ((size - 1) - lvl)
 
 -- E.g. for numbering typed holes
 newtype Fresh = Fresh Int

@@ -11,7 +11,7 @@ import Testing
 import Pudding (parseAndBootGlobals)
 import Data.Text (Text)
 import Data.Foldable (for_)
-import Pudding.Printer (formatCore, Style (Ansi), format, printCore)
+import Pudding.Printer (PrinterState(..), formatCore, Style (Ansi), format, printCore)
 import Control.DeepSeq (force)
 
 evalTest :: TestSuite
@@ -39,7 +39,7 @@ evalTest = TestSuite "EvalTest" do
     normUnder = normalizeNeutrals globals
     type0 = TUniv mempty $ UBase 0
     neutralCtx localTypes =
-      mapCtx (\(_idx, lvl) _ty -> neutralVar lvl) $
+      mapCtx (\ctx _ty -> neutralVar (level ctx (Index 0))) $
         ctxOfList globals $ (BFresh,) <$> localTypes
     typecheckUnder localTypes = force . validateQuoteNeutrals globals localTypes
   testCase "Globals" do
@@ -204,7 +204,7 @@ instance Eq Term' where
 data SubTerm' = SubTerm' Int Term
 
 instance Show SubTerm' where
-  show (SubTerm' depth t) = "\n" <> T.unpack (format Ansi $ printCore t (0, Level depth))
+  show (SubTerm' depth t) = "\n" <> T.unpack (format Ansi $ printCore t (PS 0 depth))
 
 instance Eq SubTerm' where
   SubTerm' _ t1 == SubTerm' _ t2 = t1 `termEquiv` t2

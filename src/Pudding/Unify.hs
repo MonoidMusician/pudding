@@ -4,7 +4,7 @@ import Pudding.Types
 import Pudding.Eval
 import qualified Data.Map as Map
 import Data.Functor ((<&>), void)
-import Pudding.Printer (Style (Ansi), format, printCore)
+import Pudding.Printer (PrinterState(..), Style (Ansi), format, printCore)
 import qualified Data.Text as T
 import Data.Coerce (coerce)
 import GHC.StableName (StableName)
@@ -22,7 +22,7 @@ validateQuote ctx = quote (void ctx) . validate ctx
 -- Validate in a context of neutrals
 validateQuoteNeutrals :: Globals -> ["type" @:: Term] -> "term" @:: Term -> "type" @:: Term
 validateQuoteNeutrals globals localTypes = validateQuote $
-  mapCtx (\(_idx, lvl) ty -> (ty, neutralVar lvl)) $ evalCtx $
+  mapCtx (\ctx ty -> (ty, neutralVar (level ctx (Index 0)))) $ evalCtx $
     ctxOfList globals $ (BFresh,) <$> localTypes
 -- Do not validate, but just assemble the type
 quickTermType :: EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
@@ -75,7 +75,7 @@ bootGlobalTypes globals =
     Vector.zipWith mk (Level <$> Vector.fromList [0..]) template
     where
     mk lvl _ =
-      let Index idx = lvl2idx (Vector.length template) lvl in
+      let Index idx = index (Vector.length template) lvl in
       TVar mempty $ Index $ idx + skipped
 
 --------------------------------------------------------------------------------
@@ -125,11 +125,15 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
   (EPair _ ty _ _, _) -> cc evalL (etaPair ty evalR)
   (_, EPair _ ty _ _) -> cc (etaPair ty evalL) evalR
   (ELambda _ _ bdr _ body, _) ->
-    let !arg = nextNeutral ctx in
-    conversionCheck (snoc ctx bdr ()) (instantiateClosure body arg) (doApp evalR arg)
+    let
+      (lvl, ctx') = push (bdr, ()) ctx
+      !arg = neutralVar lvl
+    in conversionCheck ctx' (instantiateClosure body arg) (doApp evalR arg)
   (_, ELambda _ _ bdr _ body) ->
-    let !arg = nextNeutral ctx in
-    conversionCheck (snoc ctx bdr ()) (doApp evalL arg) (instantiateClosure body arg)
+    let
+      (lvl, ctx') = push (bdr, ()) ctx
+      !arg = neutralVar lvl
+    in conversionCheck ctx' (doApp evalL arg) (instantiateClosure body arg)
 
   -- The default case of neutrals (variables) is easy to check: check projections
   -- pairwise. Dealing with lazily inlined globals requires checking via
@@ -156,8 +160,8 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
   cc = conversionCheck ctx
   ccScoped bdrL tyL bodyL bdrR tyR bodyR =
     let
-      !var = nextNeutral ctx
-      ctx' = snoc ctx (BMulti bdrL bdrR) ()
+      (lvl, ctx') = push (BMulti bdrL bdrR, ()) ctx
+      !var = neutralVar lvl
     in cc tyL tyR && conversionCheck ctx'
       (instantiateClosure bodyL var) (instantiateClosure bodyR var)
 
@@ -213,13 +217,13 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
 -- type if `seqOrConst = const id`.
 validateOrNot :: (forall a b. a -> b -> b) -> HasCallStack => EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
 validateOrNot seqOrConst ctx = \case
-  TVar _ idx -> fst $ indexCtx idx ctx
+  TVar _ idx -> fst $ ctx @@: idx
   TGlobal _ name -> case Map.lookup name (ctxGlobals ctx) of
     Nothing -> error $ "Undefined global " <> show name
     Just (GlobalDefn _ (GlobalTerm _ ty) _) -> ty
     -- FIXME a bit lazy
     Just (GlobalType info) -> validateOrNot seqOrConst ctx $ mkTypeConstructor name info
-  THole _ fresh -> error "typeof hole not implemented"
+  THole _ _fresh -> error "typeof hole not implemented"
   TUniv meta univ -> EUniv meta $ case univ of
     UBase lvl -> UBase (lvl + 1)
     UMeta lvl -> UMeta (lvl + 1)
@@ -232,7 +236,7 @@ validateOrNot seqOrConst ctx = \case
           -- We have to quote it back into a `Term`, mostly for when the
           -- neutral variable we used for typechecking is actually instantiated
           -- at an application site
-          Scoped $ quote (snoc quoteCtxHere b ()) bodyTy
+          Scoped $ quote (quoteCtxHere >: (b, ())) bodyTy
   TPi _ _ b ty body ->
     -- Π(x : ty : U), (body : U)
     case (vv ty, snd $ validateScoped b ty body) of
@@ -277,7 +281,7 @@ validateOrNot seqOrConst ctx = \case
       validateTelescope "Invalid constructor argument" 0 ctx args ctxParams ctorArguments \ctxArgs ->
         let
           -- the parameters were already evaluated onto the first stack
-          paramValues = Vector.fromList $ reverse $ snd <$> ctxStack ctxParams
+          paramValues = Vector.fromList $ snd <$> ctxToList ctxParams
           -- then we need to evaluate the indices, now that the arguments are
           -- all bound as well
           indexValues = eval ctxArgs <$> ctorIndices
@@ -302,8 +306,8 @@ validateOrNot seqOrConst ctx = \case
   validateScoped :: Binder -> "arg type" @:: Term -> ScopedTerm -> ("arg type" @:: Eval, "body type" @:: Eval)
   validateScoped bdr ty (Scoped body) =
     let
+      (lvl, ctx') = push (bdr, (tyVal, neutralVar lvl)) ctx
       tyVal = validateType ty
-      ctx' = snoc ctx bdr (tyVal, nextNeutral ctx)
     in (tyVal, tyVal `seq` validateOrNot seqOrConst ctx' body)
 
   evalHere = eval evalCtxHere
@@ -331,7 +335,7 @@ validateOrNot seqOrConst ctx = \case
           -- Next we typecheck `value` against `tyEval`
           valueTy = cc (mismatchError <> " " <> show i) (validateOrNot seqOrConst ctorCtx value) tyEval
           -- Now we extend `typeCtx` with the new value (laziness is nice here)
-          typeCtx' = valueTy `seqOrConst` snoc typeCtx binder (eval (toEvalCtx ctorCtx) value)
+          typeCtx' = valueTy `seqOrConst` typeCtx >: (binder, eval (toEvalCtx ctorCtx) value)
         in valueTy `seqOrConst`
           -- Proceed with the next index `i+1`
           validateTelescope mismatchError (i+1) ctorCtx valueVector typeCtx' typeVector continuation
@@ -342,12 +346,12 @@ validateOrNot seqOrConst ctx = \case
 -- This functions as a proof that terms are intrinsically typed
 typeof :: TypeCtx -> Term -> Term
 typeof ctx = \case
-  TVar _ idx -> getShifted idx (snd <$> ctxStack ctx)
+  TVar _ idx -> getShifted idx ctx
   TGlobal _ name -> case Map.lookup name (ctxGlobals ctx) of
     Nothing -> error $ "Undefined global " <> show name
     Just (GlobalDefn _ (GlobalTerm ty _) _) -> ty
     Just _ -> error "Not implemented"
-  THole _ fresh -> error "typeof hole not implemented"
+  THole _ _fresh -> error "typeof hole not implemented"
   TUniv meta univ -> TUniv meta case univ of
     UBase lvl -> UBase (lvl + 1)
     UMeta lvl -> UMeta (lvl + 1)
@@ -360,7 +364,7 @@ typeof ctx = \case
     case (typeof ctx ty, typeof (into b ty) body) of
       (TUniv m1 u1, TUniv m2 u2) -> TUniv (m1 <> m2) (umax u1 u2)
       (_, r) -> error $ "Bad pi type: " <> T.unpack do
-        format Ansi $ printCore r (0, coerce $ ctxSize ctx)
+        format Ansi $ printCore r (PS 0 (coerce $ size ctx))
   TSigma _ _ b ty (Scoped body) ->
     case (typeof ctx ty, typeof (into b ty) body) of
       (TUniv m1 u1, TUniv m2 u2) -> TUniv (m1 <> m2) (umax u1 u2)
@@ -403,4 +407,4 @@ typeof ctx = \case
     _ -> error "Bad constructor name"
   where
   into :: Binder -> Term -> TypeCtx
-  into bdr ty = snoc ctx bdr ty
+  into bdr ty = ctx >: (bdr, ty)
