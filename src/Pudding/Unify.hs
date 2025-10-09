@@ -174,13 +174,13 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
     (NGlobal _ _ nameL, NGlobal _ _ nameR) -> nameL == nameR
     (_, _) -> False -- FIXME: handle holes via unification!!
   checkPrjs shouldCC = \case
-    (NApp _ argL : moreL, NApp _ argR : moreR) ->
+    (moreL :> NApp _ argL, moreR :> NApp _ argR) ->
       shouldCC argL argR && checkPrjs shouldCC (moreL, moreR)
-    (NFst _ : moreL, NFst _ : moreR) ->
+    (moreL :> NFst _, moreR :> NFst _) ->
       checkPrjs shouldCC (moreL, moreR)
-    (NSnd _ : moreL, NSnd _ : moreR) ->
+    (moreL :> NSnd _, moreR :> NSnd _) ->
       checkPrjs shouldCC (moreL, moreR)
-    ([], []) -> True
+    (Nil, Nil) -> True
     -- Differing lengths or differing projections
     (_, _) -> False
 

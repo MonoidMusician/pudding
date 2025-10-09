@@ -55,7 +55,7 @@ normalizeNeutrals globals localTypes = normalizeCtx $
 
 -- Do a projection on `Eval`
 doPrj :: HasCallStack => Eval -> NeutPrj -> Eval
-doPrj (ENeut (Neutral blocker prjs)) prj = ENeut (Neutral blocker (prj : prjs))
+doPrj (ENeut (Neutral blocker prjs)) prj = ENeut (Neutral blocker (prjs :> prj))
 doPrj (EPair _ _ left _) (NFst _) = left
 doPrj (EPair _ _ _ right) (NSnd _) = right
 doPrj (ELambda _ _ _ _ body) (NApp _ arg) = instantiateClosure body arg
@@ -79,9 +79,9 @@ doSnd :: HasCallStack => Eval -> Eval
 doSnd tgt = doPrj tgt (NSnd mempty)
 
 -- Do a stack of projections on `Eval`
-doPrjs :: HasCallStack => Eval -> [NeutPrj] -> Eval
-doPrjs focus (prj : prjs) = doPrj (doPrjs focus prjs) prj
-doPrjs focus [] = focus
+doPrjs :: HasCallStack => Eval -> Stack NeutPrj -> Eval
+doPrjs focus (prjs :> prj) = doPrj (doPrjs focus prjs) prj
+doPrjs focus Nil = focus
 
 -- Eta expand the pair constructor, for sigma types
 etaPair :: HasCallStack => "type" @:: Eval -> "pair" @:: Eval -> Eval
@@ -94,14 +94,15 @@ checkGlobal ctx e@(ENeut (Neutral (NGlobal arity _ _name) prjs))
   | arity <= List.length prjs && not (idlePrjs prjs)
     = fromMaybe e (forceGlobal ctx e)
   where
-  -- Neutral argument: see what happens with the rest
-  idlePrjs (NApp _ (ENeut _) : prjs') = idlePrjs prjs'
-  -- Have a concrete argument: reduce now, hopefully it simplifies
-  idlePrjs (NApp _ _ : _) = False
-  -- Have a different kind of projection: reduce now
-  idlePrjs (_ : _) = False
-  -- All arguments were neutral
-  idlePrjs [] = True
+    idlePrjs :: Stack NeutPrj -> Bool
+    -- Neutral argument: see what happens with the rest
+    idlePrjs (prjs' :> NApp _ (ENeut _)) = idlePrjs prjs'
+    -- Have a concrete argument: reduce now, hopefully it simplifies
+    idlePrjs (_ :> NApp _ _) = False
+    -- Have a different kind of projection: reduce now
+    idlePrjs (_ :> _) = False
+    -- All arguments were neutral
+    idlePrjs Nil = True
 checkGlobal _ e = e
 
 -- Just evaluate a neutral global
@@ -166,8 +167,8 @@ evaling = \case
     -- open terms (digging down below binders (λ, Π, Σ)) by seeding neutrals
     case ctx @@: idx of
       -- If it is a neutral, we should add metadata...
-      ENeut (Neutral (NVar metaNeut lvl) []) ->
-        ENeut (Neutral (NVar (metaNeut <> moreMeta) lvl) [])
+      ENeut (Neutral (NVar metaNeut lvl) Nil) ->
+        ENeut (Neutral (NVar (metaNeut <> moreMeta) lvl) Nil)
       -- Otherwise we just pass the value from context along:
       -- the variable has done its job
       e -> e
@@ -181,7 +182,7 @@ evaling = \case
           -- If it has a positive number of immediate arguments, then we let
           -- it block evaluation until they are filled with at least one non-
           -- neutral argument
-          ENeut (Neutral (NGlobal arity meta name) [])
+          ENeut (Neutral (NGlobal arity meta name) Nil)
       -- Constructors are a bit tricky
       Just (GlobalType info) ->
         evaling (mkTypeConstructor name info) ctx
@@ -214,7 +215,10 @@ evaling = \case
       -- If it was stuck as a neutral, we need to preserve the argument on the
       -- stack of projections to apply to the neutral variable
       (ENeut (Neutral focus prjs), evalingArg) ->
-        checkGlobal ctx $ ENeut (Neutral { neutralBlocking = focus, neutralSpine = NApp metaApp evalingArg : prjs })
+        checkGlobal ctx $ ENeut $ Neutral
+          { neutralBlocking = focus
+          , neutralSpine = prjs :> NApp metaApp evalingArg
+          }
       _ -> error "Type error: cannot apply to non-function"
   TPair meta ty left right ->
     EPair meta <$> evaling ty <*> evaling left <*> evaling right
@@ -228,20 +232,20 @@ evaling = \case
       -- apply `fst` to it when it does reduce -> this means that in quoting we
       -- can actually reconstruct the syntax around the neutral
       ENeut (Neutral focus prjs) ->
-        checkGlobal ctx $ ENeut (Neutral focus (NFst meta : prjs))
+        checkGlobal ctx $ ENeut (Neutral focus (prjs :> NFst meta))
       _ -> error "Type error: cannot project from non-sigma"
   TSnd meta term -> \ctx ->
     -- Again, we look to beta reduce, or add a projection to a neutral
     case undeferred $ evaling term ctx of
       EPair _ _ _ right -> right
       ENeut (Neutral focus prjs) ->
-        checkGlobal ctx $ ENeut (Neutral focus (NSnd meta : prjs))
+        checkGlobal ctx $ ENeut (Neutral focus (prjs :> NSnd meta))
       _ -> error "Type error: cannot project from non-sigma"
   TUniv meta univ -> pure $ EUniv meta univ
   -- A hole is a neutral: we do not know its value yet. Thus we have to block
   -- on it and record its arguments or projections. This is contrary to the
   -- neutrals for abstract variables, which are introduced *outside* of eval.
-  THole meta hole -> pure $ ENeut (Neutral (NHole meta hole) [])
+  THole meta hole -> pure $ ENeut (Neutral (NHole meta hole) Nil)
   TTyCtor meta name params indices -> ETyCtor meta name <$> traverse evaling params <*> traverse evaling indices
   TConstr meta name params args -> EConstr meta name <$> traverse evaling params <*> traverse evaling args
   where
@@ -271,11 +275,11 @@ eval2termWith forceGlobals handleClosure = \case
           , Just (GlobalDefn _ _ (GlobalTerm term _)) <-
               Map.lookup name (ctxGlobals ctx) -> term
         NGlobal _arity meta name -> TGlobal meta name
-      go (prj : more) soFar = go more case prj of
+      go (more :> prj) soFar = go more case prj of
         NApp meta arg -> TApp meta soFar (e2t arg ctx)
         NFst meta -> TFst meta soFar
         NSnd meta -> TSnd meta soFar
-      go [] result = result
+      go Nil result = result
     in go prjs base
   EUniv meta univ -> pure $ TUniv meta univ
   ELambda meta plicit binder ty body ->
@@ -305,7 +309,7 @@ quotingClosure (Closure bdr savedCtx (Scoped savedBody)) _argTy ctx =
   let
     (lvl, ctx') = push (bdr, ()) ctx
     -- This is the (only-ish) place that we create neutrals: when quoting.
-    evalingArg = ENeut (Neutral (NVar mempty lvl) [])
+    evalingArg = ENeut (Neutral (NVar mempty lvl) Nil)
   in Scoped $ quoting ((evaling savedBody $ savedCtx :> (bdr, evalingArg)) :: Eval) ctx'
 
 -- If we don't want to fully normalize, we can turn `Eval` back into a `Term`

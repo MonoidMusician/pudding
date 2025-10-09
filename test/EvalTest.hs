@@ -17,7 +17,7 @@ import Control.DeepSeq (force)
 evalTest :: TestSuite
 evalTest = TestSuite "EvalTest" do
   let
-    empty = ctxOfGlobals globals
+    top = ctxOfGlobals globals
     globals = parseAndBootGlobals $ T.unlines
       -- Id := \(x : Type0) -> x
       [ "(define Id (lambda (x (Type0)) x))"
@@ -49,9 +49,9 @@ evalTest = TestSuite "EvalTest" do
       --   liftIO $ putStrLn $ T.unpack $ formatCore Ansi $ typecheckUnder [] ty
       _ -> pure ()
     testCase "Id" do
-      expectType empty "Id1" "(Pi (t (Type0 1)) (Type0 1))"
+      expectType top "Id1" "(Pi (t (Type0 1)) (Type0 1))"
     testCase "identity" do
-      expectType empty "identity1" "(Pi (t (Type0 1)) (Pi (x t) t))"
+      expectType top "identity1" "(Pi (t (Type0 1)) (Pi (x t) t))"
   testCase "AlphaEquivalence" do
     t1 <- parseTerm "(lambda (A (Type0)) A)"
     t2 <- parseTerm "(lambda (B (Type0)) B)"

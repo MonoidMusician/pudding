@@ -9,6 +9,7 @@ module Pudding.Types
 import Control.DeepSeq (NFData)
 import Control.Lens (from, view)
 import Data.Functor.Apply ((<.>), (<.*>))
+import qualified Data.Map as M
 import Data.Map (Map)
 import Data.Text (Text)
 import Data.Vector (Vector)
@@ -136,12 +137,6 @@ data Term
 newtype ScopedTerm = Scoped Term
   deriving newtype (NFData)
 
-spine :: Term -> (Term, [Term])
-spine = go []
-  where
-  go acc (TApp _ fun arg) = go (arg : acc) fun
-  go acc fun = (fun, acc)
-
 -- Result of the `eval` half of Normalization by Evaluation (NbE), called
 -- "the semantic domain".
 --
@@ -180,7 +175,7 @@ data Eval
 -- (This is the Normalization part of NbE: inserting variables to evaluate open terms.)
 data Neutral = Neutral
   { neutralBlocking :: NeutFocus
-  , neutralSpine :: [NeutPrj]
+  , neutralSpine :: Stack NeutPrj
     -- ^ Spine of projections/function applications/eliminators to apply,
     -- either to reconstruct the syntax around the variable, or to finish
     -- evaluating it once it is known.
@@ -232,13 +227,19 @@ data Telescope = Telescope Eval Closure
 ----------------------------------
 
 neutralVar :: Level -> Eval
-neutralVar lvl = ENeut (Neutral (NVar mempty lvl) [])
+neutralVar lvl = ENeut (Neutral (NVar mempty lvl) (view stack []))
 
 arityOfTerm :: Term -> Int
 arityOfTerm = go 0
   where
   go !acc (TLambda _ _ _ _ (Scoped body)) = go (1 + acc) body
   go !acc _ = acc
+
+spine :: Term -> (Term, [Term])
+spine = go []
+  where
+  go acc (TApp _ fun arg) = go (arg : acc) fun
+  go acc fun = (fun, acc)
 
 --------------------------
 -- The type of contexts --
@@ -256,6 +257,9 @@ instance StackLike (Ctx t) where
   Ctx _ s @@ i = s @@ i
 
   size (Ctx _ s) = size s
+
+  -- NB: Usually you want `ctxOfGlobals`
+  empty = Ctx M.empty empty
 
   push' (Ctx globals s) b = Ctx globals (s :> b)
 
@@ -415,7 +419,7 @@ instance HasMetadata Neutral where
   traverseMetadata1 f (Neutral focus prjs) =
     Neutral
       <$> traverseMetadata1 f focus
-      <.*> traverse (traverseMetadata1 (apply f)) (reverse prjs)
+      <.*> traverse (traverseMetadata1 (apply f)) prjs
 
 instance HasMetadata NeutFocus where
   traverseMetadata1 f (NVar old lvl) = (\new -> NVar new lvl) <$> f old

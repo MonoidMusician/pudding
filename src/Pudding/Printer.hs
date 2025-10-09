@@ -42,7 +42,7 @@ bound :: Binder -> (Term -> Printer) -> (ScopedTerm -> Printer)
 bound _ f (Scoped term) (PS i depth) = f term (PS i (depth + 1))
 
 formatCore :: Style -> Term -> Text
-formatCore style term = format style $ printCore term (PS 0 0)
+formatCore style term = format style $ printCore term (PS empty 0)
 
 printCore :: Term -> Printer
 printCore = \case
