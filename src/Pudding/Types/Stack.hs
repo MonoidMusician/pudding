@@ -2,6 +2,7 @@ module Pudding.Types.Stack where
 
 import Control.DeepSeq (NFData)
 import Control.Exception (assert)
+import Control.Lens (Iso, folded, foldMapOf, from, iso,  traverseOf, withIso)
 import qualified Data.RAList as RAL
 import Data.RAList (RAList)
 import GHC.Generics (Generic)
@@ -65,6 +66,14 @@ instance ToLevel Index where
 data Stack a = Stack !Int !(RAList a)
   deriving (Functor, Generic, NFData)
 
+instance Foldable Stack where
+  foldMap :: Monoid m => (a -> m) -> Stack a -> m
+  foldMap = foldMapOf (from stack . folded)
+
+instance Traversable Stack where
+  traverse :: Applicative f => (a -> f b) -> Stack a -> f (Stack b)
+  traverse = traverseOf (from stack . traverse)
+
 instance Indexable (Stack a) where
   type Elem (Stack a) = a
 
@@ -74,18 +83,16 @@ instance Indexable (Stack a) where
   size (Stack sz _) = sz
 
 -- | Construct a stack, `head` being the outermost binder
-stack :: [a] -> Stack a
-stack = rstack . reverse
-
-unstack :: Stack a -> [a]
-unstack = reverse . runstack
+stack :: Iso [a] [b] (Stack a) (Stack b)
+stack = withIso rstack \fl tl -> iso (fl . reverse) (reverse . tl)
+  -- `reversed . rstack` is morally correct but the monomorphization of the
+  -- underlying `reverse` breaks heterogeneous optics.
 
 -- | Construct a stack, `head` being the innermost binder
-rstack :: [a] -> Stack a
-rstack xs = let elems = RAL.fromList xs in Stack (RAL.length elems) elems
-
-runstack :: Stack a -> [a]
-runstack (Stack _ elems) = RAL.toList elems
+rstack :: Iso [a] [b] (Stack a) (Stack b)
+rstack = iso
+  (\xs -> let elems = RAL.fromList xs in Stack (RAL.length elems) elems)
+  (\(Stack _ elems) -> RAL.toList elems)
 
 -- | Push a binder onto the end of the stack
 snoc :: Stack a -> a -> Stack a

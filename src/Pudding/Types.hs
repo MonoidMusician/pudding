@@ -7,6 +7,7 @@ module Pudding.Types
   ) where
 
 import Control.DeepSeq (NFData)
+import Control.Lens (from, view)
 import Data.Functor.Apply ((<.>), (<.*>))
 import Data.Map (Map)
 import Data.Text (Text)
@@ -265,19 +266,19 @@ type EvalCtx = Ctx Eval
 type QuoteCtx = Ctx ()
 
 ctxOfStack :: forall t. Globals -> "inner bindings first" @:: [(Binder, t)] -> Ctx t
-ctxOfStack globals s = Ctx globals (rstack s)
+ctxOfStack globals s = Ctx globals (view rstack s)
 
 ctxOfList :: forall t. Globals -> "inner bindings last" @:: [(Binder, t)] -> Ctx t
-ctxOfList globals s = Ctx globals (stack s)
+ctxOfList globals s = Ctx globals (view stack s)
 
 ctxToList :: forall t. Ctx t -> "inner bindings last" @:: [(Binder, t)]
-ctxToList (Ctx _ s) = unstack s
+ctxToList (Ctx _ s) = view (from stack) s
 
 ctxOfGlobals :: forall t. Globals -> Ctx t
-ctxOfGlobals globals = Ctx globals (stack [])
+ctxOfGlobals globals = Ctx globals (view stack [])
 
 ctxOfSize :: Globals -> "size" @:: Int -> Ctx ()
-ctxOfSize globals sz = Ctx globals (stack (replicate sz (BFresh, ())))
+ctxOfSize globals sz = Ctx globals (view stack (replicate sz (BFresh, ())))
 
 infixl 5 >:
 (>:) :: forall t. Ctx t -> (Binder, t) -> Ctx t
