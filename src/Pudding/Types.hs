@@ -257,7 +257,7 @@ instance StackLike (Ctx t) where
 
   size (Ctx _ s) = size s
 
-  Ctx globals s >: b = Ctx globals (s >: b)
+  push' (Ctx globals s) b = Ctx globals (s :> b)
 
   pop :: Ctx t -> Maybe (Ctx t, (Binder, t))
   pop (Ctx g s) = do
@@ -290,13 +290,13 @@ ctxOfSize :: Globals -> "size" @:: Int -> Ctx ()
 ctxOfSize globals sz = Ctx globals (view stack (replicate sz (BFresh, ())))
 
 foldCtx :: (Globals -> a) -> (Ctx t -> (Binder, t) -> a -> a) -> Ctx t -> a
-foldCtx z s ctx@(Ctx g _) = case pop ctx of
-  Nothing -> z g
-  Just (ctx', b) -> s ctx' b (foldCtx z s ctx')
+foldCtx z s ctx = case ctx of
+  Nil -> z (ctxGlobals ctx)
+  ctx' :> b -> s ctx' b (foldCtx z s ctx')
 
 mapCtx :: (Ctx t -> t -> a) -> Ctx t -> Ctx a
 mapCtx f = foldCtx ctxOfGlobals \ctx (b, t) acc ->
-  acc >: (b, f ctx t)
+  acc :> (b, f ctx t)
 
 --------------------------------------------------------------------------------
 -- Helper types!                                                              --

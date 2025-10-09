@@ -19,7 +19,7 @@ quote = flip quoting
 -- (global scope) to the top of the stack.
 evalCtx :: Ctx Term -> Ctx Eval
 evalCtx = foldCtx ctxOfGlobals \_ (bdr, one) acc ->
-  acc >: (bdr, eval acc one)
+  acc :> (bdr, eval acc one)
 
 -- If you want to fully partially evaluate (ahem, normalize) a top-level `Term`.
 -- Note that this does not handle eta expansion or eta reduction: those are
@@ -119,7 +119,7 @@ captureClosure = flip . Closure
 -- Instantiate a closure
 instantiateClosure :: Closure -> Eval -> Eval
 instantiateClosure (Closure binder savedCtx (Scoped savedBody)) providedArg =
-  evaling savedBody $ savedCtx >: (binder, providedArg)
+  evaling savedBody $ savedCtx :> (binder, providedArg)
 
 
 mkTypeConstructor :: "type name" @:: Name -> GlobalTypeInfo -> Term
@@ -306,7 +306,7 @@ quotingClosure (Closure bdr savedCtx (Scoped savedBody)) _argTy ctx =
     (lvl, ctx') = push (bdr, ()) ctx
     -- This is the (only-ish) place that we create neutrals: when quoting.
     evalingArg = ENeut (Neutral (NVar mempty lvl) [])
-  in Scoped $ quoting ((evaling savedBody $ savedCtx >: (bdr, evalingArg)) :: Eval) ctx'
+  in Scoped $ quoting ((evaling savedBody $ savedCtx :> (bdr, evalingArg)) :: Eval) ctx'
 
 -- If we don't want to fully normalize, we can turn `Eval` back into a `Term`
 -- in the simplest way: copying the `Term` out of the `Closure` without any

@@ -44,16 +44,18 @@ common defaults
 
     -- LANGUAGE extensions used by modules in this package.
     default-extensions:
-        OverloadedStrings
-        DerivingStrategies
-        DerivingVia
-        DeriveAnyClass
-        GeneralizedNewtypeDeriving
-        LambdaCase
         BlockArguments
         DataKinds
+        DeriveAnyClass
+        DerivingStrategies
+        DerivingVia
+        GeneralizedNewtypeDeriving
+        LambdaCase
         MagicHash
+        OverloadedStrings
+        PatternSynonyms
         TypeFamilies
+        ViewPatterns
 
     -- Other library packages from which modules are imported.
     -- (Slightly trimmed from PureScript)

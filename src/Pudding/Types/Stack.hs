@@ -2,7 +2,7 @@ module Pudding.Types.Stack where
 
 import Control.DeepSeq (NFData)
 import Control.Exception (assert)
-import Control.Lens (Iso, folded, foldMapOf, from, iso,  traverseOf, withIso)
+import Control.Lens (Iso, folded, foldMapOf, from, iso, traverseOf, withIso)
 import qualified Data.RAList as RAL
 import Data.RAList (RAList)
 import GHC.Generics (Generic)
@@ -17,20 +17,28 @@ class StackLike c where
 
   size :: c -> Int
 
-  infixl 5 >:
-  (>:) :: c -> Elem c -> c
-
+  push' :: c -> Elem c -> c
   pop :: c -> Maybe (c, Elem c)
 
 push :: StackLike c => Elem c -> c -> (Level, c)
-push e c = (Level (size c), c >: e)
+push e c = (Level (size c), push' c e)
+
+infixl 5 :>
+pattern (:>) :: StackLike c => c -> Elem c -> c
+pattern (:>) xs x <- (pop -> Just (xs, x)) where
+  (:>) xs x = push' xs x
+
+pattern Nil :: StackLike c => c
+pattern Nil <- (pop -> Nothing)
+
+{-# COMPLETE (:>), Nil #-}
 
 -- Slightly silly instance for when we only care about the term depth
 instance StackLike Int where
   type Elem Int = ()
   _ @@ _ = ()
   size = id
-  i >: _ = i + 1
+  push' i _ = i + 1
   pop 0 = Nothing
   pop n = Just (n - 1, ())
 
@@ -93,7 +101,7 @@ instance StackLike (Stack a) where
 
   size (Stack sz _) = sz
 
-  Stack sz elems >: x = Stack (1 + sz) (RAL.cons x elems)
+  push' (Stack sz elems) x = Stack (1 + sz) (RAL.cons x elems)
 
   pop (Stack sz elems) = do
     (x, xs) <- RAL.uncons elems

@@ -236,7 +236,7 @@ validateOrNot seqOrConst ctx = \case
           -- We have to quote it back into a `Term`, mostly for when the
           -- neutral variable we used for typechecking is actually instantiated
           -- at an application site
-          Scoped $ quote (quoteCtxHere >: (b, ())) bodyTy
+          Scoped $ quote (quoteCtxHere :> (b, ())) bodyTy
   TPi _ _ b ty body ->
     -- Π(x : ty : U), (body : U)
     case (vv ty, snd $ validateScoped b ty body) of
@@ -335,7 +335,7 @@ validateOrNot seqOrConst ctx = \case
           -- Next we typecheck `value` against `tyEval`
           valueTy = cc (mismatchError <> " " <> show i) (validateOrNot seqOrConst ctorCtx value) tyEval
           -- Now we extend `typeCtx` with the new value (laziness is nice here)
-          typeCtx' = valueTy `seqOrConst` typeCtx >: (binder, eval (toEvalCtx ctorCtx) value)
+          typeCtx' = valueTy `seqOrConst` typeCtx :> (binder, eval (toEvalCtx ctorCtx) value)
         in valueTy `seqOrConst`
           -- Proceed with the next index `i+1`
           validateTelescope mismatchError (i+1) ctorCtx valueVector typeCtx' typeVector continuation
@@ -407,4 +407,4 @@ typeof ctx = \case
     _ -> error "Bad constructor name"
   where
   into :: Binder -> Term -> TypeCtx
-  into bdr ty = ctx >: (bdr, ty)
+  into bdr ty = ctx :> (bdr, ty)
