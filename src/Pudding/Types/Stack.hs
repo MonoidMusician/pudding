@@ -2,11 +2,13 @@ module Pudding.Types.Stack where
 
 import Control.DeepSeq (NFData)
 import Control.Exception (assert)
-import Control.Lens (Iso, folded, foldMapOf, from, iso, traverseOf, withIso)
+import Control.Lens (Iso, iso, withIso)
 import qualified Data.RAList as RAL
 import Data.RAList (RAList)
 import GHC.Generics (Generic)
 import Prettyprinter (Pretty)
+import Data.Monoid (Dual(Dual, getDual))
+import Control.Applicative.Backwards (Backwards(Backwards, forwards))
 
 -- | Finite mapping of indices `i` to elements `Elem`
 class StackLike c where
@@ -90,11 +92,11 @@ data Stack a = Stack !Int !(RAList a)
 
 instance Foldable Stack where
   foldMap :: Monoid m => (a -> m) -> Stack a -> m
-  foldMap = foldMapOf (from stack . folded)
+  foldMap f (Stack _ items) = getDual $ foldMap (Dual . f) items
 
 instance Traversable Stack where
   traverse :: Applicative f => (a -> f b) -> Stack a -> f (Stack b)
-  traverse = traverseOf (from stack . traverse)
+  traverse f (Stack sz items) = Stack sz <$> forwards (traverse (Backwards . f) items)
 
 instance StackLike (Stack a) where
   type Elem (Stack a) = a
