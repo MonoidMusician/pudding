@@ -6,6 +6,7 @@
 module Pudding.Semantics.Universes where
 
 import Data.Function ((&))
+import Data.Functor ((<&>))
 import Data.IntMap.Monoidal.Strict (MonoidalIntMap)
 import Data.List.NonEmpty (NonEmpty)
 import Pudding.Types (Fresh (Fresh))
@@ -14,6 +15,8 @@ import qualified Data.List.NonEmpty as NEL
 import GHC.Generics (Generic)
 import Control.DeepSeq (NFData)
 import qualified Data.IntMap.Strict as IntMap
+import Data.Coerce (coerce)
+import Data.Maybe (fromMaybe)
 
 -- The goal is to maintain a state monoid of the current universe level
 -- constraints. These constraints are proof-relevant in the sense that we keep
@@ -45,7 +48,7 @@ data Constraints meta = Constraints
   -- ^ lazy(?), a best-effort tracking of an inconsistency that occurred
   !(MonoidalIntMap (MonoidalIntMap (Related meta)))
   -- ^ the map of constraints: lower => upper => relationship
-  deriving (Generic, NFData)
+  deriving (Functor, Foldable, Traversable, Generic, NFData)
 type ConstraintMap meta = MonoidalIntMap (MonoidalIntMap (Related meta))
 
 -- A poset with `LessThanEqual < LessThan` and `LessThanEqual < Equal`
@@ -65,7 +68,7 @@ data Evidence meta = Evidence
     -- an accidentally introduced constraint, it is probably one with low heat.
     -- this compensates for discarding `evData` when possible, but it is not
     -- exactly a semantic measure
-  } deriving (Generic, Show, NFData)
+  } deriving (Functor, Foldable, Traversable, Generic, Show, NFData)
 -- Ignore `evHeat` for comparisons
 instance Eq meta => Eq (Evidence meta) where
   ev1 == ev2 = evLength ev1 == evLength ev2 && evData ev1 == evData ev2
@@ -84,7 +87,7 @@ instance Semigroup (Evidence meta) where
 data Related meta
   = Related !Relation !(Evidence meta)
   | Inconsistent !(Inconsistency meta)
-  deriving (Eq, Ord, Generic, Show, NFData)
+  deriving (Eq, Ord, Functor, Foldable, Traversable, Generic, Show, NFData)
 -- There are two types of inconsistencies:
 -- - If there is a cycle, add at least one of those is a strict inequality,
 --   then we record that as `InconsistentLTGT`
@@ -95,7 +98,7 @@ data Inconsistency meta
   = InconsistentLTGT !(Evidence meta {- LT -}) !(Evidence meta {- GT -})
   -- `InconsistentLTEQ` from summing `Related Equal` and `Related LessThan`
   | InconsistentLTEQ !(Evidence meta {- LT -}) !(Evidence meta {- EQ -})
-  deriving (Eq, Ord, Generic, Show, NFData)
+  deriving (Eq, Ord, Functor, Foldable, Traversable, Generic, Show, NFData)
 
 -- This is the `Semigroup` for two relations *between the same nodes*.
 -- There is a different `Semigroup` for the transitivity of relations!! But that
@@ -159,9 +162,11 @@ constraint (Fresh lower, rel, Fresh upper, meta) =
     , evData = NEL.singleton meta -- with this metadata
     , evHeat = 1 -- it has appeared once now
     }
+touch :: Fresh -> meta -> Constraints meta
+touch var meta = constraint (var, Equal, var, meta)
 
 data InconsistentRelationship meta = IncoRel !Fresh !(Inconsistency meta) !Fresh
-  deriving (Eq, Ord, Generic, Show, NFData)
+  deriving (Functor, Foldable, Traversable, Eq, Ord, Generic, Show, NFData)
 instance Semigroup (InconsistentRelationship meta) where
   -- Attempt to obtain a canonical inconsistency: smallest length, smallest
   -- variables (in lexicographic order), or prefer the leftmost one
@@ -224,6 +229,45 @@ saturate relationships =
   in if Map.null learned
     then amended {- le fin -}
     else saturate merged {- recurse -}
+
+restrict :: MonoidalIntMap x -> (meta -> meta') -> Constraints meta -> Constraints meta'
+restrict to mapping (Constraints inco relationships) = Constraints (fmap mapping <$> inco) $
+  Map.intersectionWith (const $ Map.intersectionWith (const (fmap mapping)) to) to relationships
+
+instantiate :: (Fresh -> Fresh) -> (meta -> meta') -> Constraints meta -> Constraints meta'
+instantiate var mapping (Constraints inco relationships) = Constraints
+  do inco <&> \(IncoRel x r y) -> IncoRel (var x) (mapping <$> r) (var y)
+  do Map.mapKeys (coerce var) $ Map.mapKeys (coerce var) . fmap (fmap mapping) <$> relationships
+
+-- Instantiate with fresh variables
+freshen :: Fresh -> (meta -> meta') -> Constraints meta -> (Fresh, Constraints meta')
+freshen (Fresh start) mapping (Constraints inco relationships) = (Fresh maxFresh,) $ Constraints
+  do inco <&> \(IncoRel x r y) -> IncoRel (coerce var x) (mapping <$> r) (coerce var y)
+  do Map.mapKeysMonotonic var $ Map.mapKeysMonotonic var . fmap (fmap mapping) <$> relationships
+  where
+  (maxFresh, freshened) = Map.mapAccum (\(!here) _ -> (here + 1, here)) start relationships
+  var i = fromMaybe i $ Map.lookup i freshened
+
+demonstrate :: Constraints meta -> (Fresh -> Int)
+demonstrate (Constraints _ relationshipsLTEI) =
+  \(Fresh var) -> fromMaybe 99 $ Map.lookup var assigned
+  where
+  -- Flip it around, so it is a map of greater to lesser
+  relationshipsGT = relationshipsLTEI & Map.foldMapWithKey \lower ->
+    Map.mapMaybe \case
+      -- This only makes sense on a saturated map where we don't lose LTE constraints
+      Related LessThan _ -> Just $ Map.singleton lower ()
+      _ -> Nothing
+  assigned = loop Map.empty 0 $
+    relationshipsGT <> (Map.empty <$ relationshipsLTEI)
+  loop !acc !depth !left =
+    let (layer, remaining) = Map.partition Map.null left in
+    let trimmed = flip Map.difference layer <$> remaining in
+    let acc' = Map.unionWith const acc (depth <$ layer) in
+    if Map.null layer then acc' else loop acc' (depth + 1) trimmed
+
+uvars :: Constraints meta -> [Fresh]
+uvars (Constraints _ rels)  = coerce $ Map.keys rels
 
 --------------------------------------------------------------------------------
 -- Transitivity: Fill out the constraints with transitive relationships       --
@@ -294,18 +338,18 @@ learns newInfo@(Related _ _) (Just existed@(Related r2 ev2)) = case newInfo <> e
   learned@(Inconsistent _) -> Just learned
 -- no sense optimizing inconsistencies
 learns l@(Inconsistent _) (Just r@(Related _ _)) = Just (l <> r)
-learns l@(Related _ _) (Just r@(Inconsistent _)) = Just (l <> r)
 -- just a bit of care, to check that we have not reached a fixedpoint
-learns (Inconsistent l) (Just (Inconsistent r)) =
-  let learned = l <> r in
-  let haveLearned b = if b then Just (Inconsistent learned) else Nothing in
+learns l (Just (Inconsistent r)) =
+  let learned = l <> Inconsistent r in
+  let haveLearned b = if b then Just learned else Nothing in
   haveLearned
     case (learned, r) of
-      (InconsistentLTGT _ _, InconsistentLTEQ _ _) -> True
-      (InconsistentLTEQ _ _, InconsistentLTGT _ _) -> True
-      (InconsistentLTGT m n, InconsistentLTGT o p) ->
+      (Related _ _, _) -> error "nope"
+      (Inconsistent (InconsistentLTGT _ _), InconsistentLTEQ _ _) -> True
+      (Inconsistent (InconsistentLTEQ _ _), InconsistentLTGT _ _) -> True
+      (Inconsistent (InconsistentLTGT m n), InconsistentLTGT o p) ->
         evLength m /= evLength o || evLength n /= evLength p
-      (InconsistentLTEQ m n, InconsistentLTEQ o p) ->
+      (Inconsistent (InconsistentLTEQ m n), InconsistentLTEQ o p) ->
         evLength m /= evLength o || evLength n /= evLength p
 
 --------------------------------------------------------------------------------
