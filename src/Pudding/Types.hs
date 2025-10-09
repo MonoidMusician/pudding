@@ -295,9 +295,17 @@ foldCtx z s ctx = case ctx of
   Nil -> z (ctxGlobals ctx)
   ctx' :> b -> s ctx' b (foldCtx z s ctx')
 
-mapCtx :: (Ctx t -> t -> a) -> Ctx t -> Ctx a
-mapCtx f = foldCtx ctxOfGlobals \ctx (b, t) acc ->
-  acc :> (b, f ctx t)
+type MapCtxAcc a = (("index" @:: Int, "level" @:: Int), Ctx a)
+
+mapCtx :: forall t a. (Index -> Level -> t -> a) -> Ctx t -> Ctx a
+mapCtx f ctx = snd (foldCtx z s ctx)
+  where
+    z :: Globals -> MapCtxAcc a
+    z g = ((size ctx - 1, 0), ctxOfGlobals g)
+
+    s :: Ctx t -> (Binder, t) -> MapCtxAcc a -> MapCtxAcc a
+    s _ (b, t) ((i, l), acc) =
+      ((i - 1, l + 1), acc :> (b, f (Index i) (Level l) t))
 
 --------------------------------------------------------------------------------
 -- Helper types!                                                              --

@@ -54,6 +54,7 @@ common defaults
         MagicHash
         OverloadedStrings
         PatternSynonyms
+        ScopedTypeVariables
         TypeFamilies
         ViewPatterns
 

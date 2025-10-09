@@ -22,7 +22,7 @@ validateQuote ctx = quote (void ctx) . validate ctx
 -- Validate in a context of neutrals
 validateQuoteNeutrals :: Globals -> ["type" @:: Term] -> "term" @:: Term -> "type" @:: Term
 validateQuoteNeutrals globals localTypes = validateQuote $
-  mapCtx (\ctx ty -> (ty, neutralVar (level ctx (Index 0)))) $ evalCtx $
+  mapCtx (\_ lvl ty -> (ty, neutralVar lvl)) $ evalCtx $
     ctxOfList globals $ (BFresh,) <$> localTypes
 -- Do not validate, but just assemble the type
 quickTermType :: EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
@@ -311,9 +311,9 @@ validateOrNot seqOrConst ctx = \case
     in (tyVal, tyVal `seq` validateOrNot seqOrConst ctx' body)
 
   evalHere = eval evalCtxHere
-  toEvalCtx = mapCtx (\_ (_, tm) -> tm)
+  toEvalCtx = mapCtx (\_ _ (_, tm) -> tm)
   evalCtxHere = toEvalCtx ctx :: EvalCtx
-  quoteCtxHere = mapCtx (\_ _ -> ()) ctx :: QuoteCtx
+  quoteCtxHere = mapCtx (\_ _ _ -> ()) ctx :: QuoteCtx
 
   -- Validating a dependent telescope is a little more tricky, but mostly it is
   -- just a lot of data to plumb around.

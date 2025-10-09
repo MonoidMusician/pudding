@@ -39,7 +39,7 @@ evalTest = TestSuite "EvalTest" do
     normUnder = normalizeNeutrals globals
     type0 = TUniv mempty $ UBase 0
     neutralCtx localTypes =
-      mapCtx (\ctx _ty -> neutralVar (level ctx (Index 0))) $
+      mapCtx (\_ lvl _ty -> neutralVar lvl) $
         ctxOfList globals $ (BFresh,) <$> localTypes
     typecheckUnder localTypes = force . validateQuoteNeutrals globals localTypes
   testCase "Globals" do

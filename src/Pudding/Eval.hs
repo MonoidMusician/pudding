@@ -46,7 +46,7 @@ normalizeCtx ctx = quote (void ctx) . eval ctx
 
 normalizeNeutrals :: Globals -> ["type" @:: Term] -> Term -> Term
 normalizeNeutrals globals localTypes = normalizeCtx $
-  mapCtx (\ctx _ty -> neutralVar (level ctx (Index 0))) $
+  mapCtx (\_ lvl _ty -> neutralVar lvl) $
     ctxOfList globals $ (BFresh,) <$> localTypes
 
 ------------------------------
