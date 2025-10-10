@@ -6,7 +6,7 @@
 module Pudding.Semantics.Universes where
 
 import Data.Function ((&))
-import Data.Functor ((<&>))
+import Data.Functor ((<&>), void)
 import Data.IntMap.Monoidal.Strict (MonoidalIntMap)
 import Data.List.NonEmpty (NonEmpty)
 import Pudding.Types (Fresh (Fresh))
@@ -252,6 +252,9 @@ demonstrate :: Constraints meta -> (Fresh -> Int)
 demonstrate (Constraints _ relationshipsLTEI) =
   \(Fresh var) -> fromMaybe 99 $ Map.lookup var assigned
   where
+  assigned = demonstrate' relationshipsLTEI
+demonstrate' :: MonoidalIntMap (MonoidalIntMap (Related meta)) -> MonoidalIntMap Int
+demonstrate' relationshipsLTEI = assigned where
   -- Flip it around, so it is a map of greater to lesser
   relationshipsGT = relationshipsLTEI & Map.foldMapWithKey \lower ->
     Map.mapMaybe \case
@@ -268,6 +271,12 @@ demonstrate (Constraints _ relationshipsLTEI) =
 
 uvars :: Constraints meta -> [Fresh]
 uvars (Constraints _ rels)  = coerce $ Map.keys rels
+
+forConstraint :: Applicative f => ConstraintMap meta -> (Fresh -> Relation -> Fresh -> Evidence meta -> f ()) -> f ()
+forConstraint = flip \f -> (void .) $
+  Map.traverseWithKey \lower -> Map.traverseWithKey \upper -> \case
+    Related r meta -> f (Fresh lower) r (Fresh upper) meta
+    _ -> pure ()
 
 --------------------------------------------------------------------------------
 -- Transitivity: Fill out the constraints with transitive relationships       --
@@ -295,6 +304,7 @@ transitivize1 existing =
       -- Look it up to find pairs (mid, relationMidUpper, upper)
       Map.lookup mid existing & foldMap \aboveMid ->
         aboveMid & Map.foldMapWithKey \upper relationMidUpper ->
+          check (lower /= upper) $
           -- Calculate the transitive relation
           transitive relationLowerMid relationMidUpper & foldMap \relationLowerUpper ->
             -- Do a lookup to check that it would contribute something
@@ -304,17 +314,18 @@ transitivize1 existing =
 
 transitive :: Related meta -> Related meta -> Maybe (Related meta)
 -- We only care about equal constraints when they are both equal:
--- transitivity of equality, we might find a shorter path
-transitive (Related Equal ev1) (Related Equal ev2) = Just $ Related Equal (ev1 <> ev2)
--- Otherwise equality serves as an identity: just drop them
-transitive (Related Equal _) r = Just r
-transitive r (Related Equal _) = Just r
+-- transitivity of equality
+transitive (Related Equal ev1) (Related Equal ev2) = Just $ Related Equal (transitiveEvidence ev1 ev2)
+-- Otherwise equality serves as an identity on the relation, but we still
+-- need the transitive evidence
+transitive (Related Equal ev1) (Related r ev2) = Just $ Related r (transitiveEvidence ev1 ev2)
+transitive (Related r ev1) (Related Equal ev2) = Just $ Related r (transitiveEvidence ev1 ev2)
 -- The relation stays as LessThanEqual only if both are
 transitive (Related LessThanEqual ev1) (Related LessThanEqual ev2) =
   Just $ Related LessThanEqual (transitiveEvidence ev1 ev2)
 -- Otherwise it strictifies to LessThan
 transitive (Related _ ev1) (Related _ ev2) =
-  Just $ Related LessThan  (transitiveEvidence ev1 ev2)
+  Just $ Related LessThan (transitiveEvidence ev1 ev2)
 -- If one relation is already inconsistent, we just do not care?
 transitive (Inconsistent _) _ = Nothing
 transitive _ (Inconsistent _) = Nothing
@@ -323,7 +334,7 @@ transitive _ (Inconsistent _) = Nothing
 transitiveEvidence :: Evidence meta -> Evidence meta -> Evidence meta
 transitiveEvidence evLower evUpper = Evidence
   { evLength = evLength evLower + evLength evUpper
-  , evData = evData evUpper <> evData evLower -- upper is the head, lower is the tail
+  , evData = evData evLower <> evData evUpper -- upper is the head, lower is the tail
   , evHeat = evLength evLower `max` evLength evUpper -- seems reasonable? idk
   }
 
@@ -368,35 +379,36 @@ oppositivize existing =
 
 -- `x R y` and `y R x` to `y R x`
 oppositive :: Related meta -> Maybe (Related meta) -> Maybe (Related meta)
--- If `a = b` and `b = a`, then, well, `b = a`
-oppositive (Related Equal ev1) existing@(Just (Related Equal ev2)) =
-  -- But we only prefer it if it has shorter evidence, otherwise it is old news
-  if evLength ev1 < evLength ev2 then
-    Just $ Related Equal $ opEv ev1
-  else existing
+-- If `a = b` and `b = a`, then, well, `b = a`. In theory we could compare
+-- the evidence chains and pick the shorter one, but we kind of dropped that
+-- information, and we also allowed it to carry `LTE` evidence instead of `EQ`
+-- evidence.
+oppositive (Related Equal _) existing@(Just (Related Equal _)) =
+  existing
 -- If `a = b` and `b <= a`, then we strengthen it to `b = a`
 oppositive (Related Equal ev1) (Just (Related LessThanEqual _)) =
-  Just $ Related Equal $ opEv ev1
+  Just $ Related Equal $ opEv ev1 -- FIXME
 -- If `a = b`, then we learn that `b = a`
-oppositive (Related Equal ev1) Nothing = Just $ Related Equal $ opEv ev1
+oppositive (Related Equal ev1) Nothing = Just $ Related Equal $ opEv ev1 -- FIXME
 -- If `a = b` but `b < a`, then we have a LTEQ inconsistency
 oppositive (Related Equal evEQ) (Just (Related LessThan evLT)) =
-  Just $ Inconsistent $ InconsistentLTEQ evLT $ opEv evEQ
+  Just $ Inconsistent $ InconsistentLTEQ evLT evEQ
 -- Vice-versa: if `a < b` but `b = a`
 oppositive (Related LessThan evGT) (Just (Related Equal evEQ)) =
-  Just $ Inconsistent $ InconsistentLTEQ (opEv evGT) evEQ
+  Just $ Inconsistent $ InconsistentLTEQ evGT evEQ
 -- If `a <= b` and `b < a` then we have a LTGT inconsistency
 oppositive (Related _ evGTE) (Just (Related LessThan evLT)) =
-  Just $ Inconsistent $ InconsistentLTGT evLT $ opEv evGTE
--- If `a <= b` and `b <= a`, then `a = b`
-oppositive (Related LessThanEqual evGTE) (Just (Related LessThanEqual evLTE)) =
-  Just $ Related Equal $ evLTE <> opEv evGTE
+  Just $ Inconsistent $ InconsistentLTGT evLT evGTE
+-- If `a <= b` and `b <= a`, then `b = a`. However, we keep the LTE evidence
+-- stored.
+oppositive (Related LessThanEqual _evGTE) (Just (Related LessThanEqual evLTE)) =
+  Just $ Related Equal evLTE
 -- Otherwise we learn nothing from `a <= b`
 oppositive (Related _ _) existing = existing
 -- We reflect LTGT inconsistencies
 oppositive (Inconsistent (InconsistentLTGT evLT evGT)) existing =
   let
-    learning = Inconsistent (InconsistentLTGT (opEv evGT) (opEv evLT))
+    learning = Inconsistent (InconsistentLTGT evGT evLT)
   in Just case existing of
     Nothing -> learning
     Just existed -> learning <> existed
