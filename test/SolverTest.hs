@@ -14,7 +14,6 @@ import Data.Maybe (isNothing)
 import GHC.Generics (Generic)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NEL
-import qualified GHC.Base as GHC
 import qualified Hedgehog as HG
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -87,8 +86,8 @@ solverTest = TestSuite "SolverTest" do
         inconsistent =<< solve setup
   testCase "Properties" do
     let
-      constraints (Constraints _ m) = m
-      constraintsEq x y = constraints x === constraints y
+      rawConstraints (Constraints _ m) = m
+      constraintsEq x y = rawConstraints x === rawConstraints y
       hedgeTest num name f = testCase name do
         HG.check $ HG.withTests num $ HG.property f
       onRandomConstraints num name fixed f =
@@ -149,6 +148,32 @@ solverTest = TestSuite "SolverTest" do
     --   c2 <- randomConstraints Nothing
     --   c3 <- randomConstraints Nothing
     --   ((c1 <> c2) <> c3) `constraintsEq` (c1 <> (c2 <> c3))
+    let
+      fake = Evidence 0 (pure ()) 0
+      testAssoc :: forall i o. Show i => Semigroup i => Show o => Eq o => HG.TestLimit -> Gen i -> (i -> o) -> Test ()
+      testAssoc n gen f = hedgeTest n "Assoc" do
+        x <- HG.forAll gen
+        y <- HG.forAll gen
+        z <- HG.forAll gen
+        f ((x <> y) <> z) === f (x <> (y <> z))
+      testIdemp :: forall i o. Show i => Semigroup i => Eq i => Show o => Eq o => HG.TestLimit -> Gen i -> (i -> o) -> Test ()
+      testIdemp n gen f = hedgeTest n "Idempotent" do
+        x <- HG.forAll gen
+        z <- HG.forAll gen
+        (z <> z) === z -- idempotence should hold literally
+        f ((x <> z) <> z) === f (x <> z)
+    testCase "Semigroup Inconsistency" do
+      testAssoc 4000 genInconsistency id
+      testIdemp 4000 genInconsistency id
+    testCase "Semigroup Related" do
+      let
+        glossOverInconsistentAlgebra = \case
+          Inconsistent i -> Inconsistent case i of
+            InconsistentLTGT _ _ -> InconsistentLTGT fake fake
+            InconsistentLTEQ _ _ -> InconsistentLTEQ fake fake
+          r -> r
+      testAssoc 4000 genRelated glossOverInconsistentAlgebra
+      testIdemp 4000 genRelated glossOverInconsistentAlgebra
 
 
 solve :: NFData meta => [Relationship meta] -> Test (Constraints meta)
@@ -199,12 +224,15 @@ genRelWith freshener = Gen.choice [ pure le, pure lt ] <*> freshener <*> freshen
 genRel :: Gen (Relationship Ev)
 genRel = genRelWith genFresh
 
+-- 100 is okay performance wise, but 200 is really slow :(
+-- `quickConstraints` helps but might not be realistic for actual usage, where
+-- constraints are mostly being added one-by-one
 genRels :: Gen [Relationship Ev]
-genRels = Gen.list (Range.linear 0 100) genRel
+genRels = Gen.list (Range.linear 0 60) genRel
 
 randomConstraints :: Maybe [Relationship Ev] -> HG.PropertyT IO (Constraints Ev)
 randomConstraints fixed =
-  liftIO . evaluate . force . foldMap constraint =<<
+  liftIO . evaluate . force . foldMap constraint {- quickConstraints -} =<<
     maybe (HG.forAll genRels) pure fixed
 
 traceConstraints :: Eq ev => [Relationship ev] -> NonEmpty (Int, ConstraintMap ev)
@@ -230,3 +258,20 @@ stabilizeConstraints = tick
   tock (current :| recording) =
     let new = transitivize1 current <> current in
     if new == current then new :| recording else tick (new :| current : recording)
+
+genEvidence :: Gen (Evidence ())
+genEvidence = Evidence
+  <$> Gen.int (Range.constant 0 10)
+  <*> pure (pure ()) -- cheating, should be of the right length but /shrug
+  <*> Gen.int (Range.constant 0 20)
+
+genInconsistency :: Gen (Inconsistency ())
+genInconsistency =
+  Gen.choice [ pure InconsistentLTGT, pure InconsistentLTEQ ]
+    <*> genEvidence <*> genEvidence
+
+genRelated :: Gen (Related ())
+genRelated = Gen.choice
+  [ Related <$> Gen.choice [ pure LessThan, pure LessThanEqual, pure Equal ] <*> genEvidence
+  , Inconsistent <$> genInconsistency
+  ]

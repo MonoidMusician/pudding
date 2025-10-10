@@ -117,7 +117,7 @@ instance Semigroup (Related meta) where
   Related LessThanEqual ev1 <> Related rel ev2 =
     Related rel ev2 { evHeat = evHeat ev1 + evHeat ev2 }
   Related rel ev1 <> Related LessThanEqual ev2 =
-    Related rel ev2 { evHeat = evHeat ev1 + evHeat ev2 }
+    Related rel ev1 { evHeat = evHeat ev1 + evHeat ev2 }
   -- Otherwise we have an inconsistency: inconsistencies here are of the form
   -- `InconsistentLTEQ`: strictly less than and also equal to, with evidence
   -- in that order
@@ -162,8 +162,17 @@ constraint (Fresh lower, rel, Fresh upper, meta) =
     , evData = NEL.singleton meta -- with this metadata
     , evHeat = 1 -- it has appeared once now
     }
+-- Register a variable
 touch :: Fresh -> meta -> Constraints meta
 touch var meta = constraint (var, Equal, var, meta)
+
+quickConstraints :: Foldable f => f (Relationship meta) -> Constraints meta
+quickConstraints relations =
+  let
+    single rel = case constraint rel of
+      Constraints _ rels -> rels
+    m = saturate $ foldMap single relations
+  in Constraints (searchForInconsistency m) m
 
 data InconsistentRelationship meta = IncoRel !Fresh !(Inconsistency meta) !Fresh
   deriving (Functor, Foldable, Traversable, Eq, Ord, Generic, Show, NFData)
