@@ -21,6 +21,8 @@ import qualified Hedgehog.Range as Range
 import Hedgehog (Gen, (===))
 import Data.Either (isRight, isLeft)
 import qualified Data.IntMap.Strict as IntMap
+import Data.IORef (newIORef, modifyIORef', readIORef)
+import qualified Data.Vector as Vector
 
 data Ev = Ev Fresh Relation Fresh
   deriving (Eq, Ord, Generic, NFData)
@@ -199,9 +201,24 @@ levelAlgebra =
         pure ()
 
 levelAlgebraHasSolution :: Test ()
-levelAlgebraHasSolution =
+levelAlgebraHasSolution = do
+  -- Capture the generated test cases
+  recorded <- liftIO $ newIORef []
   hedgeTest 8000 "LevelAlgebraHasSolution" do
     rels <- HG.forAll genRels
+    _ <- liftIO $ evaluate $ force rels
+    liftIO $ modifyIORef' recorded (rels++)
+    verify rels
+  -- To remove the overhead during the speedy tests
+  vectored <- liftIO $ Vector.fromList <$> readIORef recorded
+  hedgeTest 8000 "LevelAlgebraHasSolutionSpeedy" do
+    let maxSize = 2000
+    relStart <- HG.forAll $ Gen.int $ Range.constant 0 (Vector.length vectored - maxSize)
+    relSize <- HG.forAll $ Gen.int $ Range.linear 20 maxSize
+    let rels = Vector.toList $ Vector.slice relStart relSize vectored
+    verify rels
+  where
+  verify rels =
     case quickSolve rels of
       Right (_history, solution) -> do
         HG.annotateShow $ Lvl.solverState <$> solution : _history
@@ -282,7 +299,7 @@ evidence (Evidence { evData }) = showEvidence evData
 
 genFresh :: Gen Fresh
 genFresh = Fresh <$> do
-  Gen.int =<< Gen.choice [ pure $ Range.linear 0 10, pure $ Range.linear 0 50 ]
+  Gen.int =<< Gen.choice [ pure $ Range.linear 0 10, pure $ Range.linear 0 60 ]
 
 genRelWith :: Gen Fresh -> Gen (Relationship Ev)
 genRelWith freshener = Gen.choice [ pure le, pure lt, pure mkEq ] <*> freshener <*> freshener
@@ -295,7 +312,7 @@ genRel = genRelWith genFresh
 -- `quickConstraints` helps but might not be realistic for actual usage, where
 -- constraints are mostly being added one-by-one
 genRels :: Gen [Relationship Ev]
-genRels = Gen.list (Range.linear 0 60) genRel
+genRels = Gen.list (Range.linear 0 80) genRel
 
 randomConstraints :: Maybe [Relationship Ev] -> HG.PropertyT IO (Constraints Ev)
 randomConstraints fixed =

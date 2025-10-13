@@ -19,7 +19,7 @@ import qualified Data.Set as Set
 import qualified Data.Map as Map
 import qualified Data.IntSet as IntSet
 import Safe.Foldable (maximumMay)
-import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Maybe (fromMaybe, mapMaybe, isJust)
 import Control.DeepSeq (NFData)
 import GHC.Generics (Generic)
 
@@ -33,7 +33,7 @@ import GHC.Generics (Generic)
 type Chain = Ratio Int
 
 minChain, maxChain :: Chain
-(minChain, maxChain) = (-32, 32) -- (-1048576, 1048576) -- 2^20
+(minChain, maxChain) = (-1048576, 1048576) -- 2^20
 
 intermediate :: Chain -> Chain -> Chain
 intermediate r1 r2
@@ -44,7 +44,7 @@ intermediate r1 r2
   , rounder <- avg + (avg `mod` 2)
   , n1 < rounder, rounder < n2
   = rounder % d1
-intermediate x y = (x + y) / 2 -- TODO
+intermediate x y = (x + y) / 2
 
 isBetween :: (Chain, Chain) -> (Chain -> Bool)
 isBetween (x, z) = \y ->
@@ -389,15 +389,24 @@ chainInsertion method fallback reference solver =
         , IntMap.insert dim newPoint reference
         )
 
--- FIXME: can we save the fast path??
 -- O(w*log) fast path, O(w*v) slow path
+-- The fast path is particularly important because the slow path enables
+-- hitting the fast path next time, in the case of ascending chains for example,
+-- keeping performance near-linear.
 insertAbove :: Lattice -> Var -> Solver -> Solver
 insertAbove !lower !v solver =
-  setVar v $ fallback -- chainInsertion aboveChain fallback lower solver
+  setVar v $
+    if IntMap.size lower == 1 then
+      chainInsertion aboveChain fallback lower solver
+    else fallback
   where
   fallback =
     let (solver', upper) = newDim solver in
     (lower `tuckUnder` upper $ solver', upper)
+
+topAdjacent :: Lattice -> Solver -> Bool
+topAdjacent upper solver =
+  all (isJust . uncurry aboveChain) $ mergeZip upper (points solver)
 
 insertBetween :: Lattice -> Var -> Lattice -> Solver -> Solver
 insertBetween !lower v !upper solver =
