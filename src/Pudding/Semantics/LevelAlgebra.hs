@@ -18,7 +18,7 @@ import qualified Data.IntMap.Merge.Strict as IntMapMerge
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import qualified Data.IntSet as IntSet
-import Safe.Foldable (maximumMay, minimumMay)
+import Safe.Foldable (maximumMay)
 import Data.Maybe (fromMaybe, mapMaybe)
 import Control.DeepSeq (NFData)
 import GHC.Generics (Generic)
@@ -166,6 +166,12 @@ mergeZip = IntMapMerge.merge
   IntMapMerge.dropMissing
   (IntMapMerge.zipWithMatched (const (,)))
 
+mergeL :: IntMap a -> IntMap b -> IntMap (Maybe a, b)
+mergeL = IntMapMerge.merge
+  IntMapMerge.dropMissing
+  (IntMapMerge.mapMissing (const (Nothing,)))
+  (IntMapMerge.zipWithMatched (const ((,) . Just)))
+
 -- O(w)
 lattice :: Lattice -> Lattice -> PartialComparison
 lattice l1 l2 = fold $ mergeValues l1 l2
@@ -207,33 +213,40 @@ demonstrate (Solver { points, vars }) =
     spread = Map.fromAscList . flip zip [0..] . Set.toAscList
     pointsSpread :: IntMap (Map.Map Chain Int)
     pointsSpread = spread <$> points
-    topGrade = fromMaybe 0 $ maximumMay $ fromMaybe 0 . maximumMay <$> pointsSpread
-    mapPoint dimension alongChain = (pointsSpread IntMap.! dimension) Map.! alongChain
     gradeLattice :: Lattice -> Int
-    gradeLattice latticeValues = sum $ -- fromMaybe topGrade $ maximumMay $
-      IntMap.mapWithKey mapPoint latticeValues
+    gradeLattice latticeValues = sum $
+      mergeL latticeValues pointsSpread <&> \case
+        (Nothing, y) -> 1 + do fromMaybe 0 $ maximumMay y
+        (Just x, y) -> y Map.! x
   in gradeLattice <$> vars
 
 -- O(w*v + w*A) worst case, but hopefully most operations are <=O(w*log)
 relate :: (Fresh, Relation, Fresh) -> Solver -> Maybe Solver
 relate (Fresh v1, rel, Fresh v2) solver | v1 == v2 =
-  if rel == LessThan then Nothing else Just solver
+  if rel == LessThan then Nothing else Just
+    case lookup (Fresh v1) solver of
+      Nothing -> newVar v1 solver
+      Just _ -> solver
 relate (Fresh v1, rel, Fresh v2) solver@(Solver { ctr, vars }) =
-  case (IntMap.lookup v1 vars, IntMap.lookup v2 vars) of
+  case (lookup (Fresh v1) solver, lookup (Fresh v2) solver) of
     (Nothing, Nothing) -> Just $ case rel of
       Equal ->
         -- Might as well insert them with the same dimension `ctr`
-        solver { ctr = ctr + 1, vars = IntMap.insert v1 (ctr @! 0) $ IntMap.insert v2 (ctr @! 0) vars }
+        solver
+          { ctr = ctr + 1
+          , points = IntMap.insert ctr (Set.singleton 0) (points solver)
+          , vars = IntMap.insert v1 (ctr @! 0) $ IntMap.insert v2 (ctr @! 0) vars
+          }
       _ -> _apartIfRel rel v1 v2 $ newVarBelow v1 (ctr @! 0) $ newVar v2 solver
-    (Nothing, Just upper) -> case rel of
-      Equal -> Just $ solver { vars = IntMap.insert v1 upper vars }
-      -- This is potentially much cheaper than the symmetric `insertAbove`
-      _ -> Just $ _apartIfRel rel v1 v2 $ newVarBelow v1 upper solver
-    (Just lower, Nothing) -> case rel of
-      Equal -> Just $ solver { vars = IntMap.insert v1 lower vars }
+    (Nothing, Just upper) -> Just case rel of
+      Equal -> solver { vars = IntMap.insert v1 upper vars }
+      -- This is potentially much cheaper than the symmetric case `insertAbove`
+      _ -> _apartIfRel rel v1 v2 $ newVarBelow v1 upper solver
+    (Just lower, Nothing) -> Just case rel of
+      Equal -> solver { vars = IntMap.insert v2 lower vars }
       -- This is potentially expensive, if there is no degree of freedom
       -- where it can be inserted without altering other relationships
-      _ -> Just $ _apartIfRel rel v1 v2 $ insertAbove lower v2 solver
+      _ -> _apartIfRel rel v1 v2 $ insertAbove lower v2 solver
     (Just lower, Just upper) -> case (lattice lower upper, rel) of
       (PosetEQ, LessThan) -> Nothing
       (PosetEQ, _) -> Just solver
@@ -242,9 +255,8 @@ relate (Fresh v1, rel, Fresh v2) solver@(Solver { ctr, vars }) =
       (PosetGE, LessThan) -> Nothing
       -- squish several points on the lattice together: O(w*v + w*A)
       (PosetGE, _) -> squish (upper {- erm, lower -}) (lower {- currently upper -}) $ lower `tuckUnder` upper $ solver
-      -- ?
       (PosetUN, Equal) -> squish lower upper $ upper `tuckUnder` lower $ lower `tuckUnder` upper $ solver
-      (_, Equal) -> squish lower upper solver
+      (PosetLE, Equal) -> squish lower upper $ upper `tuckUnder` lower $ solver
       -- edit the lower one to be below the upper one: O(w*v)
       (PosetUN, _) -> Just $ _apartIfRel rel v1 v2 $ lower `tuckUnder` upper $ solver
 
@@ -346,12 +358,11 @@ stillApart solver =
 -- points below `lower`, thus it is fully O(w*v) since we do not maintain
 -- a cache of those points by dimension or grade or anything...
 tuckUnder :: Lattice -> Lattice -> Solver -> Solver
-tuckUnder lower upper solver = solver' { vars = tucking <$> vars solver' }
+tuckUnder lower upper solver = solver { vars = tucking <$> vars solver }
   where
   -- O(w)
   tucking position = if position <=? lower then
-    IntMap.unionWith min position limit else position
-  (solver', limit) = below upper solver
+    IntMap.unionWith min position upper else position
 
 -- O(w*log)
 below :: Lattice -> Solver -> (Solver, Lattice)
@@ -378,6 +389,7 @@ chainInsertion method fallback reference solver =
         , IntMap.insert dim newPoint reference
         )
 
+-- FIXME: can we save the fast path??
 -- O(w*log) fast path, O(w*v) slow path
 insertAbove :: Lattice -> Var -> Solver -> Solver
 insertAbove !lower !v solver =

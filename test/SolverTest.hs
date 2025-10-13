@@ -203,34 +203,35 @@ levelAlgebraHasSolution =
   hedgeTest 8000 "LevelAlgebraHasSolution" do
     rels <- HG.forAll genRels
     case quickSolve rels of
-      (Right (_history, solution)) -> do
+      Right (_history, solution) -> do
         HG.annotateShow $ Lvl.solverState <$> solution : _history
         let assigned = flip IntMap.lookup $ Lvl.demonstrate solution
         HG.annotateShow $ IntMap.toAscList $ Lvl.demonstrate solution
         for_ rels \(Fresh lower, rel, Fresh upper, _) -> do
           let
+            cmpL :: Lvl.Lattice -> Lvl.Lattice -> HG.PropertyT IO ()
             cmpL = case rel of
               Equal -> (===)
               LessThan -> \x y -> Lvl.lattice x y === Lvl.PosetLE
               LessThanEqual -> \x y -> x Lvl.<=? y === True
-            -- cmp = case rel of
-            --   Equal -> (===)
-            --   LessThan -> \x y -> (x < y) === True
-            --   LessThanEqual -> \x y -> (x <= y) === True
+            cmp :: Int -> Int -> HG.PropertyT IO ()
+            cmp = case rel of
+              Equal -> (===)
+              LessThan -> \x y -> (x < y) === True
+              LessThanEqual -> \x y -> (x <= y) === True
           HG.annotateShow (lower, rel, upper)
           let
             x = fromMaybe 0 $ assigned lower
             y = fromMaybe 0 $ assigned upper
             p = fromMaybe IntMap.empty $ Lvl.lookup (Fresh lower) solution
             q = fromMaybe IntMap.empty $ Lvl.lookup (Fresh upper) solution
-          cmpL p q -- *> cmp x y
-      (Left _) -> do
-        -- isNothing solv === True
+          cmpL p q *> cmp x y
+      Left _ -> do
         pure ()
 
-(???) :: Maybe a -> String -> a
-Nothing ??? err = error err
-Just r ??? _ = r
+-- (???) :: Maybe a -> String -> a
+-- Nothing ??? err = error err
+-- Just r ??? _ = r
 
 solve :: NFData meta => [Relationship meta] -> Test (Constraints meta)
 solve rels = do
@@ -284,7 +285,8 @@ genFresh = Fresh <$> do
   Gen.int =<< Gen.choice [ pure $ Range.linear 0 10, pure $ Range.linear 0 50 ]
 
 genRelWith :: Gen Fresh -> Gen (Relationship Ev)
-genRelWith freshener = Gen.choice [ pure le, pure lt ] <*> freshener <*> freshener
+genRelWith freshener = Gen.choice [ pure le, pure lt, pure mkEq ] <*> freshener <*> freshener
+  where mkEq x y = (x, Equal, y, Ev x Equal y)
 
 genRel :: Gen (Relationship Ev)
 genRel = genRelWith genFresh
