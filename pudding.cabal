@@ -117,6 +117,7 @@ library
         Pudding.Eval,
         Pudding.Unify,
         Pudding.Semantics.Universes,
+        Pudding.Semantics.LevelAlgebra,
 
     -- Modules included in this library but not exported.
     -- other-modules:

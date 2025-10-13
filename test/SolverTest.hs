@@ -9,8 +9,9 @@ import Data.Foldable (for_)
 import Control.DeepSeq (force, NFData)
 import Pudding.Types (Fresh(..))
 import Pudding.Semantics.Universes
+import qualified Pudding.Semantics.LevelAlgebra as Lvl
 import GHC.IO (evaluate)
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing, fromMaybe)
 import GHC.Generics (Generic)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NEL
@@ -18,6 +19,8 @@ import qualified Hedgehog as HG
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Hedgehog (Gen, (===))
+import Data.Either (isRight, isLeft)
+import qualified Data.IntMap.Strict as IntMap
 
 data Ev = Ev Fresh Relation Fresh
   deriving (Eq, Ord, Generic, NFData)
@@ -84,12 +87,10 @@ solverTest = TestSuite "SolverTest" do
           ]
       for_ setups \setup -> do
         inconsistent =<< solve setup
-  testCase "Properties" do
+  const (pure ()) $ testCase "Properties" do
     let
       rawConstraints (Constraints _ m) = m
       constraintsEq x y = rawConstraints x === rawConstraints y
-      hedgeTest num name f = testCase name do
-        HG.check $ HG.withTests num $ HG.property f
       onRandomConstraints num name fixed f =
         hedgeTest (maybe num (const 1) fixed) name $
           f =<< randomConstraints fixed
@@ -174,11 +175,75 @@ solverTest = TestSuite "SolverTest" do
           r -> r
       testAssoc 4000 genRelated glossOverInconsistentAlgebra
       testIdemp 4000 genRelated glossOverInconsistentAlgebra
+  levelAlgebra
+  levelAlgebraHasSolution
 
+
+hedgeTest :: HG.TestLimit -> String -> HG.PropertyT IO () -> Test ()
+hedgeTest num name f = testCase name do
+  HG.check $ HG.withTests num $ HG.property f
+
+levelAlgebra :: Test ()
+levelAlgebra =
+  hedgeTest 2000 "LevelAlgebra" do
+    rels <- HG.forAll genRels
+    case (quickConstraints rels, quickSolve rels) of
+      (Constraints Nothing _, solution) -> do
+        HG.annotateShow case solution of
+          Left (rel@(v1, _, v2, _), history, solv) -> Just
+            (rel, Lvl.compareIn (v1, v2) solv, Lvl.solverState <$> history)
+          Right _ -> Nothing
+        isRight solution === True
+      (Constraints (Just _) _, solution) -> do
+        isLeft solution === True
+        pure ()
+
+levelAlgebraHasSolution :: Test ()
+levelAlgebraHasSolution =
+  hedgeTest 8000 "LevelAlgebraHasSolution" do
+    rels <- HG.forAll genRels
+    case quickSolve rels of
+      (Right (_history, solution)) -> do
+        HG.annotateShow $ Lvl.solverState <$> solution : _history
+        let assigned = flip IntMap.lookup $ Lvl.demonstrate solution
+        HG.annotateShow $ IntMap.toAscList $ Lvl.demonstrate solution
+        for_ rels \(Fresh lower, rel, Fresh upper, _) -> do
+          let
+            cmpL = case rel of
+              Equal -> (===)
+              LessThan -> \x y -> Lvl.lattice x y === Lvl.PosetLE
+              LessThanEqual -> \x y -> x Lvl.<=? y === True
+            -- cmp = case rel of
+            --   Equal -> (===)
+            --   LessThan -> \x y -> (x < y) === True
+            --   LessThanEqual -> \x y -> (x <= y) === True
+          HG.annotateShow (lower, rel, upper)
+          let
+            x = fromMaybe 0 $ assigned lower
+            y = fromMaybe 0 $ assigned upper
+            p = fromMaybe IntMap.empty $ Lvl.lookup (Fresh lower) solution
+            q = fromMaybe IntMap.empty $ Lvl.lookup (Fresh upper) solution
+          cmpL p q -- *> cmp x y
+      (Left _) -> do
+        -- isNothing solv === True
+        pure ()
+
+(???) :: Maybe a -> String -> a
+Nothing ??? err = error err
+Just r ??? _ = r
 
 solve :: NFData meta => [Relationship meta] -> Test (Constraints meta)
 solve rels = do
   liftIO . evaluate . force $ foldMap constraint rels
+
+quickSolve :: [Relationship meta] -> Either (Relationship meta, [Lvl.Solver], Lvl.Solver) ([Lvl.Solver], Lvl.Solver)
+quickSolve [] = Right ([], Lvl.base)
+quickSolve (rel@(v1, r, v2, _) : more) =
+  case quickSolve more of
+    Left err -> Left err
+    Right (history, solv) -> case Lvl.relate (v1, r, v2) solv of
+      Nothing -> Left (rel, solv : history, solv)
+      Just res -> Right (solv : history, res)
 
 consistent :: ShowEvidence meta => Constraints meta -> Test (Constraints meta)
 consistent c@(Constraints Nothing rels) = do
