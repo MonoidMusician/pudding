@@ -175,5 +175,6 @@ Green slime
 
 ## ??
 
-prenex ??
+prenex
+:   https://en.wikipedia.org/wiki/Prenex_normal_form
 

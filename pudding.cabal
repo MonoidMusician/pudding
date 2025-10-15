@@ -38,6 +38,7 @@ build-type:         Simple
 
 common defaults
     ghc-options: -Wall
+        -ddump-to-file -ddump-simpl -ddump-tc -ddump-tc-ast -ddump-types -ddump-deriv -ddump-stranal -dppr-case-as-let -ddump-cmm-opt -ddump-stg-final -ddump-stg-cg
 
     -- Base language which the package is written in.
     default-language: GHC2021
@@ -118,6 +119,7 @@ library
         Pudding.Unify,
         Pudding.Semantics.Universes,
         Pudding.Semantics.LevelAlgebra,
+        Pudding.Semantics.Universes.Fused,
 
     -- Modules included in this library but not exported.
     -- other-modules:

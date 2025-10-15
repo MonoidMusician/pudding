@@ -178,7 +178,6 @@ solverTest = TestSuite "SolverTest" do
       testAssoc 4000 genRelated glossOverInconsistentAlgebra
       testIdemp 4000 genRelated glossOverInconsistentAlgebra
   levelAlgebra
-  levelAlgebraHasSolution
 
 
 hedgeTest :: HG.TestLimit -> String -> HG.PropertyT IO () -> Test ()
@@ -186,7 +185,7 @@ hedgeTest num name f = testCase name do
   HG.check $ HG.withTests num $ HG.property f
 
 levelAlgebra :: Test ()
-levelAlgebra =
+levelAlgebra = do
   hedgeTest 2000 "LevelAlgebra" do
     rels <- HG.forAll genRels
     case (quickConstraints rels, quickSolve rels) of
@@ -199,19 +198,21 @@ levelAlgebra =
       (Constraints (Just _) _, solution) -> do
         isLeft solution === True
         pure ()
+  testCase "LevelAlgebra" do
+    levelAlgebraHasSolution
 
 levelAlgebraHasSolution :: Test ()
 levelAlgebraHasSolution = do
   -- Capture the generated test cases
   recorded <- liftIO $ newIORef []
-  hedgeTest 8000 "LevelAlgebraHasSolution" do
+  hedgeTest 8000 "HasSolution" do
     rels <- HG.forAll genRels
     _ <- liftIO $ evaluate $ force rels
     liftIO $ modifyIORef' recorded (rels++)
     verify rels
   -- To remove the overhead during the speedy tests
   vectored <- liftIO $ Vector.fromList <$> readIORef recorded
-  hedgeTest 8000 "LevelAlgebraHasSolutionSpeedy" do
+  hedgeTest 8000 "HasSolutionSpeedy" do
     let maxSize = 2000
     relStart <- HG.forAll $ Gen.int $ Range.constant 0 (Vector.length vectored - maxSize)
     relSize <- HG.forAll $ Gen.int $ Range.linear 20 maxSize

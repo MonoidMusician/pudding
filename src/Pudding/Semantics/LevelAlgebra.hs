@@ -15,6 +15,7 @@ import Pudding.Types (Fresh (Fresh))
 import Pudding.Types.Base (type (@::))
 import Pudding.Semantics.Universes (Relation (..))
 import qualified Data.IntMap.Merge.Strict as IntMapMerge
+import qualified Data.IntMap.Internal as IMI
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import qualified Data.IntSet as IntSet
@@ -174,6 +175,7 @@ mergeL = IntMapMerge.merge
 
 -- O(w)
 lattice :: Lattice -> Lattice -> PartialComparison
+lattice l1 l2 = latticeOpt l1 l2
 lattice l1 l2 = fold $ mergeValues l1 l2
   (const PosetLE)
   (const PosetGE)
@@ -185,6 +187,18 @@ l1 <=? l2 = case lattice l1 l2 of
   PosetEQ -> True
   PosetLE -> True
   _ -> False
+
+betweenLattice :: Lattice -> Lattice -> Lattice -> Bool
+betweenLattice l1 l2 l3 =
+  case (lattice l1 l2, lattice l2 l3) of
+    (PosetLE, PosetEQ) -> True
+    (PosetLE, PosetLE) -> True
+    (PosetEQ, PosetLE) -> True
+    (PosetEQ, PosetEQ) -> True
+    (PosetEQ, PosetGE) -> True
+    (PosetGE, PosetGE) -> True
+    (PosetGE, PosetEQ) -> True
+    _ -> False
 
 
 solverState :: Solver -> [(Var, [Int])]
@@ -220,16 +234,23 @@ demonstrate (Solver { points, vars }) =
         (Just x, y) -> y Map.! x
   in gradeLattice <$> vars
 
+-- Insert a relation into the solver, returning Nothing if it is inconsistent,
+-- the new solver if it succeeded, and the actual relation between the variables
+-- that was added depending on their existing relationship (it will be
+-- strengthened from LessThanEqual to Equal if it was already equal to or
+-- greater than the other variable in the poset: it does not strengthen
+-- LessThanEqual to LessThan).
+--
 -- O(w*v + w*A) worst case, but hopefully most operations are <=O(w*log)
-relate :: (Fresh, Relation, Fresh) -> Solver -> Maybe Solver
-relate (Fresh v1, rel, Fresh v2) solver | v1 == v2 =
+checkAndRelate :: (Fresh, Relation, Fresh) -> Solver -> Maybe (Maybe Relation, Solver)
+checkAndRelate (Fresh v1, rel, Fresh v2) solver | v1 == v2 =
   if rel == LessThan then Nothing else Just
     case lookup (Fresh v1) solver of
-      Nothing -> newVar v1 solver
-      Just _ -> solver
-relate (Fresh v1, rel, Fresh v2) solver@(Solver { ctr, vars }) =
+      Nothing -> (Just rel, newVar v1 solver)
+      Just _ -> (Nothing, solver)
+checkAndRelate (Fresh v1, rel, Fresh v2) solver@(Solver { ctr, vars }) =
   case (lookup (Fresh v1) solver, lookup (Fresh v2) solver) of
-    (Nothing, Nothing) -> Just $ case rel of
+    (Nothing, Nothing) -> Just $ (Just rel,) $ case rel of
       Equal ->
         -- Might as well insert them with the same dimension `ctr`
         solver
@@ -238,27 +259,34 @@ relate (Fresh v1, rel, Fresh v2) solver@(Solver { ctr, vars }) =
           , vars = IntMap.insert v1 (ctr @! 0) $ IntMap.insert v2 (ctr @! 0) vars
           }
       _ -> _apartIfRel rel v1 v2 $ newVarBelow v1 (ctr @! 0) $ newVar v2 solver
-    (Nothing, Just upper) -> Just case rel of
+    (Nothing, Just upper) -> Just $ (Just rel,) $ case rel of
       Equal -> solver { vars = IntMap.insert v1 upper vars }
       -- This is potentially much cheaper than the symmetric case `insertAbove`
       _ -> _apartIfRel rel v1 v2 $ newVarBelow v1 upper solver
-    (Just lower, Nothing) -> Just case rel of
+    (Just lower, Nothing) -> Just $ (Just rel,) $ case rel of
       Equal -> solver { vars = IntMap.insert v2 lower vars }
       -- This is potentially expensive, if there is no degree of freedom
       -- where it can be inserted without altering other relationships
       _ -> _apartIfRel rel v1 v2 $ insertAbove lower v2 solver
     (Just lower, Just upper) -> case (lattice lower upper, rel) of
       (PosetEQ, LessThan) -> Nothing
-      (PosetEQ, _) -> Just solver
-      (PosetLE, LessThan) -> Just $ _apart v1 v2 solver
-      (PosetLE, LessThanEqual) -> Just solver
+      (PosetEQ, _) -> Just (Nothing, solver)
+      (PosetLE, LessThan) -> Just (Just rel, _apart v1 v2 solver)
+      (PosetLE, LessThanEqual) -> Just (Nothing, solver)
       (PosetGE, LessThan) -> Nothing
       -- squish several points on the lattice together: O(w*v + w*A)
-      (PosetGE, _) -> squish (upper {- erm, lower -}) (lower {- currently upper -}) $ lower `tuckUnder` upper $ solver
-      (PosetUN, Equal) -> squish lower upper $ upper `tuckUnder` lower $ lower `tuckUnder` upper $ solver
-      (PosetLE, Equal) -> squish lower upper $ upper `tuckUnder` lower $ solver
+      (PosetUN, Equal) -> Just $ (Just Equal,) $
+        upper `tuckUnder` lower $ lower `tuckUnder` upper $ solver
+      (PosetGE, _) -> (Just Equal,) <$> do
+        squish (upper {- erm, lower -}) (lower {- currently upper -}) $ lower `tuckUnder` upper $ solver
+      (PosetLE, Equal) -> (Just Equal,) <$> do
+        squish lower upper $ upper `tuckUnder` lower $ solver
       -- edit the lower one to be below the upper one: O(w*v)
-      (PosetUN, _) -> Just $ _apartIfRel rel v1 v2 $ lower `tuckUnder` upper $ solver
+      (PosetUN, _) -> Just $ (Just rel,) $
+        _apartIfRel rel v1 v2 $ lower `tuckUnder` upper $ solver
+
+relate :: (Fresh, Relation, Fresh) -> Solver -> Maybe Solver
+relate rel solver = snd <$> checkAndRelate rel solver
 
 lookup :: Fresh -> Solver -> Maybe Lattice
 lookup (Fresh v) = IntMap.lookup v . vars
@@ -335,7 +363,7 @@ squish loc1 loc2 solver = checkAparts $ solver
   }
   where
   -- O(w)
-  vars' = (\pt -> if loc1 <=? pt && pt <=? loc2 || loc2 <=? pt && pt <=? loc1 then loc1 else pt) <$> vars solver
+  vars' = (\pt -> if betweenLattice loc1 pt loc2 then loc1 else pt) <$> vars solver
 
 -- O(w*A)
 checkAparts :: Solver -> Maybe Solver
@@ -465,3 +493,32 @@ checkHealth (Solver { points, vars }) = HealthReport
   allPoints :: DimMap (Set.Set Chain)
   allPoints = IntMap.foldr' (\pt -> IntMap.unionWith (<>) $ Set.singleton <$> pt) IntMap.empty vars
 
+
+latticeOpt :: Lattice -> Lattice -> PartialComparison
+latticeOpt IMI.Nil IMI.Nil = PosetEQ
+latticeOpt IMI.Nil _ = PosetGE
+latticeOpt _ IMI.Nil = PosetLE
+latticeOpt (IMI.Tip k1 x1) (IMI.Tip k2 x2) =
+  case compare k1 k2 of
+    EQ -> partialOfTotal $! compare x1 x2
+    _ -> PosetUN
+latticeOpt t@(IMI.Tip k1 _) (IMI.Bin p2 m2 l2 r2)
+  | IMI.nomatch k1 p2 m2 = PosetUN
+  | IMI.zero k1 m2 = PosetGE <> latticeOpt t l2
+  | otherwise = PosetGE <> latticeOpt t r2
+latticeOpt (IMI.Bin p1 m1 l1 r1) t@(IMI.Tip k2 _)
+  | IMI.nomatch k2 p1 m1 = PosetUN
+  | IMI.zero k2 m1 = PosetLE <> latticeOpt l1 t
+  | otherwise = PosetLE <> latticeOpt r1 t
+latticeOpt t1@(IMI.Bin p1 m1 l1 r1) t2@(IMI.Bin p2 m2 l2 r2)
+  | IMI.shorter m1 m2 = latticeRinL
+  | IMI.shorter m2 m1 = latticeLinR
+  | p1 == p2 = latticeOpt l1 l2 <> latticeOpt r1 r2
+  | otherwise = PosetUN -- disjoint
+  where
+  latticeRinL | IMI.nomatch p2 p1 m1 = PosetUN
+              | IMI.zero p2 m1 = PosetLE <> latticeOpt l1 t2
+              | otherwise = PosetLE <> latticeOpt r1 t2
+  latticeLinR | IMI.nomatch p1 p2 m2 = PosetUN
+              | IMI.zero p1 m2 = PosetGE <> latticeOpt t1 l2
+              | otherwise = PosetGE <> latticeOpt t1 r2

@@ -21,3 +21,25 @@ When you add a new module, you need to add it to `pudding.cabal`:
   its module name needs to match its file path
 
 Probably need to run `cabal build` again before it will show up, and/or restart HLS
+
+--------
+
+HLS gripes
+
+- If the file does not parse, HLS cannot auto add imports
+- If you write a type without importing it, it will add a pseudo definition to the file which shadows anything you might want to import, sigh
+- Duplicate auto imports??
+
+--------
+
+cabal test
+Error: [Cabal-7043]
+Cannot test the package pudding-0.1.0.0 because none of the components are available to build:
+  the test suite 'pudding-test' is not available because the solver picked a plan that does not include the test suites, perhaps because no such plan exists.
+To see the error message explaining the problems with such plans, force the solver to include the test suites for all packages, by adding the line 'tests: True' to the 'cabal.project.local' file.
+
+
+^ saw this with an outdated package set that meant hedgehog did not solve.
+a better way to see the error is with `cabal test --enable-tests`.
+`cabal update` fixed it.
+
