@@ -117,22 +117,24 @@ solverTest = TestSuite "SolverTest" do
             , if endpoints ev /= (lower, upper) then "  χ" else "", "\n"
             , "    ", showEvidence (evData ev)
             ]
-    onRandomConstraints 2000 "SolvableHasSolution" problem \case
-      c@(Constraints Nothing m) -> do
-        searchForInconsistency m === Nothing
-        let solution = demonstrate c
-        forConstraint m \lower rel upper ev -> do
-          let
-            cmp = case rel of
-              Equal -> (===)
-              LessThan -> \x y -> (x < y) === True
-              LessThanEqual -> \x y -> (x <= y) === True
-          HG.annotateShow (lower, rel, upper)
-          solution lower `cmp` solution upper
-          evLength ev === NEL.length (evData ev)
-          HG.annotateShow $ evData ev
-          checkEvidence $ evData ev
-      Constraints _ _ -> pure ()
+    recordSuccessRate "Solvable (length 80)" \wasSolvable -> do
+      onRandomConstraints 2000 "SolvableHasSolution" problem \case
+        c@(Constraints Nothing m) -> do
+          searchForInconsistency m === Nothing
+          let solution = demonstrate c
+          forConstraint m \lower rel upper ev -> do
+            let
+              cmp = case rel of
+                Equal -> (===)
+                LessThan -> \x y -> (x < y) === True
+                LessThanEqual -> \x y -> (x <= y) === True
+            HG.annotateShow (lower, rel, upper)
+            solution lower `cmp` solution upper
+            evLength ev === NEL.length (evData ev)
+            HG.annotateShow $ evData ev
+            checkEvidence $ evData ev
+          wasSolvable True
+        Constraints _ _ -> wasSolvable False
     onRandomConstraints 400 "Idempotent" Nothing \c -> do
       rel <- constraint <$> HG.forAll do
         genRelWith do Gen.choice $ genFresh : (pure <$> uvars c)
@@ -186,18 +188,20 @@ hedgeTest num name f = testCase name do
 
 levelAlgebra :: Test r ()
 levelAlgebra = do
-  hedgeTest 2000 "LevelAlgebra" do
-    rels <- HG.forAll genRels
-    case (quickConstraints rels, quickSolve rels) of
-      (Constraints Nothing _, solution) -> do
-        HG.annotateShow case solution of
-          Left (rel@(v1, _, v2, _), history, solv) -> Just
-            (rel, Lvl.compareIn (v1, v2) solv, Lvl.solverState <$> history)
-          Right _ -> Nothing
-        isRight solution === True
-      (Constraints (Just _) _, solution) -> do
-        isLeft solution === True
-        pure ()
+  recordSuccessRate "Solvable (length 80)" \wasSolvable -> do
+    hedgeTest 2000 "LevelAlgebra" do
+      rels <- HG.forAll genRels
+      case (quickConstraints rels, quickSolve rels) of
+        (Constraints Nothing _, solution) -> do
+          HG.annotateShow case solution of
+            Left (rel@(v1, _, v2, _), history, solv) -> Just
+              (rel, Lvl.compareIn (v1, v2) solv, Lvl.solverState <$> history)
+            Right _ -> Nothing
+          isRight solution === True
+          wasSolvable True
+        (Constraints (Just _) _, solution) -> do
+          isLeft solution === True
+          wasSolvable False
   testCase "LevelAlgebra" do
     levelAlgebraHasSolution
 
@@ -209,22 +213,29 @@ levelAlgebraHasSolution = do
     rels <- HG.forAll genRels
     _ <- liftIO $ evaluate $ force rels
     liftIO $ modifyIORef' recorded (rels++)
-    verify rels
+    verify rels (const (pure ()))
   -- To remove the overhead during the speedy tests
   vectored <- liftIO $ Vector.fromList <$> readIORef recorded
-  hedgeTest 8000 "HasSolutionSpeedy" do
-    let maxSize = 2000
-    relStart <- HG.forAll $ Gen.int $ Range.constant 0 (Vector.length vectored - maxSize)
-    relSize <- HG.forAll $ Gen.int $ Range.linear 20 maxSize
-    let rels = Vector.toList $ Vector.slice relStart relSize vectored
-    verify rels
+  let tests = 8000
+  let maxSize = 1000
+  recordAverage ("Length until unsolvable (out of " <> show maxSize <> ")") \solveLength -> do
+    recordSuccessRate "Solvable" \wasSolvable -> do
+      hedgeTest tests "HasSolutionSpeedy" do
+        relStart <- HG.forAll $ Gen.int $ Range.constant 0 (Vector.length vectored - maxSize)
+        relSize <- HG.forAll $ Gen.int $ Range.linear 20 maxSize
+        let rels = Vector.toList $ Vector.slice relStart relSize vectored
+        verify rels \case
+          Nothing -> wasSolvable True
+          Just len -> wasSolvable False *> solveLength len
   where
-  verify rels =
+  verify :: [Relationship meta] -> (Maybe Int -> HG.PropertyT IO ()) -> HG.PropertyT IO ()
+  verify rels failLength =
     case quickSolve rels of
       Right (_history, solution) -> do
         HG.annotateShow $ Lvl.solverState <$> solution : _history
         let assigned = flip IntMap.lookup $ Lvl.demonstrate solution
         HG.annotateShow $ IntMap.toAscList $ Lvl.demonstrate solution
+        failLength Nothing
         for_ rels \(Fresh lower, rel, Fresh upper, _) -> do
           let
             cmpL :: Lvl.Lattice -> Lvl.Lattice -> HG.PropertyT IO ()
@@ -244,7 +255,8 @@ levelAlgebraHasSolution = do
             p = fromMaybe IntMap.empty $ Lvl.lookup (Fresh lower) solution
             q = fromMaybe IntMap.empty $ Lvl.lookup (Fresh upper) solution
           cmpL p q *> cmp x y
-      Left _ -> do
+      Left (_failedRel, goodRels, _failedSolver) -> do
+        _ <- failLength (Just (length goodRels))
         pure ()
 
 -- (???) :: Maybe a -> String -> a

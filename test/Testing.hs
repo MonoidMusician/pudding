@@ -3,10 +3,13 @@ module Testing where
 import Control.Exception (SomeException, catch)
 import Control.Monad (ap, forM_, unless)
 import Control.Monad.IO.Class ( MonadIO(..) )
+import Data.Foldable (fold)
 import Data.Functor ((<&>))
 import Data.List (intercalate)
 import Data.Maybe (isNothing)
 import Control.Monad.Reader.Class (MonadReader (local, ask))
+import Data.Monoid (Sum(Sum))
+import Data.IORef (newIORef, modifyIORef', readIORef)
 
 type TestFailure = String
 
@@ -157,3 +160,38 @@ expectFail (Test m) = do
     (x, _, _) <- wrapExceptions (m (fullName, context))
     return (Just (isNothing x), [], [])
   expect f "expectFail ..."
+
+
+recordSuccessRate :: forall m1 m2 a. MonadIO m1 => MonadIO m2 => String -> ((Bool -> m2 ()) -> m1 a) -> m1 a
+recordSuccessRate metricName inner = do
+  ref <- liftIO $ newIORef (mempty :: TestSummary)
+  returnValue <- inner \succeeded -> liftIO do
+    modifyIORef' ref (<> if succeeded then TestSummary 1 0 else TestSummary 0 1)
+  result <- liftIO $ readIORef ref
+  returnValue <$ case result of
+    TestSummary 0 0 -> pure ()
+    TestSummary yes no -> liftIO do
+      putStrLn $ fold
+        [ "  ^ " <> metricName
+        , ": yes: " <> show yes
+        , ", no: " <> show no
+        , ", ratio: "
+        , show ((yes * 100) `div` (yes + no)) <> "%"
+        ]
+
+recordAverage :: forall m1 m2 a. MonadIO m1 => MonadIO m2 => String -> ((Int -> m2 ()) -> m1 a) -> m1 a
+recordAverage metricName inner = do
+  ref <- liftIO $ newIORef (mempty :: (Sum Int, Sum Int))
+  returnValue <- inner \addition -> liftIO do
+    modifyIORef' ref (<> (Sum addition, 1))
+  result <- liftIO $ readIORef ref
+  returnValue <$ case result of
+    (_, 0) -> pure ()
+    (Sum total, Sum trials) -> liftIO do
+      putStrLn $ fold
+        [ "  ^ " <> metricName
+        , ": average: "
+        , show @Float (fromIntegral total / fromIntegral trials)
+        , " (" <> show trials <> " samples)"
+        ]
+

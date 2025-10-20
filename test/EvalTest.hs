@@ -105,8 +105,8 @@ evalTest = TestSuite "EvalTest" $ withTestContext do
     t2 <- parseTerm "(Type0)"
     t3 <- parseTerm "(identity1 (Type0 1) (Type0))"
     TApp mempty t1 t2 `defEqTo` t3
-  testCase "BetaReduction2" do
-    "(Pi (t Unit) Void)" `defEqTo` "(Fun Unit Void)"
+    testCase "SimpleDefinition" do
+      "(Fun Unit Void)" `defEqTo` "(Pi (t Unit) Void)"
   testCase "EtaEquivalence" do
     testCase "Lambdas" $
       addVars ["A" .:: type0, "B" .:: type0] do
@@ -131,39 +131,33 @@ evalTest = TestSuite "EvalTest" $ withTestContext do
           , "  (pair (Sigma (x A) B) (fst p) (snd p)))"
           ]
         defEqTo t1 t2
-  -- testCase "AlreadyNormalized" do
-  --   let
-  --     alreadyNormalized s = do
-  --       t <- parseTerm s
-  --       let t1 = normUnder [] t
-  --       let t2 = normUnder [] t1
-  --       expectEquiv Term' t t1
-  --       expectEquiv Term' t t2
-  --   alreadyNormalized "(lambda (x (Type0)) x)"
-  --   alreadyNormalized "(Pi (t (Type0)) (Type0))"
-  --   alreadyNormalized "(lambda (t (Type0)) (lambda (x t) x))"
-  --   alreadyNormalized "(Pi (t (Type0)) (Pi (x t) t))"
-  -- testCase "DoubleNormalize" do
-  --   let
-  --     doublyNormalized s = do
-  --       t <- normUnder [] <$> parseTerm s
-  --       let t1 = normUnder [] t
-  --       expectEquiv Term' t t1
-  --   doublyNormalized "(Id1 (Id1 (Type0)))"
-  --   doublyNormalized "identity1 (Type0) (Type0)"
-  --   doublyNormalized $ T.unlines
-  --     [ "(lambda (A (Type0))"
-  --     , "  (lambda (B (Type0))"
-  --     , "    (lambda (f (Pi (x A) B))"
-  --     , "      f)))"
-  --     ]
-  --   doublyNormalized $ T.unlines
-  --     [ "(lambda (A (Type0))"
-  --     , "  (lambda (B (Type0))"
-  --     , "    (lambda (f (Pi (x A) B))"
-  --     , "      (lambda (x A)"
-  --     , "        (f x)))))"
-  --     ]
+  testCase "AlreadyNormalized" do
+    let
+      alreadyNormalized s = normalizesTo s s
+    alreadyNormalized "(lambda (x (Type0)) x)"
+    alreadyNormalized "(Pi (t (Type0)) (Type0))"
+    alreadyNormalized "(lambda (t (Type0)) (lambda (x t) x))"
+    alreadyNormalized "(Pi (t (Type0)) (Pi (x t) t))"
+  testCase "DoubleNormalize" do
+    let
+      doublyNormalize s = do
+        (_, t) <- evalNorm =<< convert s
+        normalizesTo t t
+    doublyNormalize "(Id1 (Id1 (Type0)))"
+    doublyNormalize "identity1 (Type0) (Type0)"
+    doublyNormalize $ T.unlines
+      [ "(lambda (A (Type0))"
+      , "  (lambda (B (Type0))"
+      , "    (lambda (f (Pi (x A) B))"
+      , "      f)))"
+      ]
+    doublyNormalize $ T.unlines
+      [ "(lambda (A (Type0))"
+      , "  (lambda (B (Type0))"
+      , "    (lambda (f (Pi (x A) B))"
+      , "      (lambda (x A)"
+      , "        (f x)))))"
+      ]
   testCase "Constructor" do
     addVars ["t" .:: type0] do
       tm <- parseTerm "(nothing t)"
