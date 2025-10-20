@@ -63,7 +63,7 @@ termTest = TestSuite "TermTest" do
     expectFail $ testParser' "(splice)"
     expectFail $ testParser' "(splice x y)"
 
-testParser :: Text -> Test Term
+testParser :: Text -> Test r Term
 testParser text = do
   name <- testCaseName
   r <- liftIO $ runParser (P.spaces *> term <* P.eof) (show name) text
@@ -71,18 +71,18 @@ testParser text = do
   liftIO $ putStrLn $ T.unpack $ formatCore Ansi tm
   return tm
 
-testParser' :: Text -> Test ()
+testParser' :: Text -> Test r ()
 testParser' = void . testParser
 
 simplePos :: P.SourcePos -> (Int, Int)
 simplePos p = (P.sourceLine p, P.sourceColumn p)
 
-metaSpan :: Metadata -> Test ((Int, Int), (Int, Int))
+metaSpan :: Metadata -> Test r ((Int, Int), (Int, Int))
 metaSpan meta = case elems (sourcePos meta) of
   [SourceSpan begin end] -> return (simplePos begin, simplePos end)
   _ -> testFail "Malformed metadata"
 
-expectSpan :: ((Int, Int), (Int, Int)) -> Metadata -> Test ()
+expectSpan :: ((Int, Int), (Int, Int)) -> Metadata -> Test r ()
 expectSpan (eBegin, eEnd) meta = do
   (begin, end) <- metaSpan meta
   expectEq eBegin begin

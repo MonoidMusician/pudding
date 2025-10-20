@@ -153,13 +153,13 @@ solverTest = TestSuite "SolverTest" do
     --   ((c1 <> c2) <> c3) `constraintsEq` (c1 <> (c2 <> c3))
     let
       fake = Evidence 0 (pure ()) 0
-      testAssoc :: forall i o. Show i => Semigroup i => Show o => Eq o => HG.TestLimit -> Gen i -> (i -> o) -> Test ()
+      testAssoc :: forall i o. Show i => Semigroup i => Show o => Eq o => HG.TestLimit -> Gen i -> (i -> o) -> Test () ()
       testAssoc n gen f = hedgeTest n "Assoc" do
         x <- HG.forAll gen
         y <- HG.forAll gen
         z <- HG.forAll gen
         f ((x <> y) <> z) === f (x <> (y <> z))
-      testIdemp :: forall i o. Show i => Semigroup i => Eq i => Show o => Eq o => HG.TestLimit -> Gen i -> (i -> o) -> Test ()
+      testIdemp :: forall i o. Show i => Semigroup i => Eq i => Show o => Eq o => HG.TestLimit -> Gen i -> (i -> o) -> Test () ()
       testIdemp n gen f = hedgeTest n "Idempotent" do
         x <- HG.forAll gen
         z <- HG.forAll gen
@@ -180,11 +180,11 @@ solverTest = TestSuite "SolverTest" do
   levelAlgebra
 
 
-hedgeTest :: HG.TestLimit -> String -> HG.PropertyT IO () -> Test ()
+hedgeTest :: HG.TestLimit -> String -> HG.PropertyT IO () -> Test r ()
 hedgeTest num name f = testCase name do
   HG.check $ HG.withTests num $ HG.property f
 
-levelAlgebra :: Test ()
+levelAlgebra :: Test r ()
 levelAlgebra = do
   hedgeTest 2000 "LevelAlgebra" do
     rels <- HG.forAll genRels
@@ -201,7 +201,7 @@ levelAlgebra = do
   testCase "LevelAlgebra" do
     levelAlgebraHasSolution
 
-levelAlgebraHasSolution :: Test ()
+levelAlgebraHasSolution :: Test r ()
 levelAlgebraHasSolution = do
   -- Capture the generated test cases
   recorded <- liftIO $ newIORef []
@@ -251,7 +251,7 @@ levelAlgebraHasSolution = do
 -- Nothing ??? err = error err
 -- Just r ??? _ = r
 
-solve :: NFData meta => [Relationship meta] -> Test (Constraints meta)
+solve :: NFData meta => [Relationship meta] -> Test r (Constraints meta)
 solve rels = do
   liftIO . evaluate . force $ foldMap constraint rels
 
@@ -264,7 +264,7 @@ quickSolve (rel@(v1, r, v2, _) : more) =
       Nothing -> Left (rel, solv : history, solv)
       Just res -> Right (solv : history, res)
 
-consistent :: ShowEvidence meta => Constraints meta -> Test (Constraints meta)
+consistent :: ShowEvidence meta => Constraints meta -> Test r (Constraints meta)
 consistent c@(Constraints Nothing rels) = do
   assert (isNothing (searchForInconsistency rels)) "Uncaught inconsistency"
   liftIO $ print (demonstrate c <$> uvars c)
@@ -272,7 +272,7 @@ consistent c@(Constraints Nothing rels) = do
 consistent (Constraints (Just inco) _) = testFail $
   inconsistency inco
 
-inconsistent :: ShowEvidence meta => Constraints meta -> Test (Constraints meta)
+inconsistent :: ShowEvidence meta => Constraints meta -> Test r (Constraints meta)
 inconsistent c@(Constraints Nothing _) = do
   testFail $ "consistent?? " <> show (demonstrate c <$> uvars c)
 inconsistent c@(Constraints (Just inco) _) = do

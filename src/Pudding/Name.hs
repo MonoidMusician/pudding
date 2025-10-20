@@ -5,14 +5,14 @@ import Control.Monad.IO.Class (MonadIO(liftIO))
 import Data.Coerce (coerce)
 import Data.IORef (IORef, readIORef, modifyIORef', newIORef)
 import qualified Data.Map as Map
-import Data.Set (Set)
+import Data.Set (Set, singleton)
 import qualified Data.Text as T
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import GHC.StableName (StableName, hashStableName, makeStableName)
 import Prettyprinter (Pretty(pretty))
 
-data Name = Name !(StableName Text) !Text
+data Name = Name { nameId :: !(StableName Text), nameText :: !Text }
 
 instance Eq Name where
   Name n1 _ == Name n2 _ = n1 == n2
@@ -56,6 +56,9 @@ data CanonicalName = CanonicalName
   , allNames :: Set Name -- concatenated during unification
   }
   deriving (Generic, NFData)
+
+canonicalName :: Name -> CanonicalName
+canonicalName = CanonicalName <*> singleton
 
 instance Semigroup CanonicalName where
   l <> r = CanonicalName

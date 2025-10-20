@@ -58,6 +58,9 @@ common defaults
         ScopedTypeVariables
         TypeFamilies
         ViewPatterns
+        -- required for `default (Text)`:
+        ExtendedDefaultRules
+        -- eventually: NamedDefaults with GHC 9.12.1
 
     -- Other library packages from which modules are imported.
     -- (Slightly trimmed from PureScript)
