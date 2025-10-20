@@ -119,6 +119,8 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
       && all (uncurry cc) (Vector.zip paramsL paramsR)
       && List.length argsL == List.length argsR
       && all (uncurry cc) (Vector.zip argsL argsR)
+  (ELift _ tyL, ELift _ tyR) -> cc tyL tyR
+  (EQuote _ tmL, EQuote _ tmR) -> cc tmL tmR -- TODO: what about staging??
 
   -- Handle some eta conversions (but not unit-type eta, which needs to be
   -- type-directed)
@@ -179,6 +181,8 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
     (moreL :> NFst _, moreR :> NFst _) ->
       checkPrjs shouldCC (moreL, moreR)
     (moreL :> NSnd _, moreR :> NSnd _) ->
+      checkPrjs shouldCC (moreL, moreR)
+    (moreL :> NSplice _, moreR :> NSplice _) ->
       checkPrjs shouldCC (moreL, moreR)
     (Nil, Nil) -> True
     -- Differing lengths or differing projections
@@ -287,6 +291,13 @@ validateOrNot seqOrConst ctx = \case
           indexValues = eval ctxArgs <$> ctorIndices
         in ETyCtor mempty tyName paramValues indexValues
     _ -> error "Bad constructor name"
+  TLift _ ty -> case vv ty of
+    EUniv m1 (UBase n) -> EUniv m1 (UMeta n)
+    _ -> error "Must be a type in the base"
+  TQuote meta tm -> ELift meta $ vv tm
+  TSplice _ tm -> case vv tm of
+    ELift _ ty -> ty
+    _ -> error "Bad splice"
   where
   validateType ty = case vv ty of
     EUniv _ _ -> evalHere ty
@@ -405,6 +416,13 @@ typeof ctx = \case
         adstract [] substituted = substituted
       in TTyCtor mempty tyName params (localize <$> ctorIndices)
     _ -> error "Bad constructor name"
+  TLift _ ty -> case typeof ctx ty of
+    TUniv m1 (UBase n) -> TUniv m1 (UMeta n)
+    _ -> error "Must be a type in the base"
+  TQuote meta tm -> TLift meta $ typeof ctx tm
+  TSplice _ tm -> case typeof ctx tm of
+    TLift _ ty -> ty
+    _ -> error "Bad splice"
   where
   into :: Binder -> Term -> TypeCtx
   into bdr ty = ctx :> (bdr, ty)

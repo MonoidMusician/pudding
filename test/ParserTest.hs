@@ -53,6 +53,15 @@ termTest = TestSuite "TermTest" do
       testParser "(Pi (t (Type0)) (Pi (x t) t))"
     expectEq (Index 0) i1
     expectEq (Index 1) i2
+  testCase "2LTT" do
+    testParser' "(Lift (Pi (x A) B))"
+    testParser' "(Π (x (Lift A)) B)"
+    testParser' "(quote (lambda (x A) x))"
+    testParser' "(splice (quote x))"
+    expectFail $ testParser' "(Lift)"
+    expectFail $ testParser' "(quote)"
+    expectFail $ testParser' "(splice)"
+    expectFail $ testParser' "(splice x y)"
 
 testParser :: Text -> Test Term
 testParser text = do

@@ -81,6 +81,11 @@ int = read <$> P.many1 P.digit <* spaces
 term :: Parser Term
 term = var <|> (lp *> (P.choice terms <|> app) <* rp)
   where
+  unary fn kws = trackMeta do
+    _ <- keyword kws
+    P.spaces
+    t <- term
+    pure \meta -> fn meta t
   terms =
     [ abstraction (kwPlicit ["lambda", "λ"]) TLambda
     , abstraction (kwPlicit ["Pi", "Π"]) TPi
@@ -97,6 +102,9 @@ term = var <|> (lp *> (P.choice terms <|> app) <* rp)
         dep <- term
         r <- term
         return $ \meta -> TPair meta l dep r
+    , unary TLift ["Lift"]
+    , unary TQuote ["quote"]
+    , unary TSplice ["splice"]
     , trackMeta do
         univKind <- UBase <$ keyword ["Type0"] <|> UMeta <$ keyword ["Type1"]
         lvl <- P.option 0 int

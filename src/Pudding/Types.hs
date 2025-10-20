@@ -133,6 +133,9 @@ data Term
       -- args are the actual data stored in the constructor, from which the
       -- indices are inferred based on the constructor declaration
       ("args" @:: Vector Term)
+  | TLift Metadata Term
+  | TQuote Metadata Term
+  | TSplice Metadata Term
   deriving (Generic, NFData)
 newtype ScopedTerm = Scoped Term
   deriving newtype (NFData)
@@ -169,6 +172,8 @@ data Eval
       ("params" @:: Vector Eval)
       ("args" @:: Vector Eval)
   | EDeferred ("reason" @:: Meta Text) ("type" @:: Eval) !("sharing" @:: Maybe (StableName Eval)) Metadata ("deferred term" @:: Eval)
+  | ELift Metadata Eval
+  | EQuote Metadata Eval
   deriving (Generic, NFData)
 
 -- A Neutral is stuck on a variable (or hole), with some projections and eliminators applied to it.
@@ -196,6 +201,7 @@ data NeutPrj
   = NApp Metadata ("arg" @:: Eval)
   | NFst Metadata
   | NSnd Metadata
+  | NSplice Metadata
   deriving (Generic, NFData)
 -- Alternatively: we could just implement it as a recursive type
 -- Neutral = NVar Level | NFst Neutral | NApp ("fun" @:: Neutral) ("arg" @:: Eval)
@@ -382,6 +388,9 @@ instance HasMetadata Term where
       <$> f old
       <.*> traverse (traverseMetadata1 (apply f)) params
       <.*> traverse (traverseMetadata1 (apply f)) args
+    TLift old t -> TLift <$> f old <.> traverseMetadata1 f t
+    TQuote old t -> TQuote <$> f old <.> traverseMetadata1 f t
+    TSplice old t -> TSplice <$> f old <.> traverseMetadata1 f t
 
 instance HasMetadata ScopedTerm where
   traverseMetadata1 f (Scoped term) = Scoped <$> traverseMetadata1 f term
@@ -419,6 +428,8 @@ instance HasMetadata Eval where
       (\term' ty' -> EDeferred reason ty' ref (view metadata term') term')
       <$> traverseMetadata1 f term
       <.> traverseMetadata1 f ty
+    ELift old t -> ELift <$> f old <.> traverseMetadata1 f t
+    EQuote old t -> EQuote <$> f old <.> traverseMetadata1 f t
 
 instance HasMetadata Neutral where
   traverseMetadata1 f (Neutral focus prjs) =
@@ -438,6 +449,7 @@ instance HasMetadata NeutPrj where
       <.> traverseMetadata1 f arg
     NFst old -> NFst <$> f old
     NSnd old -> NSnd <$> f old
+    NSplice old -> NSplice <$> f old
 
 instance HasMetadata Closure where
   traverseMetadata1 f (Closure bdr ctx term) = Closure bdr ctx

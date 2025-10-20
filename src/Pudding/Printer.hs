@@ -106,3 +106,6 @@ printCore = \case
       , printCore <$> Vector.toList params
       , printCore <$> Vector.toList args
       ]
+  TLift _m ty -> sexp [ pure "Lift", printCore ty ]
+  TQuote _m ty -> sexp [ pure "quote", printCore ty ]
+  TSplice _m ty -> sexp [ pure "splice", printCore ty ]

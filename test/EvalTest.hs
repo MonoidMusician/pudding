@@ -161,6 +161,16 @@ evalTest = TestSuite "EvalTest" do
     let tyP = typecheckUnder [] tmP
     liftIO $ print $ SubTerm' 0 tmP
     liftIO $ print $ SubTerm' 0 tyP
+  testCase "2LTT" do
+    liftBoolType <- parseTerm "(Lift Bool)"
+    let
+      normalizesTo ctx s s' = do
+        t <- parseTermWith (fst <$> ctx) s
+        t2 <- parseTermWith (fst <$> ctx) s'
+        let t1 = normUnder (snd <$> ctx) t
+        expectEquiv (SubTerm' (length ctx)) t1 t2
+    normalizesTo [] "(splice (quote (lambda (x (Type0)) x)))" "(lambda (x (Type0)) x)"
+    normalizesTo [("v", liftBoolType)] "(quote (splice v))" "v"
 
 parseTerm :: Text -> Test Term
 parseTerm s = do

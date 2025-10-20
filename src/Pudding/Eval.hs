@@ -65,6 +65,7 @@ doPrj e prj = error $ mconcat
       NApp _ _ -> "App"
       NFst _ -> "Fst"
       NSnd _ -> "Snd"
+      NSplice _ -> "Splice"
   , ":"
   , "\n", T.unpack $ formatCore Ansi $ quote (ctxOfSize Map.empty 100) e
   ]
@@ -248,9 +249,21 @@ evaling = \case
   THole meta hole -> pure $ ENeut (Neutral (NHole meta hole) Nil)
   TTyCtor meta name params indices -> ETyCtor meta name <$> traverse evaling params <*> traverse evaling indices
   TConstr meta name params args -> EConstr meta name <$> traverse evaling params <*> traverse evaling args
+  TLift meta ty -> ELift meta <$> evaling ty
+  TQuote meta tm -> doQuote meta <$> evaling tm
+  TSplice meta tm -> doSplice meta <$> evaling tm
   where
   undeferred (EDeferred _ _ _ _ tm) = undeferred tm
   undeferred tm = tm
+
+doQuote :: Metadata -> Eval -> Eval
+doQuote _ (ENeut (Neutral blocking (rest :> NSplice _))) = ENeut (Neutral blocking rest)
+doQuote meta tm = EQuote meta tm
+
+doSplice :: Metadata -> Eval -> Eval
+doSplice _ (EQuote _ tm) = tm
+doSplice meta (ENeut (Neutral blocking rest)) = ENeut (Neutral blocking (rest :> NSplice meta))
+doSplice _ _ = error "Type error: cannot splice a non-quote"
 
 -- Quoting takes a term that was evaluated to depth 1 (`Eval`) and turns it back
 -- into a `Term`, calling `eval` on all closures to evaluate it fully.
@@ -279,6 +292,7 @@ eval2termWith forceGlobals handleClosure = \case
         NApp meta arg -> TApp meta soFar (e2t arg ctx)
         NFst meta -> TFst meta soFar
         NSnd meta -> TSnd meta soFar
+        NSplice meta -> TSplice meta soFar
       go Nil result = result
     in go prjs base
   EUniv meta univ -> pure $ TUniv meta univ
@@ -295,6 +309,8 @@ eval2termWith forceGlobals handleClosure = \case
   EConstr meta name params args ->
     TConstr meta name <$> traverse e2t params <*> traverse e2t args
   EDeferred _ _ _ _ tm -> e2t tm
+  ELift meta ty -> TLift meta <$> e2t ty
+  EQuote meta tm -> TQuote meta <$> e2t tm
   where
   e2t = eval2termWith forceGlobals handleClosure
 
@@ -362,6 +378,9 @@ shiftFrom base delta = \case
   TApp meta fun arg -> TApp meta (go fun) (go arg)
   TTyCtor meta name params indices -> TTyCtor meta name (go <$> params) (go <$> indices)
   TConstr meta name params args -> TConstr meta name (go <$> params) (go <$> args)
+  TLift meta ty -> TLift meta $ go ty
+  TQuote meta tm -> TQuote meta $ go tm
+  TSplice meta tm -> TSplice meta $ go tm
   where
   go = shiftFrom base delta
   into = shiftFrom (base+1) delta
