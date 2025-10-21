@@ -13,12 +13,10 @@ import Pudding (parseAndBootGlobals)
 import Data.Text (Text)
 import Data.Foldable (for_)
 import Pudding.Printer (PrinterState(..), formatCore, Style (Ansi), format, printCore)
-import Control.DeepSeq (force)
 import Control.Monad.Reader.Class (MonadReader (reader, ask), asks, local)
 import Control.Lens (review)
 import qualified Pudding.Eval as Eval
 import Data.Functor (void)
-import GHC.IO (evaluate)
 import qualified Pudding.Parser as Parse
 
 -- NamedDefaults requires GHC 9.12.1
@@ -215,8 +213,7 @@ typecheck term = do
   ctx <- ask
   let globals = ctxGlobals ctx
   let localTypes = review stack (snd . snd <$> ctxStack ctx)
-  liftIO do
-    evaluate . force $ validateQuoteNeutrals globals localTypes term
+  testNF $ validateQuoteNeutrals globals localTypes term
 
 defEqTo :: forall i1 i2. Convert i1 Eval => Convert i2 Eval => "term1" @:: i1 -> "term2" @:: i2 -> EvalTest ()
 defEqTo i1 i2 = do

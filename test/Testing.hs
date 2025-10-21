@@ -1,6 +1,6 @@
 module Testing where
 
-import Control.Exception (SomeException, catch)
+import Control.Exception (SomeException, catch, evaluate)
 import Control.Monad (ap, forM_, unless)
 import Control.Monad.IO.Class ( MonadIO(..) )
 import Data.Foldable (fold)
@@ -10,6 +10,9 @@ import Data.Maybe (isNothing)
 import Control.Monad.Reader.Class (MonadReader (local, ask))
 import Data.Monoid (Sum(Sum))
 import Data.IORef (newIORef, modifyIORef', readIORef)
+import qualified Criterion.Measurement as Crit.Meas
+import Control.DeepSeq (NFData, force)
+import System.Mem (performMajorGC)
 
 type TestFailure = String
 
@@ -195,3 +198,19 @@ recordAverage metricName inner = do
         , " (" <> show trials <> " samples)"
         ]
 
+testNF :: forall m a. MonadIO m => NFData a => a -> m a
+testNF = liftIO . evaluate . force
+
+recordTime :: forall m1 a. MonadIO m1 => NFData a => String -> m1 a -> m1 a
+recordTime metricName inner = do
+  liftIO performMajorGC
+  startTime <- liftIO do Crit.Meas.initializeTime *> Crit.Meas.getTime
+  returnValue <- testNF =<< inner
+  endTime <- liftIO do Crit.Meas.getTime
+  returnValue <$ liftIO do
+    putStrLn $ fold
+      [ "  ^ " <> metricName
+      , ": "
+      , show (endTime - startTime)
+      , " seconds"
+      ]

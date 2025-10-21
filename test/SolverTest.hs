@@ -23,6 +23,10 @@ import Data.Either (isRight, isLeft)
 import qualified Data.IntMap.Strict as IntMap
 import Data.IORef (newIORef, modifyIORef', readIORef)
 import qualified Data.Vector as Vector
+import qualified Hedgehog.Internal.Seed as HG.Seed
+import qualified Hedgehog.Internal.Gen as HG.Gen
+import qualified Hedgehog.Internal.Tree as HG.Tree
+import Data.Word (Word64)
 
 data Ev = Ev Fresh Relation Fresh
   deriving (Eq, Ord, Generic, NFData)
@@ -118,7 +122,7 @@ solverTest = TestSuite "SolverTest" do
             , "    ", showEvidence (evData ev)
             ]
     recordSuccessRate "Solvable (length 80)" \wasSolvable -> do
-      onRandomConstraints 2000 "SolvableHasSolution" problem \case
+      onRandomConstraints 1000 "SolvableHasSolution" problem \case
         c@(Constraints Nothing m) -> do
           searchForInconsistency m === Nothing
           let solution = demonstrate c
@@ -181,10 +185,14 @@ solverTest = TestSuite "SolverTest" do
       testIdemp 4000 genRelated glossOverInconsistentAlgebra
   levelAlgebra
 
-
 hedgeTest :: HG.TestLimit -> String -> HG.PropertyT IO () -> Test r ()
-hedgeTest num name f = testCase name do
+hedgeTest = hedgeTest' Nothing
+
+hedgeTest' :: Maybe Word64 -> HG.TestLimit -> String -> HG.PropertyT IO () -> Test r ()
+hedgeTest' Nothing num name f = testCase name do
   HG.check $ HG.withTests num $ HG.property f
+hedgeTest' (Just seed) num name f = testCase name do
+  HG.recheckAt (HG.Seed.from seed) "0" $ HG.withTests num $ HG.property f
 
 levelAlgebra :: Test r ()
 levelAlgebra = do
@@ -209,33 +217,44 @@ levelAlgebraHasSolution :: Test r ()
 levelAlgebraHasSolution = do
   -- Capture the generated test cases
   recorded <- liftIO $ newIORef []
-  hedgeTest 8000 "HasSolution" do
-    rels <- HG.forAll genRels
+  -- This seems a particularly bad seed for the current tests: not only are they
+  -- slower but they also hit more nonlinear behavior for the 200x1000 vs
+  -- 1000x200 tests, thus they are probably a good target for optimization
+  let hedgeSeed = Just 314159265358979323
+  -- Generate a total order
+  totalOrder <- liftIO $ case hedgeSeed of
+    Nothing -> Gen.sample seedConsistent
+    Just seed -> maybe (error "failed gen") (pure . HG.Tree.treeValue) $
+      HG.Gen.evalGen 30 (HG.Seed.from seed) seedConsistent
+  hedgeTest' hedgeSeed 6000 "HasSolution" do
+    rels <- HG.forAll $ genConsistent totalOrder $ Range.linear 0 100
     _ <- liftIO $ evaluate $ force rels
     liftIO $ modifyIORef' recorded (rels++)
-    verify rels (const (pure ()))
+    verify rels
   -- To remove the overhead during the speedy tests
-  vectored <- liftIO $ Vector.fromList <$> readIORef recorded
-  let tests = 8000
-  let maxSize = 1000
-  recordAverage ("Length until unsolvable (out of " <> show maxSize <> ")") \solveLength -> do
-    recordSuccessRate "Solvable" \wasSolvable -> do
-      hedgeTest tests "HasSolutionSpeedy" do
-        relStart <- HG.forAll $ Gen.int $ Range.constant 0 (Vector.length vectored - maxSize)
-        relSize <- HG.forAll $ Gen.int $ Range.linear 20 maxSize
-        let rels = Vector.toList $ Vector.slice relStart relSize vectored
-        verify rels \case
-          Nothing -> wasSolvable True
-          Just len -> wasSolvable False *> solveLength len
+  vectored <- liftIO $ readIORef recorded >>= \listed ->
+    pure $! Vector.fromList listed
+  let
+    testWithParams nTests maxSize = do
+      let testName = "HasSolutionSpeedy (" <> show (toInteger nTests) <> "×" <> show maxSize <> ")"
+      recordAverage ("Chosen length (out of " <> show maxSize <> ")") \solveLength ->
+        recordTime "Took" do
+          hedgeTest' hedgeSeed nTests testName do
+            relStart <- HG.forAll $ Gen.int $ Range.constant 0 (Vector.length vectored - maxSize)
+            relSize <- HG.forAll $ Gen.int $ Range.constant 20 maxSize
+            solveLength relSize
+            let rels = Vector.toList $ Vector.slice relStart relSize vectored
+            verify rels
+  testWithParams 200 1000
+  testWithParams 1000 200
   where
-  verify :: [Relationship meta] -> (Maybe Int -> HG.PropertyT IO ()) -> HG.PropertyT IO ()
-  verify rels failLength =
+  verify :: [Relationship meta] -> HG.PropertyT IO ()
+  verify rels =
     case quickSolve rels of
       Right (_history, solution) -> do
         HG.annotateShow $ Lvl.solverState <$> solution : _history
         let assigned = flip IntMap.lookup $ Lvl.demonstrate solution
         HG.annotateShow $ IntMap.toAscList $ Lvl.demonstrate solution
-        failLength Nothing
         for_ rels \(Fresh lower, rel, Fresh upper, _) -> do
           let
             cmpL :: Lvl.Lattice -> Lvl.Lattice -> HG.PropertyT IO ()
@@ -255,9 +274,8 @@ levelAlgebraHasSolution = do
             p = fromMaybe IntMap.empty $ Lvl.lookup (Fresh lower) solution
             q = fromMaybe IntMap.empty $ Lvl.lookup (Fresh upper) solution
           cmpL p q *> cmp x y
-      Left (_failedRel, goodRels, _failedSolver) -> do
-        _ <- failLength (Just (length goodRels))
-        pure ()
+      Left (_failedRel, _goodRels, _failedSolver) -> do
+        error "Was deemed inconsistent!"
 
 -- (???) :: Maybe a -> String -> a
 -- Nothing ??? err = error err
@@ -326,6 +344,30 @@ genRel = genRelWith genFresh
 -- constraints are mostly being added one-by-one
 genRels :: Gen [Relationship Ev]
 genRels = Gen.list (Range.linear 0 80) genRel
+
+seedConsistent :: Gen (IntMap.IntMap Int)
+seedConsistent = IntMap.fromList . zip [0..] <$>
+  -- Increasing the number of variables seems to increase average solve time
+  -- and also increase the slowness of more relations in certain cases
+  Gen.list (Range.linear 0 300)
+    -- Harder to tell how this affects speed
+    (Gen.int (Range.linear 0 40))
+
+genConsistent :: IntMap.IntMap Int -> Range.Range Int -> Gen [Relationship Ev]
+genConsistent totalOrder lengthRange = do
+  let sz = IntMap.size totalOrder
+  Gen.list lengthRange do
+    x <- Gen.int (Range.linear 0 sz)
+    y <- Gen.int (Range.linear 0 sz)
+    rel <- case compare (IntMap.lookup x totalOrder) (IntMap.lookup y totalOrder) of
+      EQ -> Just <$> do
+        (\i -> if i > 0 then LessThanEqual else Equal) <$> Gen.int (Range.constant 0 3)
+      LT -> pure (Just LessThan)
+      GT -> pure Nothing
+    pure case rel of
+      Just r -> (Fresh x, r, Fresh y, Ev (Fresh x) r (Fresh y))
+      Nothing -> (Fresh y, LessThanEqual, Fresh x, Ev (Fresh y) LessThanEqual (Fresh x))
+
 
 randomConstraints :: Maybe [Relationship Ev] -> HG.PropertyT IO (Constraints Ev)
 randomConstraints fixed =

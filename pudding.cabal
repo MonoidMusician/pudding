@@ -74,6 +74,8 @@ common defaults
         bytestring >=0.12.1.0 && <0.13,
         cborg >=0.2.10.0 && <0.3,
         containers >=0.6.8 && <0.7,
+        criterion >=1.6.4.1 && <1.7,
+        criterion-measurement >=0.2.3.0 && <0.2.4,
         data-ordlist >=0.4.7.0 && <0.5,
         deepseq >=1.5.1.0 && <1.6,
         lens >=5.3.4 && <5.4,

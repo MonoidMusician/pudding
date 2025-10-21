@@ -8,7 +8,6 @@ import Prelude hiding (lookup)
 import Data.Foldable (fold)
 import Data.Function ((&))
 import Data.Functor ((<&>))
-import Data.Ratio (Ratio, numerator, denominator, (%))
 import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as IntMap
 import Pudding.Types (Fresh (Fresh))
@@ -21,8 +20,9 @@ import qualified Data.Map as Map
 import qualified Data.IntSet as IntSet
 import Safe.Foldable (maximumMay)
 import Data.Maybe (fromMaybe, mapMaybe, isJust)
-import Control.DeepSeq (NFData)
+import Control.DeepSeq (NFData (rnf))
 import GHC.Generics (Generic)
+import Data.Int (Int32, Int64)
 
 -- v: number of variables
 -- d: number of (active) dimensions (<= ctr, <= v)
@@ -31,7 +31,42 @@ import GHC.Generics (Generic)
 -- A: apartnesses (<= v^2)
 -- log: generic log, i.e. log v, but usually better
 
-type Chain = Ratio Int
+data Chain = Chain
+  { numerator :: {-# UNPACK #-} !Int32
+  , denominator :: {-# UNPACK #-} !Int32
+  }
+  deriving (Show, Generic)
+
+reduced :: Int32 -> Int32 -> Chain
+reduced x y = Chain (x `quot` d) (y `quot` d)
+  where d = gcd x y
+
+pattern (:%) :: Int32 -> Int32 -> Chain
+pattern (:%) x y <- Chain x y where
+  (:%) x y = reduced x y
+
+{-# COMPLETE (:%) #-}
+
+instance Num Chain where
+  negate (Chain n d)  =  Chain (negate n) d
+  abs (Chain x y)     =  Chain (abs x) y
+  signum (x:%_)       =  Chain (signum x) 1
+  fromInteger x       =  Chain (fromInteger x) 1
+  (x:%y) + (x':%y')   =  reduced (x*y' + x'*y) (y*y')
+  (x:%y) - (x':%y')   =  reduced (x*y' - x'*y) (y*y')
+  (x:%y) * (x':%y')   =  reduced (x * x') (y * y')
+instance Fractional Chain where
+  fromRational = undefined
+  recip (Chain n d) = Chain (d * signum n) (abs n)
+deriving instance Eq Chain
+instance Ord Chain where
+  compare (Chain n1 d1) (Chain n2 d2) | d1 == d2 = compare n1 n2
+  compare (Chain n1 d1) (Chain n2 d2) = compare @Int64
+    (fromIntegral n1 * fromIntegral d2)
+    (fromIntegral n2 * fromIntegral d1)
+
+instance NFData Chain where
+  rnf (Chain _ _) = ()
 
 minChain, maxChain :: Chain
 (minChain, maxChain) = (-1048576, 1048576) -- 2^20
@@ -44,7 +79,7 @@ intermediate r1 r2
   , avg <- (n1 + n2) `div` 2
   , rounder <- avg + (avg `mod` 2)
   , n1 < rounder, rounder < n2
-  = rounder % d1
+  = Chain rounder d1
 intermediate x y = (x + y) / 2
 
 isBetween :: (Chain, Chain) -> (Chain -> Bool)
@@ -274,13 +309,14 @@ checkAndRelate (Fresh v1, rel, Fresh v2) solver@(Solver { ctr, vars }) =
       (PosetLE, LessThan) -> Just (Just rel, _apart v1 v2 solver)
       (PosetLE, LessThanEqual) -> Just (Nothing, solver)
       (PosetGE, LessThan) -> Nothing
-      -- squish several points on the lattice together: O(w*v + w*A)
+      -- Make the points equal and propagate it to children of one or the other
       (PosetUN, Equal) -> Just $ (Just Equal,) $
-        upper `tuckUnder` lower $ lower `tuckUnder` upper $ solver
+        tuckBoth upper lower solver
+      -- squish several points on the lattice together: O(w*v + w*A)
       (PosetGE, _) -> (Just Equal,) <$> do
-        squish (upper {- erm, lower -}) (lower {- currently upper -}) $ lower `tuckUnder` upper $ solver
+        checkAparts $ squished $ lower `tuckUnder` upper $ solver
       (PosetLE, Equal) -> (Just Equal,) <$> do
-        squish lower upper $ upper `tuckUnder` lower $ solver
+        checkAparts $ squished $ upper `tuckUnder` lower $ solver
       -- edit the lower one to be below the upper one: O(w*v)
       (PosetUN, _) -> Just $ (Just rel,) $
         _apartIfRel rel v1 v2 $ lower `tuckUnder` upper $ solver
@@ -356,6 +392,11 @@ squishPoints = IntMapMerge.merge
 --   vars' = (\pt -> if pt <=? loc2 || pt <=? loc1 then squishLattice dimensions pt else pt) <$> vars solver
 --   dimensions = squishCmds loc1 loc2
 
+squished :: Solver -> Solver
+squished solver = solver
+  { points = IntMap.foldr' (\pt -> IntMap.unionWith (<>) $ Set.singleton <$> pt) IntMap.empty (vars solver)
+  }
+
 squish :: Lattice -> Lattice -> Solver -> Maybe Solver
 squish loc1 loc2 solver = checkAparts $ solver
   { points = IntMap.foldr' (\pt -> IntMap.unionWith (<>) $ Set.singleton <$> pt) IntMap.empty vars'
@@ -386,11 +427,24 @@ stillApart solver =
 -- points below `lower`, thus it is fully O(w*v) since we do not maintain
 -- a cache of those points by dimension or grade or anything...
 tuckUnder :: Lattice -> Lattice -> Solver -> Solver
-tuckUnder lower upper solver = solver { vars = tucking <$> vars solver }
+tuckUnder lower upper = mapLatticePositions tucking
   where
   -- O(w)
   tucking position = if position <=? lower then
     IntMap.unionWith min position upper else position
+
+tuckBoth :: Lattice -> Lattice -> Solver -> Solver
+tuckBoth left right = mapLatticePositions tucking
+  where
+  -- O(w)
+  tucking position = case (position <=? left, position <=? right) of
+    (False, False) -> position
+    (True, True) -> position
+    (True, False) -> IntMap.unionWith min position right
+    (False, True) -> IntMap.unionWith min position left
+
+mapLatticePositions :: (Lattice -> Lattice) -> Solver -> Solver
+mapLatticePositions f solver = solver { vars = f <$> vars solver }
 
 -- O(w*log)
 below :: Lattice -> Solver -> (Solver, Lattice)
