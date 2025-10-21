@@ -30,11 +30,21 @@ import qualified Hedgehog.Internal.Report as HG.Report
 import qualified Hedgehog.Internal.Runner as HG.Runner
 import qualified Hedgehog.Internal.Seed as HG.Seed
 import qualified Hedgehog.Internal.Tree as HG.Tree
+import Data.Int (Int32)
 import Data.Word (Word64)
 
 solverUnitTest :: TestSuite
 solverUnitTest = TestSuite "SolverUnitTest" do
+  reducedEqual
   intermediateIsBetween
+
+reducedEqual :: Test r ()
+reducedEqual = hedgeTest 1000 "reducedEqual" do
+  n <- HG.forAll genNumerator
+  d <- HG.forAll genDenominator
+  let r = Lvl.reduced n d
+  HG.annotateShow r
+  Lvl.Chain n 1 === r * Lvl.Chain d 1
 
 intermediateIsBetween :: Test r ()
 intermediateIsBetween = hedgeTest 1000 "intermediateIsBetween" do
@@ -44,14 +54,23 @@ intermediateIsBetween = hedgeTest 1000 "intermediateIsBetween" do
   HG.annotateShow z
   HG.assert $ Lvl.isBetween (x, y) z
 
+minSafeInt32 :: Int32
+minSafeInt32 = -32768
+
+maxSafeInt32 :: Int32
+maxSafeInt32 = 32767
+
+genNumerator :: Gen Int32
+genNumerator = Gen.int32 $ Range.linearFrom 0 minSafeInt32 maxSafeInt32
+
+genDenominator :: Gen Int32
+genDenominator = Gen.choice
+  [ Gen.int32 $ Range.linearFrom 1 1 maxSafeInt32
+  , Gen.int32 $ Range.linearFrom (-1) minSafeInt32 (-1)
+  ]
+
 genChain :: Gen Lvl.Chain
-genChain = Lvl.reduced <$> n <*> d
-  where
-    n = Gen.int32 $ Range.linearFrom 0 minBound maxBound
-    d = Gen.choice
-      [ Gen.int32 $ Range.linearFrom 1 1 maxBound
-      , Gen.int32 $ Range.linearFrom (-1) minBound (-1)
-      ]
+genChain = Lvl.reduced <$> genNumerator <*> genDenominator
 
 data Ev = Ev Fresh Relation Fresh
   deriving (Eq, Ord, Generic, NFData)
@@ -213,9 +232,9 @@ solverTest = TestSuite "SolverTest" do
 hedgeTest :: HG.TestLimit -> String -> HG.PropertyT IO () -> Test r ()
 hedgeTest = hedgeTest' Nothing
 
-hedgeTest' :: Maybe Word64 -> HG.TestLimit -> String -> HG.PropertyT IO () -> Test r ()
+hedgeTest' :: Maybe HG.Seed -> HG.TestLimit -> String -> HG.PropertyT IO () -> Test r ()
 hedgeTest' seed num name f = testCase name do
-  expectProp (HG.Seed.from <$> seed) $ HG.withTests num $ HG.property f
+  expectProp seed $ HG.withTests num $ HG.property f
 
 expectProp :: Maybe HG.Seed -> HG.Property -> Test r ()
 expectProp mseed prop = do
@@ -258,7 +277,7 @@ levelAlgebraHasSolution = do
     Nothing -> Gen.sample seedConsistent
     Just seed -> maybe (error "failed gen") (pure . HG.Tree.treeValue) $
       HG.Gen.evalGen 30 (HG.Seed.from seed) seedConsistent
-  hedgeTest' hedgeSeed 6000 "HasSolution" do
+  hedgeTest' (HG.Seed.from <$> hedgeSeed) 6000 "HasSolution" do
     rels <- HG.forAll $ genConsistent totalOrder $ Range.linear 0 100
     _ <- liftIO $ evaluate $ force rels
     liftIO $ modifyIORef' recorded (rels++)
@@ -271,7 +290,7 @@ levelAlgebraHasSolution = do
       let testName = "HasSolutionSpeedy (" <> show (toInteger nTests) <> "×" <> show maxSize <> ")"
       recordAverage ("Chosen length (out of " <> show maxSize <> ")") \solveLength ->
         recordTime "Took" do
-          hedgeTest' hedgeSeed nTests testName do
+          hedgeTest' (HG.Seed.from <$> hedgeSeed) nTests testName do
             relStart <- HG.forAll $ Gen.int $ Range.constant 0 (Vector.length vectored - maxSize)
             relSize <- HG.forAll $ Gen.int $ Range.constant 20 maxSize
             solveLength relSize
