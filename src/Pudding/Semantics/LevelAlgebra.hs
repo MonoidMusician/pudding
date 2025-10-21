@@ -38,7 +38,7 @@ data Chain = Chain
   deriving (Show, Generic)
 
 reduced :: Int32 -> Int32 -> Chain
-reduced x y = Chain (x `quot` d) (y `quot` d)
+reduced x y = Chain (signum y * x `quot` d) (abs y `quot` d)
   where d = gcd x y
 
 pattern (:%) :: Int32 -> Int32 -> Chain
