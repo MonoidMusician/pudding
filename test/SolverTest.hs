@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Evaluate" #-}
-module SolverTest (solverTest) where
+module SolverTest (solverTest, solverUnitTest) where
 
 import Control.Monad.IO.Class (liftIO)
 
@@ -31,6 +31,27 @@ import qualified Hedgehog.Internal.Runner as HG.Runner
 import qualified Hedgehog.Internal.Seed as HG.Seed
 import qualified Hedgehog.Internal.Tree as HG.Tree
 import Data.Word (Word64)
+
+solverUnitTest :: TestSuite
+solverUnitTest = TestSuite "SolverUnitTest" do
+  intermediateIsBetween
+
+intermediateIsBetween :: Test r ()
+intermediateIsBetween = hedgeTest 1000 "intermediateIsBetween" do
+  x <- HG.forAll genChain
+  y <- HG.forAll genChain
+  let z = Lvl.intermediate x y
+  HG.annotateShow z
+  HG.assert $ Lvl.isBetween (x, y) z
+
+genChain :: Gen Lvl.Chain
+genChain = Lvl.reduced <$> n <*> d
+  where
+    n = Gen.int32 $ Range.linearFrom 0 minBound maxBound
+    d = Gen.choice
+      [ Gen.int32 $ Range.linearFrom 1 1 maxBound
+      , Gen.int32 $ Range.linearFrom (-1) minBound (-1)
+      ]
 
 data Ev = Ev Fresh Relation Fresh
   deriving (Eq, Ord, Generic, NFData)

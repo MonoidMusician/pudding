@@ -7,11 +7,11 @@ import System.Exit (exitFailure)
 import EvalTest (evalTest)
 import ParserTest (parserTest)
 import Testing (TestSummary(failed, passed), summarize, runSuites)
-import SolverTest (solverTest)
+import SolverTest (solverTest, solverUnitTest)
 
 main :: IO ()
 main = do
-  r <- runSuites "Pudding" [parserTest, evalTest, solverTest]
+  r <- runSuites "Pudding" [parserTest, evalTest, solverUnitTest, solverTest]
   let summary = summarize r
   putStrLn $ show (passed summary) ++ " tests passed"
   putStrLn $ show (failed summary) ++ " tests failed"
