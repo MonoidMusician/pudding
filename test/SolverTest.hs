@@ -23,8 +23,12 @@ import Data.Either (isRight, isLeft)
 import qualified Data.IntMap.Strict as IntMap
 import Data.IORef (newIORef, modifyIORef', readIORef)
 import qualified Data.Vector as Vector
-import qualified Hedgehog.Internal.Seed as HG.Seed
+import qualified Hedgehog.Internal.Config as HG.Config
 import qualified Hedgehog.Internal.Gen as HG.Gen
+import qualified Hedgehog.Internal.Region as HG.Region
+import qualified Hedgehog.Internal.Report as HG.Report
+import qualified Hedgehog.Internal.Runner as HG.Runner
+import qualified Hedgehog.Internal.Seed as HG.Seed
 import qualified Hedgehog.Internal.Tree as HG.Tree
 import Data.Word (Word64)
 
@@ -189,10 +193,17 @@ hedgeTest :: HG.TestLimit -> String -> HG.PropertyT IO () -> Test r ()
 hedgeTest = hedgeTest' Nothing
 
 hedgeTest' :: Maybe Word64 -> HG.TestLimit -> String -> HG.PropertyT IO () -> Test r ()
-hedgeTest' Nothing num name f = testCase name do
-  HG.check $ HG.withTests num $ HG.property f
-hedgeTest' (Just seed) num name f = testCase name do
-  HG.recheckAt (HG.Seed.from seed) "0" $ HG.withTests num $ HG.property f
+hedgeTest' seed num name f = testCase name do
+  expectProp (HG.Seed.from <$> seed) $ HG.withTests num $ HG.property f
+
+expectProp :: Maybe HG.Seed -> HG.Property -> Test r ()
+expectProp mseed prop = do
+  color <- HG.Config.detectColor
+  seed <- HG.Config.resolveSeed mseed
+  ok <- liftIO . HG.Region.displayRegion $ \region ->
+    (== HG.Report.OK) . HG.Report.reportStatus <$>
+      HG.Runner.checkRegion region color Nothing 0 seed prop
+  expect ok "Property does not hold"
 
 levelAlgebra :: Test r ()
 levelAlgebra = do
