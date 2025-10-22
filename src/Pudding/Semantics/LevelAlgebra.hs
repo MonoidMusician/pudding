@@ -23,6 +23,7 @@ import Data.Maybe (fromMaybe, mapMaybe, isJust)
 import Control.DeepSeq (NFData (rnf))
 import GHC.Generics (Generic)
 import Data.Int (Int32, Int64)
+import qualified Data.List as List
 
 -- v: number of variables
 -- d: number of (active) dimensions (<= ctr, <= v)
@@ -256,18 +257,42 @@ solverState (Solver { points, vars }) =
 
 
 demonstrate :: Solver -> IntMap Int
-demonstrate (Solver { points, vars }) =
+demonstrate (Solver { vars, aparts }) =
   let
-    spread :: Set.Set Chain -> Map.Map Chain Int
-    spread = Map.fromAscList . flip zip [0..] . Set.toAscList
-    pointsSpread :: IntMap (Map.Map Chain Int)
-    pointsSpread = spread <$> points
-    gradeLattice :: Lattice -> Int
-    gradeLattice latticeValues = sum $
-      mergeL latticeValues pointsSpread <&> \case
-        (Nothing, y) -> 1 + do fromMaybe 0 $ maximumMay y
-        (Just x, y) -> y Map.! x
-  in gradeLattice <$> vars
+    -- Convert the apartness relations (which are in the order of variables!)
+    -- into a DAG of relations from greater elements to lesser elements:
+    -- thus the variables that are not in the root set are those that can
+    -- be assigned level 0 *IF* they are not GE than another element
+    -- that is blocked (being greater than another unassigned element)
+    forwardsIsAbove :: IntMap IntSet.IntSet -> IntMap (Lattice, IntSet.IntSet)
+    forwardsIsAbove = IntMap.mapWithKey \v1 ->
+      let p1 = (vars IntMap.! v1) in (p1,) .
+      IntSet.filter \v2 ->
+        (vars IntMap.! v2) <=? p1
+    reverso :: IntMap IntSet.IntSet -> IntMap IntSet.IntSet
+    reverso forwards = IntMap.fromListWith (<>) do
+      (x,ys) <- IntMap.toAscList (IntSet.toAscList <$> forwards)
+      y <- ys
+      pure (y, IntSet.singleton x)
+    directed :: IntMap (Lattice, IntMap ())
+    directed = fmap (fmap (IntMap.fromDistinctAscList . fmap (,()) . IntSet.toAscList)) $
+      IntMap.unionWith (<>)
+        (forwardsIsAbove aparts)
+        (forwardsIsAbove (reverso aparts))
+
+    layers = loop [] directed
+    loop :: [IntMap Lattice] -> IntMap (Lattice, IntMap ()) -> [IntMap Lattice]
+    loop !acc !left =
+      let (candidates, blocked) = IntMap.partition (IntMap.null . snd) left in
+      let isActuallyBlocked p1 = any (\(p2, _) -> p2 <=? p1) blocked in
+      let (accepted, rejected) = IntMap.partition (not . isActuallyBlocked . fst) candidates in
+      let remaining = IntMap.union blocked rejected in
+      let trimmed = fmap (flip IntMap.difference accepted) <$> remaining in
+      if IntMap.null accepted then reverse acc else loop (fmap fst accepted : acc) trimmed
+    assigned = vars <&> \point ->
+      fromMaybe (length layers) $
+        List.findIndex (any (point <=?)) layers
+  in assigned
 
 -- Insert a relation into the solver, returning Nothing if it is inconsistent,
 -- the new solver if it succeeded, and the actual relation between the variables
