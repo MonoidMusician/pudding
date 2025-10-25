@@ -1,40 +1,32 @@
 module FileTest (plumTest) where
 
-import Control.Applicative (many)
 import Control.Monad.IO.Class (liftIO)
-import Data.Foldable (fold)
-import Data.Functor (void)
-import Data.Set (elems)
+import Data.Foldable (sequenceA_)
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Data.Text.IO as TIO
 import qualified Text.Parsec as P
 
 import Pudding.Parser
-import Pudding.Printer (formatCore, Style (Ansi))
 import Pudding.Types
 import Testing
 import EvalTest
-import Control.Monad.Cont (Cont)
 import qualified Data.Map.Lazy as Map
 import Pudding.Unify (bootGlobals)
 import Control.Monad.Trans.Class (MonadTrans(lift))
 import Control.Monad.Trans.Cont (ContT (ContT))
 import qualified Data.Text.IO.Utf8 as Text
-import Pudding.Name (Name(nameText))
-import qualified Data.Text as T
 
 plumTest :: TestSuite
 plumTest = TestSuite "PlumTests" do
-  runPlumFile "test/Test.plum"
+  runPlumFile "test/test.plum"
 
 plumStatement :: Parser PlumTest
-plumStatement = (testAction P.<|> fmap intoEnv declaration)
+plumStatement = testAction P.<|> fmap intoEnv declaration
 
 plumStatements :: Parser PlumTest
 plumStatements = do
   statements <- spaces *> P.many (plumStatement <* spaces)
-  pure $ foldr (*>) (pure ()) statements
+  pure $ sequenceA_ statements
 
 testAction :: Parser PlumTest
 testAction = P.try do lp *> testActions <* rp

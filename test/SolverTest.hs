@@ -31,7 +31,6 @@ import qualified Hedgehog.Internal.Runner as HG.Runner
 import qualified Hedgehog.Internal.Seed as HG.Seed
 import qualified Hedgehog.Internal.Tree as HG.Tree
 import Data.Int (Int32)
-import Data.Word (Word64)
 
 solverUnitTest :: TestSuite
 solverUnitTest = TestSuite "SolverUnitTest" do
