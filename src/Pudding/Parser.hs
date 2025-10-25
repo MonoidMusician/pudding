@@ -47,7 +47,9 @@ markEnd = do
   liftIO $ writeIORef r p
 
 spaces :: Parser ()
-spaces = markEnd *> P.spaces
+spaces = markEnd *> P.spaces <* P.many do
+  _ <- P.string' "--" <* P.manyTill P.anyChar P.newline
+  P.spaces
 
 pragma :: Text -> Parser ()
 pragma name = void $ P.string' $ "%" <> T.unpack name
@@ -78,12 +80,28 @@ ident = do
 int :: Parser Int
 int = read <$> P.many1 P.digit <* spaces
 
+str :: Parser Text
+str = T.pack <$> (P.char '"' *> P.manyTill escapable (P.char '"'))
+
+escapable :: Parser Char
+escapable = P.satisfy (\c -> c /= '"' && c /= '\'' && c /= '\\') <|>
+  do
+    _ <- P.char '\\'
+    let lit c = c <$ P.char c
+    P.choice
+      [ lit '"'
+      , lit '\''
+      , lit '\\'
+      , '\n' <$ P.char 'n'
+      , '\r' <$ P.char 'r'
+      , '\t' <$ P.char 't'
+      ]
+
 term :: Parser Term
 term = var <|> (lp *> (P.choice terms <|> app) <* rp)
   where
   unary fn kws = trackMeta do
     _ <- keyword kws
-    P.spaces
     t <- term
     pure \meta -> fn meta t
   terms =
@@ -92,12 +110,11 @@ term = var <|> (lp *> (P.choice terms <|> app) <* rp)
     , abstraction (kwPlicit ["Sigma", "Σ"]) TSigma
     , trackMeta do
         which <- TFst <$ P.string' "fst" <|> TSnd <$ P.string' "snd"
-        P.spaces
+        spaces
         t <- term
         return $ \meta -> which meta t
     , trackMeta do
         _ <- keyword ["pair"]
-        P.spaces
         l <- term
         dep <- term
         r <- term
@@ -141,7 +158,7 @@ kwPlicit :: [String] -> Parser Plicit
 kwPlicit kw = keyword kw *> plicity
 
 plicity :: Parser Plicit
-plicity = P.option Explicit (Implicit <$ P.char '?') <* P.spaces
+plicity = P.option Explicit (Implicit <$ P.char '?') <* spaces
 
 type Abstraction = Metadata -> Plicit -> Binder -> Term -> ScopedTerm -> Term
 

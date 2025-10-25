@@ -8,10 +8,11 @@ import EvalTest (evalTest)
 import ParserTest (parserTest)
 import Testing (TestSummary(failed, passed), summarize, runSuites)
 import SolverTest (solverTest, solverUnitTest)
+import FileTest (plumTest)
 
 main :: IO ()
 main = do
-  r <- runSuites "Pudding" [parserTest, evalTest, solverUnitTest, solverTest]
+  r <- runSuites "Pudding" [parserTest, evalTest, solverUnitTest, solverTest, plumTest]
   let summary = summarize r
   putStrLn $ show (passed summary) ++ " tests passed"
   putStrLn $ show (failed summary) ++ " tests failed"

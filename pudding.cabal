@@ -161,6 +161,7 @@ test-suite pudding-test
         EvalTest,
         ParserTest,
         SolverTest,
+        FileTest,
         Testing,
 
     -- The interface type and version of the test suite.

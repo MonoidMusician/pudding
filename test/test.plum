@@ -1,0 +1,28 @@
+(define Id (lambda (x (Type0)) x))
+(define Id1 (lambda (x (Type0 1)) x))
+(define identity (lambda (t (Type0)) (lambda (x t) x)))
+(define identity1 (lambda (t (Type0 1)) (lambda (x t) x)))
+
+(inductive Void () ())
+(inductive Unit () () (unit))
+(inductive Bool () () (true) (false))
+
+-- Non-dependent function type
+(define Fun (lambda (I (Type0)) (lambda (O (Type0)) (Pi (x I) O))))
+(define Not (lambda (P (Type0)) (Fun P Void)))
+
+(inductive Maybe ((T (Type0))) () (nothing) (just ((v T)) ()))
+(inductive IsJust ((T (Type0))) ((mv (Maybe T))) (proveJust ((v T)) ((just T v))))
+
+(inductive Either ((L (Type0)) (R (Type0))) ()
+  (left ((v L))) (right ((v R))))
+
+(inductive Decide ((P (Type0))) ()
+  (proven ((proof P))) (disproven ((disproof (Not P)))))
+
+(namedTest "defEq1"
+  (defEq (Fun Unit Void) (Pi (t Unit) Void)))
+
+(namedTest "defEq2"
+  (defEq (identity Unit unit) unit))
+

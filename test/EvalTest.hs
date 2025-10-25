@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wno-type-defaults #-}
-module EvalTest (evalTest) where
+module EvalTest where
 
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.Text as T
@@ -43,15 +43,15 @@ globalSource = T.unlines
   , "(define identity (lambda (t (Type0)) (lambda (x t) x)))"
   , "(define identity1 (lambda (t (Type0 1)) (lambda (x t) x)))"
   -- Non-dependent function type
-  , "(define Fun (lambda (i (Type0)) (lambda (o (Type0)) (Pi (x i) o))))"
+  , "(define Fun (lambda (I (Type0)) (lambda (O (Type0)) (Pi (x I) O))))"
   -- Basic ADTs
   , "(inductive Void () ())"
   , "(inductive Unit () () (unit))"
   , "(inductive Bool () () (true) (false))"
-  , "(inductive Maybe ((t (Type0))) () (nothing) (just ((v t)) ()))"
-  , "(inductive IsJust ((t (Type0))) ((mv (Maybe t))) (proveJust ((v t)) ((just t v))))"
-  , "(inductive Either ((l (Type0)) (r (Type0))) ()"
-  , "  (left ((v l))) (right ((v r))))"
+  , "(inductive Maybe ((T (Type0))) () (nothing) (just ((v T)) ()))"
+  , "(inductive IsJust ((T (Type0))) ((mv (Maybe T))) (proveJust ((v T)) ((just T v))))"
+  , "(inductive Either ((L (Type0)) (R (Type0))) ()"
+  , "  (left ((v L))) (right ((v R))))"
   ]
 
 withTestContext :: EvalTest r -> Test () r
