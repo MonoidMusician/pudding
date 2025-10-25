@@ -15,7 +15,6 @@ import Data.Text (Text)
 import Data.Vector (Vector)
 import GHC.Generics (Generic)
 import GHC.StableName (StableName)
-import Prettyprinter (Pretty)
 import Pudding.Name (CanonicalName(..), Name(..), newTable, initTable, internalize)
 import Pudding.Types.Base
 import Pudding.Types.Metadata
@@ -324,28 +323,12 @@ mapCtx f ctx = snd (foldCtx z s ctx)
 data Plicit = Explicit | Implicit
   deriving (Eq, Ord, Generic, NFData)
 
--- E.g. for numbering typed holes
-newtype Fresh = Fresh Int
-  deriving newtype (Eq, Ord, Show, Pretty, NFData)
-
 data ULevel
   = UBase !Int
   | UMeta !Int
   | UVar !Fresh !Int -- unsolved level, plus offset
     -- sigh, scoping...
   deriving (Eq, Ord, Generic, Show, NFData)
-
---------------------------------------------------------------------------------
--- Metadata types                                                             --
---------------------------------------------------------------------------------
-
--- `Exact` values only unify with themself: otherwise it throws an error.
-newtype Exact t = Exact t
-  deriving newtype (Eq, Ord, NFData)
-
-instance Eq t => Semigroup (Exact t) where
-  Exact l <> Exact r =
-    if l == r then Exact l else error "Inexact"
 
 --------------------
 -- Metadata class --

@@ -14,6 +14,16 @@ import Pudding.Parser.Base (SourceSpan)
 newtype Meta t = Meta t
   deriving newtype (Eq, Ord, Semigroup, NFData)
 
+
+-- `Exact` values only unify with themself: otherwise it throws an error.
+newtype Exact t = Exact t
+  deriving newtype (Eq, Ord, NFData)
+
+instance Eq t => Semigroup (Exact t) where
+  Exact l <> Exact r =
+    if l == r then Exact l else error "Inexact"
+
+
 -- Per-node metadata. Synthesized nodes do not have source metadata, and so use
 -- `mempty :: Metadata`.
 data Metadata = Metadata
