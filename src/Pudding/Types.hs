@@ -335,105 +335,106 @@ data ULevel
 --------------------
 
 instance HasMetadata Term where
-  traverseMetadata1 f = \case
+  traverseMetadata1Depth d f = \case
     TVar old idx -> (\new -> TVar new idx) <$> f old
     THole old hole -> (\new -> THole new hole) <$> f old
     TUniv old univ -> (\new -> TUniv new univ) <$> f old
     TGlobal old name -> (\new -> TGlobal new name) <$> f old
     TLambda old p b ty body -> (\new -> TLambda new p b)
       <$> f old
-      <.> traverseMetadata1 f ty
-      <.> traverseMetadata1 f body
+      <.*> traverseMetadataDepth d (apply f) ty
+      <.*> traverseMetadataDepth d (apply f) body
     TPi old p b ty body -> (\new -> TPi new p b)
       <$> f old
-      <.> traverseMetadata1 f ty
-      <.> traverseMetadata1 f body
+      <.*> traverseMetadataDepth d (apply f) ty
+      <.*> traverseMetadataDepth d (apply f) body
     TApp old fun arg -> TApp
       <$> f old
-      <.> traverseMetadata1 f fun
-      <.> traverseMetadata1 f arg
+      <.*> traverseMetadataDepth d (apply f) fun
+      <.*> traverseMetadataDepth d (apply f) arg
     TSigma old p b ty body -> (\new -> TSigma new p b)
       <$> f old
-      <.> traverseMetadata1 f ty
-      <.> traverseMetadata1 f body
+      <.*> traverseMetadataDepth d (apply f) ty
+      <.*> traverseMetadataDepth d (apply f) body
     TPair old t l r -> TPair
       <$> f old
-      <.> traverseMetadata1 f t
-      <.> traverseMetadata1 f l
-      <.> traverseMetadata1 f r
-    TFst old t -> TFst <$> f old <.> traverseMetadata1 f t
-    TSnd old t -> TSnd <$> f old <.> traverseMetadata1 f t
+      <.*> traverseMetadataDepth d (apply f) t
+      <.*> traverseMetadataDepth d (apply f) l
+      <.*> traverseMetadataDepth d (apply f) r
+    TFst old t -> TFst <$> f old <.*> traverseMetadataDepth d (apply f) t
+    TSnd old t -> TSnd <$> f old <.*> traverseMetadataDepth d (apply f) t
     TTyCtor old name params indices -> (\new -> TTyCtor new name)
       <$> f old
-      <.*> traverse (traverseMetadata1 (apply f)) params
-      <.*> traverse (traverseMetadata1 (apply f)) indices
+      <.*> traverse (traverseMetadataDepth d (apply f)) params
+      <.*> traverse (traverseMetadataDepth d (apply f)) indices
     TConstr old name params args -> (\new -> TConstr new name)
       <$> f old
-      <.*> traverse (traverseMetadata1 (apply f)) params
-      <.*> traverse (traverseMetadata1 (apply f)) args
-    TLift old t -> TLift <$> f old <.> traverseMetadata1 f t
-    TQuote old t -> TQuote <$> f old <.> traverseMetadata1 f t
-    TSplice old t -> TSplice <$> f old <.> traverseMetadata1 f t
+      <.*> traverse (traverseMetadataDepth d (apply f)) params
+      <.*> traverse (traverseMetadataDepth d (apply f)) args
+    TLift old t -> TLift <$> f old <.*> traverseMetadataDepth d (apply f) t
+    TQuote old t -> TQuote <$> f old <.*> traverseMetadataDepth d (apply f) t
+    TSplice old t -> TSplice <$> f old <.*> traverseMetadataDepth d (apply f) t
 
 instance HasMetadata ScopedTerm where
-  traverseMetadata1 f (Scoped term) = Scoped <$> traverseMetadata1 f term
+  traverseMetadata1Depth d f (Scoped term) = Scoped <$> traverseMetadata1Depth d f term
 
 instance HasMetadata Eval where
-  traverseMetadata1 f = \case
-    ENeut neutral -> ENeut <$> traverseMetadata1 f neutral
+  traverseMetadata1Depth d f = \case
+    ENeut neutral -> ENeut <$> traverseMetadata1Depth d f neutral
     EUniv old univ -> (\new -> EUniv new univ) <$> f old
     ELambda old p b ty body -> (\new -> ELambda new p b)
       <$> f old
-      <.> traverseMetadata1 f ty
-      <.> traverseMetadata1 f body
+      <.*> traverseMetadataDepth d (apply f) ty
+      <.*> traverseMetadataDepth d (apply f) body
     EPi old p b ty body -> (\new -> EPi new p b)
       <$> f old
-      <.> traverseMetadata1 f ty
-      <.> traverseMetadata1 f body
+      <.*> traverseMetadataDepth d (apply f) ty
+      <.*> traverseMetadataDepth d (apply f) body
     ESigma old p b ty body -> (\new -> ESigma new p b)
       <$> f old
-      <.> traverseMetadata1 f ty
-      <.> traverseMetadata1 f body
+      <.*> traverseMetadataDepth d (apply f) ty
+      <.*> traverseMetadataDepth d (apply f) body
     EPair old t l r -> EPair
       <$> f old
-      <.> traverseMetadata1 f t
-      <.> traverseMetadata1 f l
-      <.> traverseMetadata1 f r
+      <.*> traverseMetadataDepth d (apply f) t
+      <.*> traverseMetadataDepth d (apply f) l
+      <.*> traverseMetadataDepth d (apply f) r
     ETyCtor old name params indices -> (\new -> ETyCtor new name)
       <$> f old
-      <.*> traverse (traverseMetadata1 (apply f)) params
-      <.*> traverse (traverseMetadata1 (apply f)) indices
+      <.*> traverse (traverseMetadataDepth d (apply f)) params
+      <.*> traverse (traverseMetadataDepth d (apply f)) indices
     EConstr old name params args -> (\new -> EConstr new name)
       <$> f old
-      <.*> traverse (traverseMetadata1 (apply f)) params
-      <.*> traverse (traverseMetadata1 (apply f)) args
+      <.*> traverse (traverseMetadataDepth d (apply f)) params
+      <.*> traverse (traverseMetadataDepth d (apply f)) args
     EDeferred reason ty ref _ term ->
       (\term' ty' -> EDeferred reason ty' ref (view metadata term') term')
-      <$> traverseMetadata1 f term
-      <.> traverseMetadata1 f ty
-    ELift old t -> ELift <$> f old <.> traverseMetadata1 f t
-    EQuote old t -> EQuote <$> f old <.> traverseMetadata1 f t
+      -- Traverse term first!
+      <$> traverseMetadata1Depth d f term
+      <.*> traverseMetadataDepth d (apply f) ty
+    ELift old t -> ELift <$> f old <.*> traverseMetadataDepth d (apply f) t
+    EQuote old t -> EQuote <$> f old <.*> traverseMetadataDepth d (apply f) t
 
 instance HasMetadata Neutral where
-  traverseMetadata1 f (Neutral focus prjs) =
+  traverseMetadata1Depth d f (Neutral focus prjs) =
     Neutral
-      <$> traverseMetadata1 f focus
-      <.*> traverse (traverseMetadata1 (apply f)) prjs
+      <$> traverseMetadata1Depth d f focus
+      <.*> traverse (traverseMetadataDepth d (apply f)) prjs
 
 instance HasMetadata NeutFocus where
-  traverseMetadata1 f (NVar old lvl) = (\new -> NVar new lvl) <$> f old
-  traverseMetadata1 f (NHole old hole) = (\new -> NHole new hole) <$> f old
-  traverseMetadata1 f (NGlobal arity old name) = (\new -> NGlobal arity new name) <$> f old
+  traverseMetadata1Depth _ f (NVar old lvl) = (\new -> NVar new lvl) <$> f old
+  traverseMetadata1Depth _ f (NHole old hole) = (\new -> NHole new hole) <$> f old
+  traverseMetadata1Depth _ f (NGlobal arity old name) = (\new -> NGlobal arity new name) <$> f old
 
 instance HasMetadata NeutPrj where
-  traverseMetadata1 f = \case
+  traverseMetadata1Depth d f = \case
     NApp old arg -> NApp
       <$> f old
-      <.> traverseMetadata1 f arg
+      <.*> traverseMetadataDepth d (apply f) arg
     NFst old -> NFst <$> f old
     NSnd old -> NSnd <$> f old
     NSplice old -> NSplice <$> f old
 
 instance HasMetadata Closure where
-  traverseMetadata1 f (Closure bdr ctx term) = Closure bdr ctx
-    <$> traverseMetadata1 f term
+  traverseMetadata1Depth d f (Closure bdr ctx term) = Closure bdr ctx
+    <$> traverseMetadata1Depth d f term

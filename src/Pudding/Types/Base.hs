@@ -12,3 +12,9 @@ type (@::) (s :: Symbol) t = t
 -- E.g. for numbering typed holes
 newtype Fresh = Fresh Int
   deriving newtype (Eq, Ord, Show, Pretty, NFData)
+
+data UnifyMode
+  = LSubsumesR
+  | RSubsumesL
+  | Unify
+  | Check

@@ -46,6 +46,7 @@ common defaults
     -- LANGUAGE extensions used by modules in this package.
     default-extensions:
         BlockArguments
+        FunctionalDependencies
         DataKinds
         DeriveAnyClass
         DerivingStrategies
@@ -117,8 +118,10 @@ library
         Pudding.Printer,
         Pudding.Types,
         Pudding.Types.Base,
+        Pudding.Types.Config,
         Pudding.Types.Metadata,
         Pudding.Types.Stack,
+        Pudding.Types.Monads,
         Pudding.Name,
         Pudding.Eval,
         Pudding.Unify,

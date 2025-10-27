@@ -38,7 +38,7 @@ track p = do
 trackMeta :: Parser (Metadata -> a) -> Parser a
 trackMeta p = do
   Tracked sourceSpan fn <- track p
-  return $ fn $ Metadata $ singleton sourceSpan
+  return $ fn $ parseMetadata sourceSpan
 
 markEnd :: Parser ()
 markEnd = do
@@ -145,7 +145,7 @@ lookupIdent i = do
 var :: Parser Term
 var = do
   Tracked s i <- track ident
-  let meta = Metadata (singleton s)
+  let meta = parseMetadata s
   mix <- lookupIdent i
   return $ case mix of
     Just ix -> TVar meta ix
@@ -173,7 +173,7 @@ abstraction kw mk = do
     body <- local (bindIdent name) term
     let b = bName name
     return $ \meta -> mk meta plicit b ty (Scoped body)
-  return (finish (Metadata (singleton s)))
+  return (finish (parseMetadata s))
 
 bName :: Name -> Binder
 bName name = BVar (Meta (CanonicalName name (singleton name)))
@@ -187,7 +187,7 @@ app = do
     trackApp :: Tracked Term -> Tracked Term -> Tracked Term
     trackApp (Tracked s1 a) (Tracked s2 b) =
       let s = s1 <> s2 in
-        Tracked s (TApp (Metadata (singleton s)) a b)
+        Tracked s (TApp (parseMetadata s) a b)
 
 -- List is in stack order, not binding order
 type Binding = (Plicit, Binder, Term)
