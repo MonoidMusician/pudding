@@ -85,6 +85,7 @@ class HasMetadata t where
   traverseMetadata = cloneTraversal traverseMetadata1
   -- | Recursively access non-empty metadata from self and children
   traverseMetadata1 :: Traversal1' t Metadata
+  traverseMetadata1 = traverseMetadata1Depth Nothing
   -- | Recursively access metadata from children
   descendantMetadata :: Traversal' t Metadata
   descendantMetadata = dropping 1 traverseMetadata

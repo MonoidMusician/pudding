@@ -1,3 +1,5 @@
+-- Stdlib-ish
+
 (define Id (lambda (x (Type0)) x))
 (define Id1 (lambda (x (Type0 1)) x))
 (define identity (lambda (t (Type0)) (lambda (x t) x)))
@@ -20,9 +22,35 @@
 (inductive Decide ((P (Type0))) ()
   (proven ((proof P))) (disproven ((disproof (Not P)))))
 
+(define not
+  (lambda (b Bool)
+    (caseOn (lambda (b Bool) Bool) b
+      ((true false) (false true)))))
+
+(define isJust
+  (lambda (T (Type0))
+    (lambda (m (Maybe T))
+      (caseOn (lambda (m (Maybe T)) Bool) m
+        ((nothing false)
+         (just (lambda (v T) true)))))))
+
+-- Tests
+
 (namedTest "defEq1"
   (defEq (Fun Unit Void) (Pi (t Unit) Void)))
 
 (namedTest "defEq2"
   (defEq (identity Unit unit) unit))
+
+(namedTest "not"
+  (namedTest "typechecks"
+    (hasType (Pi (b Bool) Bool) (not)))
+  (namedTest "reduces"
+    (defEq (not true) (false))
+    (defEq (not false) (true))))
+
+(namedTest "isJust/typechecks"
+  (hasType (Pi (T (Type0)) (Pi (m (Maybe T)) Bool)) (isJust)))
+(namedTest "isJust/specializes"
+  (hasType (Pi (m (Maybe Unit)) Bool) (isJust Unit)))
 

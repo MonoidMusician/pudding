@@ -1,21 +1,22 @@
 module Pudding.Types
-  ( module Pudding.Types -- Export the default exports of this module
-  , module Pudding.Types.Base
-  , module Pudding.Types.Metadata
-  , module Pudding.Types.Stack
-  , module Pudding.Name -- Export more
-  ) where
+  ( module Pudding.Types, -- Export the default exports of this module
+    module Pudding.Types.Base,
+    module Pudding.Types.Metadata,
+    module Pudding.Types.Stack,
+    module Pudding.Name, -- Export more
+  )
+where
 
 import Control.DeepSeq (NFData)
 import Control.Lens (from, view)
-import Data.Functor.Apply ((<.>), (<.*>))
-import qualified Data.Map as M
+import Data.Functor.Apply ((<.*>))
 import Data.Map (Map)
+import Data.Map qualified as M
 import Data.Text (Text)
 import Data.Vector (Vector)
 import GHC.Generics (Generic)
 import GHC.StableName (StableName)
-import Pudding.Name (CanonicalName(..), Name(..), newTable, initTable, internalize)
+import Pudding.Name (CanonicalName (..), Name (..), initTable, internalize, newTable)
 import Pudding.Types.Base
 import Pudding.Types.Metadata
 import Pudding.Types.Stack
@@ -36,26 +37,26 @@ data GlobalTerm = GlobalTerm !Term Eval
   deriving (Generic, NFData)
 
 data GlobalInfo
-  -- A function or global constant or whatever.
-  -- These also get generated for the names introduced by inductive types:
-  -- the type name becomes a definition and so does each constructor.
-  = GlobalDefn !("arity" @:: Int) ("type" @:: GlobalTerm) ("term" @:: GlobalTerm)
-  -- An inductive type declaration.
-  | GlobalType GlobalTypeInfo
+  = -- A function or global constant or whatever.
+    -- These also get generated for the names introduced by inductive types:
+    -- the type name becomes a definition and so does each constructor.
+    GlobalDefn !("arity" @:: Int) ("type" @:: GlobalTerm) ("term" @:: GlobalTerm)
+  | -- An inductive type declaration.
+    GlobalType GlobalTypeInfo
   deriving (Generic, NFData)
 
 type Globals = Map Name GlobalInfo
 
 data GlobalTypeInfo = GlobalTypeInfo
-  { typeParams :: !(Vector (Plicit, Binder, Term))
-  , typeIndices :: !(Vector (Plicit, Binder, Term))
-  , typeConstrs :: !(Map Name ConstructorInfo)
+  { typeParams :: !(Vector (Plicit, Binder, Term)),
+    typeIndices :: !(Vector (Plicit, Binder, Term)),
+    typeConstrs :: !(Map Name ConstructorInfo)
   }
   deriving (Generic, NFData)
 
 data ConstructorInfo = ConstructorInfo
-  { ctorArguments :: !(Vector (Plicit, Binder, Term))
-  , ctorIndices :: !(Vector Term)
+  { ctorArguments :: !(Vector (Plicit, Binder, Term)),
+    ctorIndices :: !(Vector Term)
   }
   deriving (Generic, NFData)
 
@@ -89,53 +90,79 @@ data ConstructorInfo = ConstructorInfo
 -- It is intrinsically typed in the sense that it supports `typeof :: Term -> Term`
 -- (where `typeof . typeof` resolves to some `TUniv`)
 data Term
-  -- (Local) variables
-  = TVar Metadata !Index
-  -- Typed holes
-  | THole Metadata !Fresh
-  -- Type universes
-  | TUniv Metadata ULevel
-  -- Global variables
-  | TGlobal Metadata !Name
-  -- | TLet Metadata Binder ("value" @:: Term) ("body" @:: Term)
-  | TLambda
+  = -- (Local) variables
+    TVar Metadata !Index
+  | -- Typed holes
+    THole Metadata !Fresh
+  | -- Type universes
+    TUniv Metadata ULevel
+  | -- Global variables
+    TGlobal Metadata !Name
+  | -- | TLet Metadata Binder ("value" @:: Term) ("body" @:: Term)
+    TLambda
       -- Metadata: not relevant to equality/unification
       -- Every argument is explicit in the core and every core binder only binds
       -- one variable, but we keep this information around for pretty printing
-      Metadata !Plicit Binder
+      Metadata
+      !Plicit
+      Binder
       -- Actual core data (influences equality, etc.)
-      ("domain type" @:: Term) ("body" @:: ScopedTerm)
+      ("domain type" @:: Term)
+      ("body" @:: ScopedTerm)
   | TPi
-      Metadata !Plicit Binder
-      ("domain type" @:: Term) ("codomain" @:: ScopedTerm)
-  | TApp Metadata
-      ("function" @:: Term) ("argument" @:: Term)
+      Metadata
+      !Plicit
+      Binder
+      ("domain type" @:: Term)
+      ("codomain" @:: ScopedTerm)
+  | TApp
+      Metadata
+      ("function" @:: Term)
+      ("argument" @:: Term)
   | TSigma
-      Metadata !Plicit Binder
-      ("fst type" @:: Term) ("snd type under fst type" @:: ScopedTerm)
-  -- A pair of a sigma type
-  | TPair Metadata
+      Metadata
+      !Plicit
+      Binder
+      ("fst type" @:: Term)
+      ("snd type under fst type" @:: ScopedTerm)
+  | -- A pair of a sigma type
+    TPair
+      Metadata
       ("sigma type" @:: Term)
       ("fst value" @:: Term)
       ("snd value" @:: Term)
   | TFst Metadata Term
   | TSnd Metadata Term
-  -- A type constructor: the name of an inductive type applied to parameters
-  -- and indices
-  | TTyCtor Metadata !("type name" @:: Name)
+  | -- A type constructor: the name of an inductive type applied to parameters
+    -- and indices
+    TTyCtor
+      Metadata
+      !("type name" @:: Name)
       ("params" @:: Vector Term)
       ("indices" @:: Vector Term)
-  -- A term constructor: the actual constructor of the inductive type applied
-  -- to its arguments (from which the indices are also derived)
-  | TConstr Metadata !("type name" @:: Name, "constr name" @:: Name)
+  | -- A term constructor: the actual constructor of the inductive type applied
+    -- to its arguments (from which the indices are also derived)
+    TConstr
+      Metadata
+      !("type name" @:: Name, "constr name" @:: Name)
       ("params" @:: Vector Term)
       -- args are the actual data stored in the constructor, from which the
       -- indices are inferred based on the constructor declaration
       ("args" @:: Vector Term)
+  -- | TElim Metadata
+  --     !("type name" @:: Name)
+  --     ("motive" @:: Term)
+  --     ("cases" @:: Map Name Term)
+  | TCase
+      Metadata
+      ("motive" @:: Term)
+      ("cases" @:: Map Name Term)
+      !("inspect" @:: Term)
   | TLift Metadata Term
   | TQuote Metadata Term
   | TSplice Metadata Term
   deriving (Generic, NFData)
+
 newtype ScopedTerm = Scoped Term
   deriving newtype (NFData)
 
@@ -155,19 +182,32 @@ data Eval
   = ENeut Neutral -- do we want it tagged with its ultimate type?
   | EUniv Metadata ULevel
   | ELambda
-      Metadata !Plicit Binder
-      ("domain type" @:: Eval) ("body" @:: Closure)
+      Metadata
+      !Plicit
+      Binder
+      ("domain type" @:: Eval)
+      ("body" @:: Closure)
   | EPi
-      Metadata !Plicit Binder
-      ("domain type" @:: Eval) ("codomain" @:: Closure)
+      Metadata
+      !Plicit
+      Binder
+      ("domain type" @:: Eval)
+      ("codomain" @:: Closure)
   | ESigma
-      Metadata !Plicit Binder
-      ("fst type" @:: Eval) ("snd type under fst type" @:: Closure)
+      Metadata
+      !Plicit
+      Binder
+      ("fst type" @:: Eval)
+      ("snd type under fst type" @:: Closure)
   | EPair Metadata ("sigma type" @:: Eval) ("fst value" @:: Eval) ("snd value" @:: Eval)
-  | ETyCtor Metadata !("type name" @:: Name)
+  | ETyCtor
+      Metadata
+      !("type name" @:: Name)
       ("params" @:: Vector Eval)
       ("indices" @:: Vector Eval)
-  | EConstr Metadata !("type name" @:: Name, "constr name" @:: Name)
+  | EConstr
+      Metadata
+      !("type name" @:: Name, "constr name" @:: Name)
       ("params" @:: Vector Eval)
       ("args" @:: Vector Eval)
   | EDeferred ("reason" @:: Meta Text) ("type" @:: Eval) !("sharing" @:: Maybe (StableName Eval)) Metadata ("deferred term" @:: Eval)
@@ -178,16 +218,17 @@ data Eval
 -- A Neutral is stuck on a variable (or hole), with some projections and eliminators applied to it.
 -- (This is the Normalization part of NbE: inserting variables to evaluate open terms.)
 data Neutral = Neutral
-  { neutralBlocking :: NeutFocus
-  , neutralSpine :: Stack NeutPrj
-    -- ^ Spine of projections/function applications/eliminators to apply,
+  { neutralBlocking :: NeutFocus,
+    -- | Spine of projections/function applications/eliminators to apply,
     -- either to reconstruct the syntax around the variable, or to finish
     -- evaluating it once it is known.
     --
     -- This should **really** be a Snoc list (in terms of order of
     -- evaluation), but I've been lazy thus far.
+    neutralSpine :: Stack NeutPrj
   }
   deriving (Generic, NFData)
+
 data NeutFocus
   = NVar Metadata !Level
   | NHole Metadata !Fresh -- needs some scoping information(?)
@@ -196,15 +237,20 @@ data NeutFocus
   -- also be evaluated during conversion checking
   | NGlobal !("arity" @:: Int) Metadata Name
   deriving (Generic, NFData)
+
 data NeutPrj
   = NApp Metadata ("arg" @:: Eval)
   | NFst Metadata
   | NSnd Metadata
   | NSplice Metadata
+  | NCase
+      Metadata
+      ("motive" @:: Eval)
+      !("cases" @:: Map Name Eval)
   deriving (Generic, NFData)
+
 -- Alternatively: we could just implement it as a recursive type
 -- Neutral = NVar Level | NFst Neutral | NApp ("fun" @:: Neutral) ("arg" @:: Eval)
-
 
 -- Closure: an unevaluated term frozen in an environment of evaluated (or neutral)
 -- variable values.
@@ -219,10 +265,11 @@ data NeutPrj
 --
 -- `(\x -> x + 1) 2` will evaluate the `Closure` immediately, but
 -- `(\x -> x) (\y -> y)` leaves `(\y -> y)` for quoting
-data Closure = Closure
-  Binder
-  ("saved external context" @:: EvalCtx)
-  ("body" @:: ScopedTerm)
+data Closure
+  = Closure
+      Binder
+      ("saved external context" @:: EvalCtx)
+      ("body" @:: ScopedTerm)
   deriving (Generic, NFData)
 
 data Telescope = Telescope Eval Closure
@@ -237,22 +284,22 @@ neutralVar lvl = ENeut (Neutral (NVar mempty lvl) (view stack []))
 arityOfTerm :: Term -> Int
 arityOfTerm = go 0
   where
-  go !acc (TLambda _ _ _ _ (Scoped body)) = go (1 + acc) body
-  go !acc _ = acc
+    go !acc (TLambda _ _ _ _ (Scoped body)) = go (1 + acc) body
+    go !acc _ = acc
 
 spine :: Term -> (Term, [Term])
 spine = go []
   where
-  go acc (TApp _ fun arg) = go (arg : acc) fun
-  go acc fun = (fun, acc)
+    go acc (TApp _ fun arg) = go (arg : acc) fun
+    go acc fun = (fun, acc)
 
 --------------------------
 -- The type of contexts --
 --------------------------
 
 data Ctx t = Ctx
-  { ctxGlobals :: Globals
-  , ctxStack :: !(Stack (Binder, t))
+  { ctxGlobals :: Globals,
+    ctxStack :: !(Stack (Binder, t))
   }
   deriving (Functor, Generic, NFData)
 
@@ -274,7 +321,8 @@ instance StackLike (Ctx t) where
     return (Ctx g s', b)
 
 infixr 8 @@:
-(@@:) :: ToIndex i => Ctx t -> i -> t
+
+(@@:) :: (ToIndex i) => Ctx t -> i -> t
 c @@: i = snd (c @@ i)
 
 -- Context used for `eval`
@@ -327,7 +375,7 @@ data ULevel
   = UBase !Int
   | UMeta !Int
   | UVar !Fresh !Int -- unsolved level, plus offset
-    -- sigh, scoping...
+  -- sigh, scoping...
   deriving (Eq, Ord, Generic, Show, NFData)
 
 --------------------
@@ -340,37 +388,50 @@ instance HasMetadata Term where
     THole old hole -> (\new -> THole new hole) <$> f old
     TUniv old univ -> (\new -> TUniv new univ) <$> f old
     TGlobal old name -> (\new -> TGlobal new name) <$> f old
-    TLambda old p b ty body -> (\new -> TLambda new p b)
-      <$> f old
-      <.*> traverseMetadataDepth d (apply f) ty
-      <.*> traverseMetadataDepth d (apply f) body
-    TPi old p b ty body -> (\new -> TPi new p b)
-      <$> f old
-      <.*> traverseMetadataDepth d (apply f) ty
-      <.*> traverseMetadataDepth d (apply f) body
-    TApp old fun arg -> TApp
-      <$> f old
-      <.*> traverseMetadataDepth d (apply f) fun
-      <.*> traverseMetadataDepth d (apply f) arg
-    TSigma old p b ty body -> (\new -> TSigma new p b)
-      <$> f old
-      <.*> traverseMetadataDepth d (apply f) ty
-      <.*> traverseMetadataDepth d (apply f) body
-    TPair old t l r -> TPair
-      <$> f old
-      <.*> traverseMetadataDepth d (apply f) t
-      <.*> traverseMetadataDepth d (apply f) l
-      <.*> traverseMetadataDepth d (apply f) r
+    TLambda old p b ty body ->
+      (\new -> TLambda new p b)
+        <$> f old
+        <.*> traverseMetadataDepth d (apply f) ty
+        <.*> traverseMetadataDepth d (apply f) body
+    TPi old p b ty body ->
+      (\new -> TPi new p b)
+        <$> f old
+        <.*> traverseMetadataDepth d (apply f) ty
+        <.*> traverseMetadataDepth d (apply f) body
+    TApp old fun arg ->
+      TApp
+        <$> f old
+        <.*> traverseMetadataDepth d (apply f) fun
+        <.*> traverseMetadataDepth d (apply f) arg
+    TSigma old p b ty body ->
+      (\new -> TSigma new p b)
+        <$> f old
+        <.*> traverseMetadataDepth d (apply f) ty
+        <.*> traverseMetadataDepth d (apply f) body
+    TPair old t l r ->
+      TPair
+        <$> f old
+        <.*> traverseMetadataDepth d (apply f) t
+        <.*> traverseMetadataDepth d (apply f) l
+        <.*> traverseMetadataDepth d (apply f) r
     TFst old t -> TFst <$> f old <.*> traverseMetadataDepth d (apply f) t
     TSnd old t -> TSnd <$> f old <.*> traverseMetadataDepth d (apply f) t
-    TTyCtor old name params indices -> (\new -> TTyCtor new name)
-      <$> f old
-      <.*> traverse (traverseMetadataDepth d (apply f)) params
-      <.*> traverse (traverseMetadataDepth d (apply f)) indices
-    TConstr old name params args -> (\new -> TConstr new name)
-      <$> f old
-      <.*> traverse (traverseMetadataDepth d (apply f)) params
-      <.*> traverse (traverseMetadataDepth d (apply f)) args
+    TTyCtor old name params indices ->
+      (\new -> TTyCtor new name)
+        <$> f old
+        <.*> traverse (traverseMetadataDepth d (apply f)) params
+        <.*> traverse (traverseMetadataDepth d (apply f)) indices
+    TConstr old name params args ->
+      (\new -> TConstr new name)
+        <$> f old
+        <.*> traverse (traverseMetadataDepth d (apply f)) params
+        <.*> traverse (traverseMetadataDepth d (apply f)) args
+    TCase old motive cases inspect ->
+      TCase
+        <$> f old
+        <.*> traverseMetadataDepth d (apply f) motive
+        <.*> traverse (traverseMetadataDepth d (apply f)) cases
+        <.*> traverseMetadataDepth d (apply f) inspect
     TLift old t -> TLift <$> f old <.*> traverseMetadataDepth d (apply f) t
     TQuote old t -> TQuote <$> f old <.*> traverseMetadataDepth d (apply f) t
     TSplice old t -> TSplice <$> f old <.*> traverseMetadataDepth d (apply f) t
@@ -382,36 +443,42 @@ instance HasMetadata Eval where
   traverseMetadata1Depth d f = \case
     ENeut neutral -> ENeut <$> traverseMetadata1Depth d f neutral
     EUniv old univ -> (\new -> EUniv new univ) <$> f old
-    ELambda old p b ty body -> (\new -> ELambda new p b)
-      <$> f old
-      <.*> traverseMetadataDepth d (apply f) ty
-      <.*> traverseMetadataDepth d (apply f) body
-    EPi old p b ty body -> (\new -> EPi new p b)
-      <$> f old
-      <.*> traverseMetadataDepth d (apply f) ty
-      <.*> traverseMetadataDepth d (apply f) body
-    ESigma old p b ty body -> (\new -> ESigma new p b)
-      <$> f old
-      <.*> traverseMetadataDepth d (apply f) ty
-      <.*> traverseMetadataDepth d (apply f) body
-    EPair old t l r -> EPair
-      <$> f old
-      <.*> traverseMetadataDepth d (apply f) t
-      <.*> traverseMetadataDepth d (apply f) l
-      <.*> traverseMetadataDepth d (apply f) r
-    ETyCtor old name params indices -> (\new -> ETyCtor new name)
-      <$> f old
-      <.*> traverse (traverseMetadataDepth d (apply f)) params
-      <.*> traverse (traverseMetadataDepth d (apply f)) indices
-    EConstr old name params args -> (\new -> EConstr new name)
-      <$> f old
-      <.*> traverse (traverseMetadataDepth d (apply f)) params
-      <.*> traverse (traverseMetadataDepth d (apply f)) args
+    ELambda old p b ty body ->
+      (\new -> ELambda new p b)
+        <$> f old
+        <.*> traverseMetadataDepth d (apply f) ty
+        <.*> traverseMetadataDepth d (apply f) body
+    EPi old p b ty body ->
+      (\new -> EPi new p b)
+        <$> f old
+        <.*> traverseMetadataDepth d (apply f) ty
+        <.*> traverseMetadataDepth d (apply f) body
+    ESigma old p b ty body ->
+      (\new -> ESigma new p b)
+        <$> f old
+        <.*> traverseMetadataDepth d (apply f) ty
+        <.*> traverseMetadataDepth d (apply f) body
+    EPair old t l r ->
+      EPair
+        <$> f old
+        <.*> traverseMetadataDepth d (apply f) t
+        <.*> traverseMetadataDepth d (apply f) l
+        <.*> traverseMetadataDepth d (apply f) r
+    ETyCtor old name params indices ->
+      (\new -> ETyCtor new name)
+        <$> f old
+        <.*> traverse (traverseMetadataDepth d (apply f)) params
+        <.*> traverse (traverseMetadataDepth d (apply f)) indices
+    EConstr old name params args ->
+      (\new -> EConstr new name)
+        <$> f old
+        <.*> traverse (traverseMetadataDepth d (apply f)) params
+        <.*> traverse (traverseMetadataDepth d (apply f)) args
     EDeferred reason ty ref _ term ->
       (\term' ty' -> EDeferred reason ty' ref (view metadata term') term')
-      -- Traverse term first!
-      <$> traverseMetadata1Depth d f term
-      <.*> traverseMetadataDepth d (apply f) ty
+        -- Traverse term first!
+        <$> traverseMetadata1Depth d f term
+        <.*> traverseMetadataDepth d (apply f) ty
     ELift old t -> ELift <$> f old <.*> traverseMetadataDepth d (apply f) t
     EQuote old t -> EQuote <$> f old <.*> traverseMetadataDepth d (apply f) t
 
@@ -428,13 +495,20 @@ instance HasMetadata NeutFocus where
 
 instance HasMetadata NeutPrj where
   traverseMetadata1Depth d f = \case
-    NApp old arg -> NApp
-      <$> f old
-      <.*> traverseMetadataDepth d (apply f) arg
+    NApp old arg ->
+      NApp
+        <$> f old
+        <.*> traverseMetadataDepth d (apply f) arg
     NFst old -> NFst <$> f old
     NSnd old -> NSnd <$> f old
     NSplice old -> NSplice <$> f old
+    NCase old motive cases ->
+      NCase
+        <$> f old
+        <.*> traverseMetadataDepth d (apply f) motive
+        <.*> traverse (traverseMetadataDepth d (apply f)) cases
 
 instance HasMetadata Closure where
-  traverseMetadata1Depth d f (Closure bdr ctx term) = Closure bdr ctx
-    <$> traverseMetadata1Depth d f term
+  traverseMetadata1Depth d f (Closure bdr ctx term) =
+    Closure bdr ctx
+      <$> traverseMetadata1Depth d f term

@@ -49,5 +49,5 @@ instance Semigroup (Fused meta) where
       _ -> case addAll (sz1, r1) r2 s1 of
         Nothing -> Fused Nothing (0, []) (slow1 <> slow2) (poly1 <> poly2)
         Just (r, !s) -> Fused (Just s) r (slow1 <> slow2) (poly1 <> poly2)
-  -- Inconsistent
+  -- Inconsistent: just need the slow solver
   Fused _ _ slow1 poly1 <> Fused _ _ slow2 poly2 = Fused Nothing (0, []) (slow1 <> slow2) (poly1 <> poly2)

@@ -3,15 +3,21 @@ module Pudding.Unify where
 import Pudding.Types
 import Pudding.Eval
 import qualified Data.Map as Map
+import Data.Foldable (fold)
 import Data.Functor ((<&>), void)
-import Pudding.Printer (PrinterState(..), Style (Ansi), format, printCore)
-import qualified Data.Text as T
-import Data.Coerce (coerce)
 import GHC.StableName (StableName)
 import qualified Data.List as List
 import qualified Data.Vector as Vector
 import Data.Maybe (fromMaybe)
 import GHC.Stack (HasCallStack)
+import Data.These (These(..))
+import Data.Semialign.Indexed (SemialignWithIndex (ialignWith))
+import qualified Pudding.Types.Stack as Stack
+import Debug.Trace (traceWith)
+import Pudding.Printer (formatCore, Style (Ansi))
+import qualified Data.Text as T
+import qualified Pudding.Printer as P
+import Control.DeepSeq (NFData(rnf))
 
 -- Validate the type of a term, as an evaluated type
 validate :: EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
@@ -58,7 +64,7 @@ bootGlobalTypes globals =
   where
   disjointUnion = Map.unionWithKey \k _ _ -> error $ "Duplicate global: " <> show k
   fakeGlobal tm = GlobalDefn (arityOfTerm tm) undefined (GlobalTerm tm undefined)
-  constructors = foldMap id . Map.mapWithKey \tyName -> \case
+  constructors = fold . Map.mapWithKey \tyName -> \case
     GlobalType (GlobalTypeInfo { typeParams, typeConstrs }) ->
       flip Map.mapWithKey typeConstrs \conName (ConstructorInfo { ctorArguments }) -> fakeGlobal $
         abstract (Vector.toList typeParams <> Vector.toList ctorArguments) $
@@ -221,7 +227,12 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
 -- type if `seqOrConst = const id`.
 validateOrNot :: (forall a b. a -> b -> b) -> HasCallStack => EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
 validateOrNot seqOrConst ctx = \case
-  TVar _ idx -> fst $ ctx @@: idx
+  TVar _ idx ->
+    checkFor "idx is nonnegative" (idx >= Index 0)
+      `seqOrConst`
+    checkFor "idx fits in the current context" (idx < Index (size ctx))
+      `seqOrConst`
+    fst (ctx @@: idx)
   TGlobal _ name -> case Map.lookup name (ctxGlobals ctx) of
     Nothing -> error $ "Undefined global " <> show name
     Just (GlobalDefn _ (GlobalTerm _ ty) _) -> ty
@@ -291,6 +302,28 @@ validateOrNot seqOrConst ctx = \case
           indexValues = eval ctxArgs <$> ctorIndices
         in ETyCtor mempty tyName paramValues indexValues
     _ -> error "Bad constructor name"
+  TCase _ motive cases inspect ->
+    let motiveHere = evalHere motive in
+    flip seqOrConst (doApp motiveHere (evalHere inspect))
+    case vv inspect of
+      inspectType@(ETyCtor _ tyName chosenParams _) ->
+        case Map.lookup tyName (ctxGlobals ctx) of
+          Just (GlobalType tyInfo@(GlobalTypeInfo { typeConstrs })) ->
+            cc "case motive" (vv motive) (EPi mempty Explicit BUnused inspectType (Closure BUnused Nil $ Scoped $ TUniv mempty (UBase 0)))
+              `seqOrConst`
+            checkFor "Wrong case names" (Map.keys typeConstrs == Map.keys cases)
+              `seqOrConst`
+            checkFor "Wrong case types" do
+              alignAll typeConstrs cases \conName -> \case
+                That _ -> error "Extra case"
+                This _ -> error "Missing case"
+                These constr caseTerm ->
+                  let
+                    !caseFnType = traceEval "caseFnType" $ ee (makeCaseFnType tyName tyInfo conName constr)
+                    !caseType = traceEval "caseType" $ doApps caseFnType (Stack.fromFoldable chosenParams :> motiveHere)
+                  in cc ("Wrong case type for " <> show conName) caseType (vv caseTerm) `seqOrConst` True
+          _ -> error "Undefined type constructor"
+      _ -> error "Not a type constructor in case annotation"
   TLift _ ty -> case vv ty of
     EUniv m1 (UBase n) -> EUniv m1 (UMeta n)
     _ -> error "Must be a type in the base"
@@ -305,9 +338,9 @@ validateOrNot seqOrConst ctx = \case
 
   -- TODO: subsumption
   cc :: HasCallStack => String -> Eval -> Eval -> Eval
-  cc err l r = case conversionCheck (void ctx) l r of
-    True -> l
-    False -> error err
+  cc err l r
+    | conversionCheck (void ctx) l r = l
+    | otherwise = error err
 
   vv = validateOrNot seqOrConst ctx
 
@@ -321,10 +354,20 @@ validateOrNot seqOrConst ctx = \case
       tyVal = validateType ty
     in (tyVal, tyVal `seq` validateOrNot seqOrConst ctx' body)
 
+  -- FIXME: rnf on the left here does not terminate...?
+  ee tm = vv tm `seqOrConst` evalHere tm
+
   evalHere = eval evalCtxHere
   toEvalCtx = mapCtx (\_ _ (_, tm) -> tm)
   evalCtxHere = toEvalCtx ctx :: EvalCtx
   quoteCtxHere = mapCtx (\_ _ _ -> ()) ctx :: QuoteCtx
+
+  traceEval desc = traceTermWith desc (quote quoteCtxHere)
+  traceTerm desc = traceTermWith desc id
+  traceTermWith :: forall x. String -> (x -> Term) -> x -> x
+  traceTermWith desc fn = traceWith (termTrace desc . fn)
+  termTrace desc tm = desc <> ": " <> do
+    T.unpack $ P.format P.Ansi $ P.printCore tm (P.PS 0 (size ctx))
 
   -- Validating a dependent telescope is a little more tricky, but mostly it is
   -- just a lot of data to plumb around.
@@ -352,77 +395,77 @@ validateOrNot seqOrConst ctx = \case
           validateTelescope mismatchError (i+1) ctorCtx valueVector typeCtx' typeVector continuation
       _ -> continuation typeCtx
 
+alignAll :: SemialignWithIndex i f => Foldable f => f x -> f y -> (i -> These x y -> Bool) -> Bool
+alignAll xs ys f = and $ ialignWith f xs ys
+
+-- | The type of the motive for the given inductive type:
+-- it takes the indices of the inductive type as arguments
+-- and then returns a type (the motive at those indices).
+--
+-- We need to abstract over the *parameters* of the type, so to keep it as a
+-- closed term, we take those as lambda arguments for the caller to apply.
+makeMotiveType :: Name -> GlobalTypeInfo -> Term
+makeMotiveType tyName (GlobalTypeInfo { typeParams, typeIndices }) =
+  let
+    -- Make a telescope of *lambdas* to accept the chosen parameter types
+    prependParams inner = foldr prependParam inner typeParams
+    prependParam (p, b, paramType) inner =
+      TLambda mempty p b paramType $ Scoped inner
+    -- Make a telescope of *Pis* to abstract over indices of the type constructor
+    prependIndices inner = foldr prependIndex inner typeIndices
+    prependIndex (p, b, indexType) inner =
+      TPi mempty p b indexType $ Scoped inner
+    -- Finally we apply the *chosen values* of each parameter and index to the type constructor
+    -- Level <$> (#params + #indices - 1)..(#indices)
+    -- Level <$> (#indices - 1)..0
+    chosenParam i = TVar mempty $ Index $ (length typeParams - 1 - i) + length typeIndices
+    chosenIndex i = TVar mempty $ Index $ (length typeIndices - 1 - i) + 0
+    chosenType = TTyCtor mempty tyName
+      (Vector.imap (const . chosenParam) typeParams)
+      (Vector.imap (const . chosenIndex) typeIndices)
+    -- And a motive takes that specific type and returns the goal type for it
+    motive = TPi mempty Explicit BUnused chosenType $ Scoped (TUniv mempty (UBase 0))
+  in prependParams $ prependIndices $ motive
 
 
--- This functions as a proof that terms are intrinsically typed
-typeof :: TypeCtx -> Term -> Term
-typeof ctx = \case
-  TVar _ idx -> getShifted idx ctx
-  TGlobal _ name -> case Map.lookup name (ctxGlobals ctx) of
-    Nothing -> error $ "Undefined global " <> show name
-    Just (GlobalDefn _ (GlobalTerm ty _) _) -> ty
-    Just _ -> error "Not implemented"
-  THole _ _fresh -> error "typeof hole not implemented"
-  TUniv meta univ -> TUniv meta case univ of
-    UBase lvl -> UBase (lvl + 1)
-    UMeta lvl -> UMeta (lvl + 1)
-    -- This is why `UVar` has an `Int`: increment to get the typeof
-    UVar fresh incr -> UVar fresh (incr + 1)
-  TLambda meta p b ty (Scoped body) ->
-    TPi meta p b ty (Scoped (typeof (into b ty) body))
-  TPi _ _ b ty (Scoped body) ->
-    -- Π(x : ty : U), (body : U)
-    case (typeof ctx ty, typeof (into b ty) body) of
-      (TUniv m1 u1, TUniv m2 u2) -> TUniv (m1 <> m2) (umax u1 u2)
-      (_, r) -> error $ "Bad pi type: " <> T.unpack do
-        format Ansi $ printCore r (PS 0 (coerce $ size ctx))
-  TSigma _ _ b ty (Scoped body) ->
-    case (typeof ctx ty, typeof (into b ty) body) of
-      (TUniv m1 u1, TUniv m2 u2) -> TUniv (m1 <> m2) (umax u1 u2)
-      _ -> error "Bad sigma type"
-  TPair _meta ty _left _right -> ty
-  TFst _ tm -> case typeof ctx tm of
-    TSigma _ _ _ ty _body -> ty
-    _ -> error "Bad fst"
-  TSnd _ tm -> case typeof ctx tm of
-    -- typeof (snd (tm : Σ(x : ty), body)) = body@[x := fst tm] = (λ(x : ty), body)(fst tm)
-    TSigma _ _ binder ty body ->
-      TApp mempty (TLambda mempty Explicit binder ty body) (TFst mempty tm)
-    _ -> error "Bad snd"
-  TApp _ fun arg -> case typeof ctx fun of
-    -- typeof ((f : Π(x : ty), body) (arg : ty)) = body@[x := arg] = (λ(x : ty), body)(arg)
-    TPi meta p b ty body -> TApp mempty (TLambda meta p b ty body) arg
-    _ -> error "Bad app"
-  TTyCtor _ tyName params indices -> case Map.lookup tyName (ctxGlobals ctx) of
-    Just (GlobalType (GlobalTypeInfo { typeParams, typeIndices, typeConstrs = _ })) ->
-      -- FIXME: do a proper universe check
-      TUniv mempty (UBase 0)
-    _ -> error "Bad type constructor name"
-  TConstr _ (tyName, conName) params args -> case Map.lookup tyName (ctxGlobals ctx) of
-    Just (GlobalType (GlobalTypeInfo { typeParams, typeIndices = _, typeConstrs }))
-      | Just (ConstructorInfo { ctorArguments, ctorIndices }) <- Map.lookup conName typeConstrs ->
-      let
-        -- Don't bother with actual substitution: do it via lambdas and apps
-        localize =
-          adstract (Vector.toList params <> Vector.toList args)
-            . abstract (Vector.toList typeParams <> Vector.toList ctorArguments)
-        -- First we form repeated lambdas to back out the scope
-        abstract ((p, b, paramType) : more) focus =
-          TLambda mempty p b paramType $ Scoped $ abstract more focus
-        abstract [] focus = focus
-        -- Then we apply each parameter in turn
-        adstract (param : more) abstracted =
-          adstract more $ TApp mempty abstracted param
-        adstract [] substituted = substituted
-      in TTyCtor mempty tyName params (localize <$> ctorIndices)
-    _ -> error "Bad constructor name"
-  TLift _ ty -> case typeof ctx ty of
-    TUniv m1 (UBase n) -> TUniv m1 (UMeta n)
-    _ -> error "Must be a type in the base"
-  TQuote meta tm -> TLift meta $ typeof ctx tm
-  TSplice _ tm -> case typeof ctx tm of
-    TLift _ ty -> ty
-    _ -> error "Bad splice"
-  where
-  into :: Binder -> Term -> TypeCtx
-  into bdr ty = ctx :> (bdr, ty)
+-- TODO: share this evaluation
+makeCaseFnType :: Name -> GlobalTypeInfo -> Name -> ConstructorInfo -> Term
+makeCaseFnType tyName tyInfo@(GlobalTypeInfo { typeParams, typeIndices = _ }) conName (ConstructorInfo { ctorArguments, ctorIndices }) =
+  let
+    -- Make a telescope of *lambdas* to accept the chosen parameter types
+    prependParams inner = foldr prependParam inner typeParams
+    prependParam (p, b, paramType) inner =
+      TLambda mempty p b paramType $ Scoped inner
+    -- Now take a motive for those parameters
+    abstractedMotiveType = makeMotiveType tyName tyInfo
+    chosenParamForMotive i = TVar mempty $ Index $ (length typeParams - 1 - i)
+    chosenMotiveType = Vector.ifoldl
+      (\motiveTypeFn i _ -> TApp mempty motiveTypeFn $ chosenParamForMotive i)
+      abstractedMotiveType typeParams
+    prependMotive inner = TLambda mempty Explicit BFresh chosenMotiveType $ Scoped inner
+    withMotive introed = shiftFrom introed 1
+    -- Make a telescope of *Pis* to abstract over the *constructor* arguments
+    prependArguments inner = Vector.ifoldr prependArgument inner ctorArguments
+    prependArgument introed (p, b, argumentType) inner =
+      TPi mempty p b (withMotive introed argumentType) $ Scoped inner
+    -- Now we know the constructor arguments...
+    chosenArgument i = TVar mempty $ Index $ (length ctorArguments - 1 - i) + 0
+    -- (The parameters have shifted)
+    chosenParam i = TVar mempty $ Index $ (length typeParams - 1 - i) + 1 {- motive -} + length ctorArguments
+    -- ... So we can reconstruct the inspected value
+    chosenValue = TConstr mempty (tyName, conName)
+      (Vector.imap (const . chosenParam) typeParams)
+      (Vector.imap (const . chosenArgument) ctorArguments)
+    -- And we know the abstract motive, waiting for indices and the constructed value
+    givenMotive = TVar mempty (Index (length ctorArguments))
+    -- So we should be able to just plug in the indices to the motive:
+    -- (They are relative to the arguments abstracted in the same way)
+    -- FIXME: this is not true! the parameters are one off! ugh
+    relevantMotive = Vector.ifoldl
+      (\motiveFn i chosenIndex -> TApp mempty motiveFn (withMotive (i + Vector.length ctorArguments) chosenIndex))
+      givenMotive ctorIndices
+    appliedMotive = TApp mempty relevantMotive chosenValue
+    -- And plug in the value from the arguments
+  -- Now we fit it all together, then let the caller apply it
+  in prependParams $ prependMotive $ prependArguments $ appliedMotive
+

@@ -5,9 +5,17 @@ import Prettyprinter qualified as Doc
 import Pudding.Types
 import Prettyprinter.Render.Text (renderStrict)
 import qualified Prettyprinter.Render.Terminal as Ansi
+import Data.Foldable (fold)
+import Data.Functor ((<&>))
 import Data.Text (Text)
 import qualified Data.Vector as Vector
 import Control.Monad (join)
+import qualified Data.Map as Map
+import Control.Lens (view)
+import Text.Parsec.Pos (sourceLine, sourceColumn)
+import Pudding.Parser (SourceSpan(SourceSpan))
+import qualified Data.Set as Set
+import Data.List (intercalate)
 
 type Print = Doc.Doc Ansi.AnsiStyle
 type Printer = PrinterState -> Print
@@ -42,11 +50,25 @@ bound :: Binder -> (Term -> Printer) -> (ScopedTerm -> Printer)
 bound _ f (Scoped term) (PS i depth) = f term (PS i (depth + 1))
 
 formatCore :: Style -> Term -> Text
-formatCore style term = format style $ printCore term (PS empty 0)
+formatCore style term = format style $ printCore term (PS 0 empty)
+
+formatCoreWithSpan :: Style -> Term -> Text
+formatCoreWithSpan style term = format style $ withSpan printCore term (PS 0 empty)
+
+withSpan :: (Term -> Printer) -> Term -> Printer
+withSpan main term = fold
+  [ pure $ "@{" <> Doc.pretty (intercalate "," spans) <> "} "
+  , main term
+  ]
+  where
+  Metadata { sourcePos } = view metadata term
+  compactPos pos = show (sourceLine pos) <> ":" <> show (sourceColumn pos)
+  spans = Set.toList sourcePos <&> \(SourceSpan lower upper) ->
+    "(" <> compactPos lower <> "--" <> compactPos upper <> ")"
 
 printCore :: Term -> Printer
 printCore = \case
-  TVar _m idx -> \(PS _ ctx) -> mconcat
+  TVar _m idx -> \(PS _ ctx) -> fold
     [ "_" <> Doc.pretty (level ctx idx)
     -- , "." <> Doc.pretty idx
     ]
@@ -105,6 +127,13 @@ printCore = \case
       [ pure $ pure $ Doc.pretty name
       , printCore <$> Vector.toList params
       , printCore <$> Vector.toList args
+      ]
+  TCase _m motive cases inspect ->
+    sexp
+      [ pure "case"
+      , printCore motive
+      , sexp $ (\(name, fn) -> sexp [ pure $ Doc.pretty name, printCore fn ]) <$> Map.toList cases
+      , printCore inspect
       ]
   TLift _m ty -> sexp [ pure "Lift", printCore ty ]
   TQuote _m ty -> sexp [ pure "quote", printCore ty ]

@@ -126,6 +126,18 @@ term = var <|> (lp *> (P.choice terms <|> app) <* rp)
         univKind <- UBase <$ keyword ["Type0"] <|> UMeta <$ keyword ["Type1"]
         lvl <- P.option 0 int
         pure \meta -> TUniv meta (univKind lvl)
+    , trackMeta do
+        _ <- keyword ["case"]
+        motive <- term
+        cases <- parens $ P.many $ parens $ liftA2 (,) ident term
+        inspect <- term
+        pure \meta -> TCase meta motive (Map.fromList cases) inspect
+    , trackMeta do
+        _ <- keyword ["caseOn"]
+        motive <- term
+        inspect <- term
+        cases <- parens $ P.many $ parens $ liftA2 (,) ident term
+        pure \meta -> TCase meta motive (Map.fromList cases) inspect
     ]
 
 data ParseCtx = ParseCtx

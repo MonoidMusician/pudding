@@ -4,14 +4,14 @@ module EvalTest where
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.Text as T
 
-import Pudding.Unify ( validateQuoteNeutrals, conversionCheck, typeof )
+import Pudding.Unify ( validateQuoteNeutrals, conversionCheck )
 import Pudding.Parser ( runParserScope, globalTable )
 import Pudding.Types
 import Pudding.Name (canonicalName)
 import Testing
 import Pudding (parseAndBootGlobals)
 import Data.Text (Text)
-import Data.Foldable (for_)
+import Data.Foldable (for_, fold)
 import Pudding.Printer (PrinterState(..), formatCore, Style (Ansi), format, printCore)
 import Control.Monad.Reader.Class (MonadReader (reader, ask), asks, local)
 import Control.Lens (review)
@@ -220,7 +220,11 @@ defEqTo i1 i2 = do
   (e1 :: Eval) <- convert i1
   (e2 :: Eval) <- convert i2
   ctx <- ask
-  expect (conversionCheck (void ctx) e1 e2) "Terms are equal under the conversion check"
+  expect (conversionCheck (void ctx) e1 e2) $ fold
+    [ "Terms are equal under the conversion check:"
+    , "\n", T.unpack $ formatCore Ansi $ Eval.quote (void ctx) e1
+    , "\n", T.unpack $ formatCore Ansi $ Eval.quote (void ctx) e2
+    ]
 
 normalizesTo :: forall i1 i2. Convert i1 Term => Convert i2 Term => "term1" @:: i1 -> "term2" @:: i2 -> EvalTest ()
 normalizesTo i1 i2 = do
@@ -239,8 +243,7 @@ expectType :: "term" @:: Text -> "type" @:: Text -> EvalTest ()
 expectType tm ty = do
   tm' <- parseTerm tm
   ty' <- parseTerm ty
-  ctx <- reader \ctx -> snd <$> ctx
-  expectEquiv Term' ty' (typeof ctx tm')
+  defEqTo ty' =<< typecheck tm'
 
 termEquiv :: Term -> Term -> Bool
 termEquiv (TVar _ i1) (TVar _ i2) = i1 == i2

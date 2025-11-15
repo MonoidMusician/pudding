@@ -80,7 +80,7 @@ runPlumSource :: P.SourceName -> Text -> Test () ()
 runPlumSource sourceName source = do
   parsed <- liftIO $ runParser plumContents sourceName source
   case parsed of
-    Right runTest -> runTest
+    Right testToRun -> testToRun
     Left err -> testFail $ show err
 
 plumContents :: Parser (Test () ())

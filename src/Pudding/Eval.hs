@@ -6,9 +6,10 @@ import Data.Functor (void)
 import qualified Data.List as List
 import Data.Maybe (fromMaybe)
 import qualified Data.Vector as Vector
-import Pudding.Printer (formatCore, Style (Ansi))
+import Pudding.Printer (formatCore, Style (Ansi), formatCoreWithSpan)
 import qualified Data.Text as T
 import GHC.Stack (HasCallStack)
+import qualified Pudding.Types.Stack as Stack
 
 eval :: EvalCtx -> Term -> Eval
 eval = flip evaling
@@ -59,6 +60,9 @@ doPrj (ENeut (Neutral blocker prjs)) prj = ENeut (Neutral blocker (prjs :> prj))
 doPrj (EPair _ _ left _) (NFst _) = left
 doPrj (EPair _ _ _ right) (NSnd _) = right
 doPrj (ELambda _ _ _ _ body) (NApp _ arg) = instantiateClosure body arg
+doPrj (EConstr _meta (_tyName, conName) _params args) (NCase _ _ cases) =
+  doApps (cases Map.! conName) (Stack.fromFoldable args)
+doPrj (EDeferred _ _ _ _ term) prj = doPrj term prj
 doPrj e prj = error $ mconcat
   [ "Type error in doPrj "
   , case prj of
@@ -66,8 +70,10 @@ doPrj e prj = error $ mconcat
       NFst _ -> "Fst"
       NSnd _ -> "Snd"
       NSplice _ -> "Splice"
+      NCase {} -> "Case"
   , ":"
-  , "\n", T.unpack $ formatCore Ansi $ quote (ctxOfSize Map.empty 100) e
+  -- FIXME: no scope available, indices will be wrong
+  , "\n", T.unpack $ formatCoreWithSpan Ansi $ quote (ctxOfSize Map.empty 100) e
   ]
 
 doApp :: HasCallStack => "fun" @:: Eval -> "arg" @:: Eval -> Eval
@@ -83,6 +89,9 @@ doSnd tgt = doPrj tgt (NSnd mempty)
 doPrjs :: HasCallStack => Eval -> Stack NeutPrj -> Eval
 doPrjs focus (prjs :> prj) = doPrj (doPrjs focus prjs) prj
 doPrjs focus Nil = focus
+
+doApps :: HasCallStack => Eval -> Stack Eval -> Eval
+doApps focus = doPrjs focus . fmap (NApp mempty)
 
 -- Eta expand the pair constructor, for sigma types
 etaPair :: HasCallStack => "type" @:: Eval -> "pair" @:: Eval -> Eval
@@ -249,6 +258,13 @@ evaling = \case
   THole meta hole -> pure $ ENeut (Neutral (NHole meta hole) Nil)
   TTyCtor meta name params indices -> ETyCtor meta name <$> traverse evaling params <*> traverse evaling indices
   TConstr meta name params args -> EConstr meta name <$> traverse evaling params <*> traverse evaling args
+  TCase meta motive cases inspect -> \ctx ->
+    case undeferred $ evaling inspect ctx of
+      EConstr _meta (_tyName, conName) _params args ->
+        doApps (evaling (cases Map.! conName) ctx) (Stack.fromFoldable args)
+      ENeut (Neutral focus prjs) ->
+        checkGlobal ctx $ ENeut (Neutral focus (prjs :> NCase meta (evaling motive ctx) (eval ctx <$> cases)))
+      _ -> error "Type error: cannot case on non-inductive"
   TLift meta ty -> ELift meta <$> evaling ty
   TQuote meta tm -> doQuote meta <$> evaling tm
   TSplice meta tm -> doSplice meta <$> evaling tm
@@ -293,6 +309,7 @@ eval2termWith forceGlobals handleClosure = \case
         NFst meta -> TFst meta soFar
         NSnd meta -> TSnd meta soFar
         NSplice meta -> TSplice meta soFar
+        NCase meta motive cases -> TCase meta (e2t motive ctx) (flip e2t ctx <$> cases) soFar
       go Nil result = result
     in go prjs base
   EUniv meta univ -> pure $ TUniv meta univ
@@ -346,14 +363,6 @@ umax (UBase l1) (UBase l2) = UBase (max l1 l2)
 umax (UMeta l1) (UMeta l2) = UMeta (max l1 l2)
 umax _ _ = error "Bad umax / unimplemented"
 
--- We are lazy with shifting terms: they enter the context completely unshifted,
--- and then when we want to pull one out, we shift by the appropriate amount
--- based on how much the context has grown.
-getShifted :: Index -> TypeCtx -> Term
-getShifted (Index idx) terms =
-  -- We always shift at least one: index 0 is the most recent variable, but its
-  -- type belongs to the context _before_ it was introduced
-  shift (idx+1) (terms @@: idx)
 
 shift :: Int -> Term -> Term
 shift = shiftFrom 0
@@ -378,6 +387,7 @@ shiftFrom base delta = \case
   TApp meta fun arg -> TApp meta (go fun) (go arg)
   TTyCtor meta name params indices -> TTyCtor meta name (go <$> params) (go <$> indices)
   TConstr meta name params args -> TConstr meta name (go <$> params) (go <$> args)
+  TCase meta motive cases inspect -> TCase meta (go motive) (go <$> cases) (go inspect)
   TLift meta ty -> TLift meta $ go ty
   TQuote meta tm -> TQuote meta $ go tm
   TSplice meta tm -> TSplice meta $ go tm

@@ -9,6 +9,7 @@ import GHC.Generics (Generic)
 import Prettyprinter (Pretty)
 import Data.Monoid (Dual(Dual, getDual))
 import Control.Applicative.Backwards (Backwards(Backwards, forwards))
+import Data.Foldable (foldl')
 
 -- | Finite mapping of indices `i` to elements `Elem`
 class StackLike c where
@@ -125,3 +126,7 @@ rstack :: Iso [a] [b] (Stack a) (Stack b)
 rstack = iso
   (\xs -> let elems = RAL.fromList xs in Stack (RAL.length elems) elems)
   (\(Stack _ elems) -> RAL.toList elems)
+
+fromFoldable :: Foldable f => f a -> Stack a
+fromFoldable = foldl' (:>) Nil
+
