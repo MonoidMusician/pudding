@@ -11,13 +11,14 @@ import Pudding.Name (canonicalName)
 import Testing
 import Pudding (parseAndBootGlobals)
 import Data.Text (Text)
-import Data.Foldable (for_, fold)
+import Data.Foldable (fold)
 import Pudding.Printer (PrinterState(..), formatCore, Style (Ansi), format, printCore)
 import Control.Monad.Reader.Class (MonadReader (reader, ask), asks, local)
 import Control.Lens (review)
 import qualified Pudding.Eval as Eval
 import Data.Functor (void)
 import qualified Pudding.Parser as Parse
+import qualified Data.Map as Map
 
 -- NamedDefaults requires GHC 9.12.1
 default (Text)
@@ -85,9 +86,10 @@ evalTest = TestSuite "EvalTest" $ withTestContext do
     type0 = TUniv mempty $ UBase 0
   testCase "Globals" do
     globals <- asks ctxGlobals
-    for_ globals \case
-      -- GlobalDefn _ (GlobalTerm ty _) _ -> do
-      --   liftIO $ putStrLn $ T.unpack $ formatCore Ansi ty
+    _ <- flip Map.traverseWithKey (globalDefns globals) \name -> \case
+      -- GlobalDefn _ (GlobalTerm ty _) (GlobalTerm tm _) -> do
+      --   liftIO $ putStrLn $ T.unpack $ nameText name <> " : " <> formatCore Ansi ty
+      --   liftIO $ putStrLn $ T.unpack $ nameText name <> " := " <> formatCore Ansi tm
       --   liftIO $ putStrLn $ T.unpack $ formatCore Ansi $ typecheckUnder [] ty
       _ -> pure ()
     testCase "Id" do

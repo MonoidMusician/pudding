@@ -118,13 +118,13 @@ printCore = \case
   TSnd _m term -> sexp [ pure "snd", printCore term ]
   TTyCtor _m name params indices ->
     sexp $ join
-      [ pure $ pure $ Doc.pretty name
+      [ pure $ pure $ "$" <> Doc.pretty name
       , printCore <$> Vector.toList params
       , printCore <$> Vector.toList indices
       ]
   TConstr _m (_, name) params args ->
     sexp $ join
-      [ pure $ pure $ Doc.pretty name
+      [ pure $ pure $ "$" <> Doc.pretty name
       , printCore <$> Vector.toList params
       , printCore <$> Vector.toList args
       ]

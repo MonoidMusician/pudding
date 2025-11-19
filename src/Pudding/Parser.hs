@@ -254,7 +254,7 @@ declaration = parens $ P.choice
       keyword ["define"]
       n <- ident
       t <- term
-      pure (n, GlobalDefn (arityOfTerm t) undefined (GlobalTerm t undefined))
+      pure (n, DefnGlobal $ GlobalDefn (arityOfTerm t) undefined (GlobalTerm t undefined))
   , do
       keyword ["inductive"]
       typeName <- ident
@@ -270,14 +270,14 @@ declaration = parens $ P.choice
             -- And says what each index should be
             fmap (args,) $ P.option [] $ parensMany term
         info <- assembleInductive typeName parameters indices constructors
-        pure (typeName, GlobalType info)
+        pure (typeName, TypeGlobal info)
   ]
 declarations :: Parser Globals
 declarations = P.many declaration >>= \decls -> do
   let globals = Map.fromList decls
   when (Map.size globals /= length decls) do
     fail "Duplicate global names"
-  pure globals
+  pure $ globalsFrom globals
 
 runParser :: Parser a -> P.SourceName -> Text -> IO (Either P.ParseError a)
 runParser p s t = runParserScope p [] s t

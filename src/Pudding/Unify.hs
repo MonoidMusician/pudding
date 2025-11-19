@@ -14,10 +14,8 @@ import Data.These (These(..))
 import Data.Semialign.Indexed (SemialignWithIndex (ialignWith))
 import qualified Pudding.Types.Stack as Stack
 import Debug.Trace (traceWith)
-import Pudding.Printer (formatCore, Style (Ansi))
 import qualified Data.Text as T
 import qualified Pudding.Printer as P
-import Control.DeepSeq (NFData(rnf))
 
 -- Validate the type of a term, as an evaluated type
 validate :: EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
@@ -43,11 +41,12 @@ bootGlobals = bootGlobalDefns . bootGlobalTypes
 
 bootGlobalDefns globals = newGlobals
   where
-  newGlobals = globals <&> \case
-    GlobalDefn _ _ (GlobalTerm defn _) ->
-      let !ty = typeofGlobal defn in
-      GlobalDefn (arityOfTerm defn) ty (globalTerm defn)
-    global -> global
+  newGlobals = globals
+    { globalDefns = globalDefns globals <&> \case
+        GlobalDefn _ _ (GlobalTerm defn _) ->
+          let !ty = typeofGlobal defn in
+          GlobalDefn (arityOfTerm defn) ty (globalTerm defn)
+    }
   ctx :: forall t. Ctx t
   ctx = ctxOfGlobals newGlobals
   globalTerm :: Term -> GlobalTerm
@@ -60,16 +59,36 @@ bootGlobalDefns globals = newGlobals
     GlobalTerm (quote (void ctx) ty) ty
 
 bootGlobalTypes globals =
-  globals `disjointUnion` constructors globals
+  globals { globalDefns = globalDefns globals `disjointUnion` constructors (globalTypes globals) }
   where
   disjointUnion = Map.unionWithKey \k _ _ -> error $ "Duplicate global: " <> show k
   fakeGlobal tm = GlobalDefn (arityOfTerm tm) undefined (GlobalTerm tm undefined)
   constructors = fold . Map.mapWithKey \tyName -> \case
-    GlobalType (GlobalTypeInfo { typeParams, typeConstrs }) ->
-      flip Map.mapWithKey typeConstrs \conName (ConstructorInfo { ctorArguments }) -> fakeGlobal $
-        abstract (Vector.toList typeParams <> Vector.toList ctorArguments) $
-          TConstr mempty (tyName, conName) (toVars (Vector.length ctorArguments) typeParams) (toVars 0 ctorArguments)
-    _ -> Map.empty
+    info@(GlobalTypeInfo { typeParams, typeConstrs }) -> fold
+      [ Map.singleton tyName $ fakeGlobal $ mkTypeConstructor tyName info
+      , flip Map.mapWithKey typeConstrs \conName (ConstructorInfo { ctorArguments }) -> fakeGlobal $
+          abstract (Vector.toList typeParams <> Vector.toList ctorArguments) $
+            TConstr mempty (tyName, conName) (toVars (Vector.length ctorArguments) typeParams) (toVars 0 ctorArguments)
+      ]
+  -- Form repeated lambdas to turn the raw constructor into a curried function
+  abstract ((p, b, paramType) : more) focus =
+    TLambda mempty p b paramType $ Scoped $ abstract more focus
+  abstract [] focus = focus
+
+  toVars :: forall i. Int -> Vector.Vector i -> Vector.Vector Term
+  toVars skipped template =
+    -- ugh why no mapWithIndex
+    Vector.zipWith mk (Level <$> Vector.fromList [0..]) template
+    where
+    mk lvl _ =
+      let Index idx = index (Vector.length template) lvl in
+      TVar mempty $ Index $ idx + skipped
+
+mkTypeConstructor :: "type name" @:: Name -> GlobalTypeInfo -> Term
+mkTypeConstructor tyName (GlobalTypeInfo { typeParams, typeIndices }) =
+  abstract (Vector.toList typeParams <> Vector.toList typeIndices) $
+    TTyCtor mempty tyName (toVars (Vector.length typeIndices) typeParams) (toVars 0 typeIndices)
+  where
   -- Form repeated lambdas to turn the raw constructor into a curried function
   abstract ((p, b, paramType) : more) focus =
     TLambda mempty p b paramType $ Scoped $ abstract more focus
@@ -233,11 +252,9 @@ validateOrNot seqOrConst ctx = \case
     checkFor "idx fits in the current context" (idx < Index (size ctx))
       `seqOrConst`
     fst (ctx @@: idx)
-  TGlobal _ name -> case Map.lookup name (ctxGlobals ctx) of
+  TGlobal _ name -> case Map.lookup name (globalDefns $ ctxGlobals ctx) of
     Nothing -> error $ "Undefined global " <> show name
     Just (GlobalDefn _ (GlobalTerm _ ty) _) -> ty
-    -- FIXME a bit lazy
-    Just (GlobalType info) -> validateOrNot seqOrConst ctx $ mkTypeConstructor name info
   THole _ _fresh -> error "typeof hole not implemented"
   TUniv meta univ -> EUniv meta $ case univ of
     UBase lvl -> UBase (lvl + 1)
@@ -254,11 +271,11 @@ validateOrNot seqOrConst ctx = \case
           Scoped $ quote (quoteCtxHere :> (b, ())) bodyTy
   TPi _ _ b ty body ->
     -- Π(x : ty : U), (body : U)
-    case (vv ty, snd $ validateScoped b ty body) of
+    case (vvv ty, force $ snd $ validateScoped b ty body) of
       (EUniv m1 u1, EUniv m2 u2) -> EUniv (m1 <> m2) (umax u1 u2)
       _ -> error "Bad pi type"
   TSigma _ _ b ty body ->
-    case (vv ty, snd $ validateScoped b ty body) of
+    case (vvv ty, force $ snd $ validateScoped b ty body) of
       (EUniv m1 u1, EUniv m2 u2) -> EUniv (m1 <> m2) (umax u1 u2)
       _ -> error "Bad sigma type"
   TPair _ ty left right ->
@@ -268,19 +285,19 @@ validateOrNot seqOrConst ctx = \case
         cc "snd type mismatch" (instantiateClosure body (evalHere left)) (vv right) `seqOrConst`
         tyVal
       _ -> error "bad pair type"
-  TFst _ tm -> case vv tm of
+  TFst _ tm -> case vvv tm of
     ESigma _ _ _ ty _ -> ty
     _ -> error "Bad fst"
-  TSnd _ tm -> case vv tm of
+  TSnd _ tm -> case vvv tm of
     ESigma _ _ _ _ body ->
       instantiateClosure body (doPrj (evalHere tm) (NFst mempty))
     _ -> error "Bad snd"
-  TApp _ fun arg -> case (vv fun, vv arg) of
+  TApp _ fun arg -> case (vvv fun, vv arg) of
     (EPi _ _ _ argTyExpected body, argTyActual) ->
       cc "argument type mismatch" argTyExpected argTyActual `seq` instantiateClosure body (evalHere arg)
     _ -> error "Bad app"
-  TTyCtor _ tyName params indices -> case Map.lookup tyName (ctxGlobals ctx) of
-    Just (GlobalType (GlobalTypeInfo { typeParams, typeIndices, typeConstrs = _ })) ->
+  TTyCtor _ tyName params indices -> case Map.lookup tyName (globalTypes $ ctxGlobals ctx) of
+    Just (GlobalTypeInfo { typeParams, typeIndices, typeConstrs = _ }) ->
       checkFor "Wrong number of parameters" (Vector.length params == Vector.length typeParams) `seqOrConst`
       checkFor "Wrong number of indices" (Vector.length indices == Vector.length typeIndices) `seqOrConst`
       validateTelescope "Invalid type constructor parameter" 0 ctx params (ctxOfGlobals $ ctxGlobals ctx) typeParams \ctxParams ->
@@ -288,8 +305,8 @@ validateOrNot seqOrConst ctx = \case
       -- FIXME: do a proper universe check
       EUniv mempty (UBase 0)
     _ -> error "Bad type constructor name"
-  TConstr _ (tyName, conName) params args -> case Map.lookup tyName (ctxGlobals ctx) of
-    Just (GlobalType (GlobalTypeInfo { typeParams, typeIndices = _, typeConstrs }))
+  TConstr _ (tyName, conName) params args -> case Map.lookup tyName (globalTypes $ ctxGlobals ctx) of
+    Just (GlobalTypeInfo { typeParams, typeIndices = _, typeConstrs })
       | Just (ConstructorInfo { ctorArguments, ctorIndices }) <- Map.lookup conName typeConstrs ->
       checkFor "Wrong number of parameters" (Vector.length params == Vector.length typeParams) `seqOrConst`
       validateTelescope "Invalid constructor parameter" 0 ctx params (ctxOfGlobals $ ctxGlobals ctx) typeParams \ctxParams ->
@@ -305,10 +322,10 @@ validateOrNot seqOrConst ctx = \case
   TCase _ motive cases inspect ->
     let motiveHere = evalHere motive in
     flip seqOrConst (doApp motiveHere (evalHere inspect))
-    case vv inspect of
+    case vvv inspect of
       inspectType@(ETyCtor _ tyName chosenParams _) ->
-        case Map.lookup tyName (ctxGlobals ctx) of
-          Just (GlobalType tyInfo@(GlobalTypeInfo { typeConstrs })) ->
+        case Map.lookup tyName (globalTypes $ ctxGlobals ctx) of
+          Just tyInfo@(GlobalTypeInfo { typeConstrs }) ->
             cc "case motive" (vv motive) (EPi mempty Explicit BUnused inspectType (Closure BUnused Nil $ Scoped $ TUniv mempty (UBase 0)))
               `seqOrConst`
             checkFor "Wrong case names" (Map.keys typeConstrs == Map.keys cases)
@@ -320,19 +337,19 @@ validateOrNot seqOrConst ctx = \case
                 These constr caseTerm ->
                   let
                     !caseFnType = traceEval "caseFnType" $ ee (makeCaseFnType tyName tyInfo conName constr)
-                    !caseType = traceEval "caseType" $ doApps caseFnType (Stack.fromFoldable chosenParams :> motiveHere)
+                    !caseType = traceEval "caseType" $ checkGlobal ctx $ doApps caseFnType (Stack.fromFoldable chosenParams :> motiveHere)
                   in cc ("Wrong case type for " <> show conName) caseType (vv caseTerm) `seqOrConst` True
           _ -> error "Undefined type constructor"
-      _ -> error "Not a type constructor in case annotation"
-  TLift _ ty -> case vv ty of
+      _ty -> error $ termTrace "Not a type constructor in case annotation" $ quote quoteCtxHere _ty
+  TLift _ ty -> case vvv ty of
     EUniv m1 (UBase n) -> EUniv m1 (UMeta n)
     _ -> error "Must be a type in the base"
   TQuote meta tm -> ELift meta $ vv tm
-  TSplice _ tm -> case vv tm of
+  TSplice _ tm -> case vvv tm of
     ELift _ ty -> ty
     _ -> error "Bad splice"
   where
-  validateType ty = case vv ty of
+  validateType ty = case vvv ty of
     EUniv _ _ -> evalHere ty
     _ -> error "Expected a valid type"
 
@@ -343,6 +360,9 @@ validateOrNot seqOrConst ctx = \case
     | otherwise = error err
 
   vv = validateOrNot seqOrConst ctx
+  vvv = force . vv
+
+  force = (fromMaybe <*> forceGlobal ctx) . undeferred
 
   checkFor _ True = ()
   checkFor err False = error err

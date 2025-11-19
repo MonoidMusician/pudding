@@ -5,8 +5,7 @@ import qualified Data.Map as Map
 import Data.Functor (void)
 import qualified Data.List as List
 import Data.Maybe (fromMaybe)
-import qualified Data.Vector as Vector
-import Pudding.Printer (formatCore, Style (Ansi), formatCoreWithSpan)
+import Pudding.Printer (Style (Ansi), formatCoreWithSpan)
 import qualified Data.Text as T
 import GHC.Stack (HasCallStack)
 import qualified Pudding.Types.Stack as Stack
@@ -73,7 +72,7 @@ doPrj e prj = error $ mconcat
       NCase {} -> "Case"
   , ":"
   -- FIXME: no scope available, indices will be wrong
-  , "\n", T.unpack $ formatCoreWithSpan Ansi $ quote (ctxOfSize Map.empty 100) e
+  , "\n", T.unpack $ formatCoreWithSpan Ansi $ quote (ctxOfSize freshGlobals 100) e
   ]
 
 doApp :: HasCallStack => "fun" @:: Eval -> "arg" @:: Eval -> Eval
@@ -118,8 +117,9 @@ checkGlobal _ e = e
 -- Just evaluate a neutral global
 forceGlobal :: forall t. HasCallStack => Ctx t -> Eval -> Maybe Eval
 forceGlobal ctx (ENeut (Neutral (NGlobal _ _ name) prjs)) =
-  case Map.lookup name (ctxGlobals ctx) of
-    Just (GlobalDefn _ _ (GlobalTerm _ evaled)) -> Just (doPrjs evaled prjs)
+  case Map.lookup name (globalDefns $ ctxGlobals ctx) of
+    Just (GlobalDefn _ _ (GlobalTerm _ evaled)) ->
+      Just (checkGlobal ctx (doPrjs evaled prjs))
     _ -> Nothing
 forceGlobal _ _ = Nothing
 
@@ -132,25 +132,6 @@ instantiateClosure :: Closure -> Eval -> Eval
 instantiateClosure (Closure binder savedCtx (Scoped savedBody)) providedArg =
   evaling savedBody $ savedCtx :> (binder, providedArg)
 
-
-mkTypeConstructor :: "type name" @:: Name -> GlobalTypeInfo -> Term
-mkTypeConstructor tyName (GlobalTypeInfo { typeParams, typeIndices }) =
-  abstract (Vector.toList typeParams <> Vector.toList typeIndices) $
-    TTyCtor mempty tyName (toVars (Vector.length typeIndices) typeParams) (toVars 0 typeIndices)
-  where
-  -- Form repeated lambdas to turn the raw constructor into a curried function
-  abstract ((p, b, paramType) : more) focus =
-    TLambda mempty p b paramType $ Scoped $ abstract more focus
-  abstract [] focus = focus
-
-  toVars :: forall i. Int -> Vector.Vector i -> Vector.Vector Term
-  toVars skipped template =
-    -- ugh why no mapWithIndex
-    Vector.zipWith mk (Level <$> Vector.fromList [0..]) template
-    where
-    mk lvl _ =
-      let Index idx = index (Vector.length template) lvl in
-      TVar mempty $ Index $ idx + skipped
 
 --------------------------------------------------------------------------------
 -- Implementations                                                            --
@@ -185,7 +166,7 @@ evaling = \case
   -- If we are looking at evaluating a global
   TGlobal meta name -> \ctx ->
     -- The global info is already looked up
-    case Map.lookup name (ctxGlobals ctx) of
+    case Map.lookup name (globalDefns $ ctxGlobals ctx) of
       -- We already have a shared lazy evaluation for a global definition
       Just (GlobalDefn arity _ (GlobalTerm _ evaled)) ->
         if arity == 0 then evaled else
@@ -193,9 +174,6 @@ evaling = \case
           -- it block evaluation until they are filled with at least one non-
           -- neutral argument
           ENeut (Neutral (NGlobal arity meta name) Nil)
-      -- Constructors are a bit tricky
-      Just (GlobalType info) ->
-        evaling (mkTypeConstructor name info) ctx
       Nothing -> error $ "Could not find global " <> show name
   -- For a lambda
   TLambda meta plicit binder ty body ->
@@ -261,16 +239,17 @@ evaling = \case
   TCase meta motive cases inspect -> \ctx ->
     case undeferred $ evaling inspect ctx of
       EConstr _meta (_tyName, conName) _params args ->
-        doApps (evaling (cases Map.! conName) ctx) (Stack.fromFoldable args)
+        checkGlobal ctx $ doApps (evaling (cases Map.! conName) ctx) (Stack.fromFoldable args)
       ENeut (Neutral focus prjs) ->
         checkGlobal ctx $ ENeut (Neutral focus (prjs :> NCase meta (evaling motive ctx) (eval ctx <$> cases)))
       _ -> error "Type error: cannot case on non-inductive"
   TLift meta ty -> ELift meta <$> evaling ty
   TQuote meta tm -> doQuote meta <$> evaling tm
   TSplice meta tm -> doSplice meta <$> evaling tm
-  where
-  undeferred (EDeferred _ _ _ _ tm) = undeferred tm
-  undeferred tm = tm
+
+undeferred :: ("deferred term" @:: Eval) -> Eval
+undeferred (EDeferred _ _ _ _ tm) = undeferred tm
+undeferred tm = tm
 
 doQuote :: Metadata -> Eval -> Eval
 doQuote _ (ENeut (Neutral blocking (rest :> NSplice _))) = ENeut (Neutral blocking rest)
@@ -302,7 +281,7 @@ eval2termWith forceGlobals handleClosure = \case
         NGlobal _ _ name
           | forceGlobals
           , Just (GlobalDefn _ _ (GlobalTerm term _)) <-
-              Map.lookup name (ctxGlobals ctx) -> term
+              Map.lookup name (globalDefns $ ctxGlobals ctx) -> term
         NGlobal _arity meta name -> TGlobal meta name
       go (more :> prj) soFar = go more case prj of
         NApp meta arg -> TApp meta soFar (e2t arg ctx)

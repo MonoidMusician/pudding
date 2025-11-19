@@ -10,6 +10,7 @@ where
 import Control.DeepSeq (NFData)
 import Control.Lens (from, view)
 import Data.Functor.Apply ((<.*>))
+import Data.Function ((&))
 import Data.Map (Map)
 import Data.Map qualified as M
 import Data.Text (Text)
@@ -36,17 +37,41 @@ data Binder
 data GlobalTerm = GlobalTerm !Term Eval
   deriving (Generic, NFData)
 
-data GlobalInfo
+data GlobalDefn
   = -- A function or global constant or whatever.
     -- These also get generated for the names introduced by inductive types:
     -- the type name becomes a definition and so does each constructor.
     GlobalDefn !("arity" @:: Int) ("type" @:: GlobalTerm) ("term" @:: GlobalTerm)
-  | -- An inductive type declaration.
-    GlobalType GlobalTypeInfo
   deriving (Generic, NFData)
 
-type Globals = Map Name GlobalInfo
+data Globals = Globals
+  { globalDefns :: Map Name GlobalDefn
+  , globalTypes :: Map Name GlobalTypeInfo
+  }
+  deriving (Generic, NFData)
 
+freshGlobals :: Globals
+freshGlobals = Globals M.empty M.empty
+
+globalsFrom :: Map Name GlobalInfo -> Globals
+globalsFrom m = Globals
+  { globalDefns = m & M.mapMaybe \case
+      DefnGlobal g -> Just g
+      _ -> Nothing
+  , globalTypes = m & M.mapMaybe \case
+      TypeGlobal g -> Just g
+      _ -> Nothing
+  }
+
+addGlobal :: Globals -> Name -> GlobalInfo -> Globals
+addGlobal g name (TypeGlobal ty) = g { globalTypes = M.insert name ty (globalTypes g) }
+addGlobal g name (DefnGlobal df) = g { globalDefns = M.insert name df (globalDefns g) }
+
+data GlobalInfo
+  = TypeGlobal GlobalTypeInfo
+  | DefnGlobal GlobalDefn
+
+-- An inductive type declaration.
 data GlobalTypeInfo = GlobalTypeInfo
   { typeParams :: !(Vector (Plicit, Binder, Term)),
     typeIndices :: !(Vector (Plicit, Binder, Term)),
@@ -149,10 +174,11 @@ data Term
       -- args are the actual data stored in the constructor, from which the
       -- indices are inferred based on the constructor declaration
       ("args" @:: Vector Term)
-  -- | TElim Metadata
-  --     !("type name" @:: Name)
+  -- | TElim
+  --     Metadata
   --     ("motive" @:: Term)
   --     ("cases" @:: Map Name Term)
+  --     !("inspect" @:: Term)
   | TCase
       Metadata
       ("motive" @:: Term)
@@ -311,7 +337,7 @@ instance StackLike (Ctx t) where
   size (Ctx _ s) = size s
 
   -- NB: Usually you want `ctxOfGlobals`
-  empty = Ctx M.empty empty
+  empty = Ctx freshGlobals empty
 
   push' (Ctx globals s) b = Ctx globals (s :> b)
 

@@ -10,7 +10,6 @@ import Pudding.Parser
 import Pudding.Types
 import Testing
 import EvalTest
-import qualified Data.Map.Lazy as Map
 import Pudding.Unify (bootGlobals)
 import Control.Monad.Trans.Class (MonadTrans(lift))
 import Control.Monad.Trans.Cont (ContT (ContT))
@@ -87,13 +86,13 @@ plumContents :: Parser (Test () ())
 plumContents = uncont <$> plumStatements
 
 -- Bare globals, lazily booted globals
-type RunningEnv = (Map.Map Name GlobalInfo, Globals)
+type RunningEnv = (Globals, Globals)
 -- Turn reader into state, basically
 type PlumTest = ContT () (Test RunningEnv) ()
 
 uncont :: PlumTest -> Test () ()
 uncont (ContT withFinish) =
-  withContext (Map.empty, Map.empty) $
+  withContext (freshGlobals, freshGlobals) $
     withFinish \() -> pure ()
 
 intoEnv :: (Name, GlobalInfo) -> PlumTest
@@ -101,7 +100,7 @@ intoEnv (name, entry) = ContT \cont ->
   changeContext envppend (cont ())
   where
   envppend (prev, _) =
-    let globals = Map.insert name entry prev in
+    let globals = addGlobal prev name entry in
     (globals, bootGlobals globals)
 
 inEnv :: EvalTest () -> PlumTest
