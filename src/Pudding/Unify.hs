@@ -3,7 +3,8 @@ module Pudding.Unify where
 import Pudding.Types
 import Pudding.Eval
 import qualified Data.Map as Map
-import Data.Foldable (fold)
+import Data.Foldable (fold, foldl')
+import Data.Function ((&))
 import Data.Functor ((<&>), void)
 import GHC.StableName (StableName)
 import qualified Data.List as List
@@ -16,6 +17,7 @@ import qualified Pudding.Types.Stack as Stack
 import Debug.Trace (traceWith)
 import qualified Data.Text as T
 import qualified Pudding.Printer as P
+import Data.Align (Semialign(alignWith))
 
 -- Validate the type of a term, as an evaluated type
 validate :: EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
@@ -64,8 +66,15 @@ bootGlobalTypes globals =
   disjointUnion = Map.unionWithKey \k _ _ -> error $ "Duplicate global: " <> show k
   fakeGlobal tm = GlobalDefn (arityOfTerm tm) undefined (GlobalTerm tm undefined)
   constructors = fold . Map.mapWithKey \tyName -> \case
-    info@(GlobalTypeInfo { typeParams, typeConstrs }) -> fold
-      [ Map.singleton tyName $ fakeGlobal $ mkTypeConstructor tyName info
+    GlobalTypeInfo { typeParams, typeIndices, typeConstrs } -> fold
+      -- The type constructor: take all of the parameters and the indices,
+      -- and then make the fully applied type constructor term.
+      [ Map.singleton tyName $ fakeGlobal $
+          abstract (Vector.toList typeParams <> Vector.toList typeIndices) $
+            TTyCtor mempty tyName (toVars (Vector.length typeIndices) typeParams) (toVars 0 typeIndices)
+      -- The term constructors: take all of the parameters and constructor
+      -- arguments, then make the fully applied inductive constructor. (Note
+      -- that the type indices are inferred from the parameters and arguments.)
       , flip Map.mapWithKey typeConstrs \conName (ConstructorInfo { ctorArguments }) -> fakeGlobal $
           abstract (Vector.toList typeParams <> Vector.toList ctorArguments) $
             TConstr mempty (tyName, conName) (toVars (Vector.length ctorArguments) typeParams) (toVars 0 ctorArguments)
@@ -76,32 +85,8 @@ bootGlobalTypes globals =
   abstract [] focus = focus
 
   toVars :: forall i. Int -> Vector.Vector i -> Vector.Vector Term
-  toVars skipped template =
-    -- ugh why no mapWithIndex
-    Vector.zipWith mk (Level <$> Vector.fromList [0..]) template
-    where
-    mk lvl _ =
-      let Index idx = index (Vector.length template) lvl in
-      TVar mempty $ Index $ idx + skipped
-
-mkTypeConstructor :: "type name" @:: Name -> GlobalTypeInfo -> Term
-mkTypeConstructor tyName (GlobalTypeInfo { typeParams, typeIndices }) =
-  abstract (Vector.toList typeParams <> Vector.toList typeIndices) $
-    TTyCtor mempty tyName (toVars (Vector.length typeIndices) typeParams) (toVars 0 typeIndices)
-  where
-  -- Form repeated lambdas to turn the raw constructor into a curried function
-  abstract ((p, b, paramType) : more) focus =
-    TLambda mempty p b paramType $ Scoped $ abstract more focus
-  abstract [] focus = focus
-
-  toVars :: forall i. Int -> Vector.Vector i -> Vector.Vector Term
-  toVars skipped template =
-    -- ugh why no mapWithIndex
-    Vector.zipWith mk (Level <$> Vector.fromList [0..]) template
-    where
-    mk lvl _ =
-      let Index idx = index (Vector.length template) lvl in
-      TVar mempty $ Index $ idx + skipped
+  toVars skipped = mapWithLevel \(_, Index idx) _ ->
+    TVar mempty $ Index $ idx + skipped
 
 --------------------------------------------------------------------------------
 -- Conversion checking: the algorithm for definitional equality / unification --
@@ -144,6 +129,12 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
       && all (uncurry cc) (Vector.zip paramsL paramsR)
       && List.length argsL == List.length argsR
       && all (uncurry cc) (Vector.zip argsL argsR)
+  (ERecordTy _ fieldsL, ERecordTy _ fieldsR) ->
+    Map.keys fieldsL == Map.keys fieldsR
+      && alignCC fieldsL fieldsR
+  (ERecordTm _ fieldsL, ERecordTm _ fieldsR) ->
+    Map.keys fieldsL == Map.keys fieldsR
+      && alignCC fieldsL fieldsR
   (ELift _ tyL, ELift _ tyR) -> cc tyL tyR
   (EQuote _ tmL, EQuote _ tmR) -> cc tmL tmR -- TODO: what about staging??
 
@@ -151,6 +142,8 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
   -- type-directed)
   (EPair _ ty _ _, _) -> cc evalL (etaPair ty evalR)
   (_, EPair _ ty _ _) -> cc (etaPair ty evalL) evalR
+  (ERecordTm _ fieldsL, _) -> cc evalL (etaRecord fieldsL evalR)
+  (_, ERecordTm _ fieldsR) -> cc (etaRecord fieldsR evalL) evalR
   (ELambda _ _ bdr _ body, _) ->
     let
       (lvl, ctx') = push (bdr, ()) ctx
@@ -192,6 +185,14 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
     in cc tyL tyR && conversionCheck ctx'
       (instantiateClosure bodyL var) (instantiateClosure bodyR var)
 
+  alignCC :: forall f. Semialign f => Foldable f => f Eval -> f Eval -> Bool
+  alignCC itemsL itemsR = and $ alignWith aligned itemsL itemsR
+    where
+    aligned = \case
+      This _ -> False
+      That _ -> False
+      These x y -> cc x y
+
   -- Check what the neutral is blocked on: if it is a neutral variable,
   -- they *must* be the same variable (à la skolem variables)
   checkFocus focusL focusR = case (focusL, focusR) of
@@ -209,6 +210,8 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
       checkPrjs shouldCC (moreL, moreR)
     (moreL :> NSplice _, moreR :> NSplice _) ->
       checkPrjs shouldCC (moreL, moreR)
+    (moreL :> NField _ fieldL, moreR :> NField _ fieldR) ->
+      fieldL == fieldR && checkPrjs shouldCC (moreL, moreR)
     (Nil, Nil) -> True
     -- Differing lengths or differing projections
     (_, _) -> False
@@ -323,24 +326,23 @@ validateOrNot seqOrConst ctx = \case
     let motiveHere = evalHere motive in
     flip seqOrConst (doApp motiveHere (evalHere inspect))
     case vvv inspect of
-      inspectType@(ETyCtor _ tyName chosenParams _) ->
+      ETyCtor _ tyName chosenParams _ | applyParams <- Stack.fromFoldable chosenParams ->
         case Map.lookup tyName (globalTypes $ ctxGlobals ctx) of
-          Just tyInfo@(GlobalTypeInfo { typeConstrs }) ->
-            cc "case motive" (vv motive) (EPi mempty Explicit BUnused inspectType (Closure BUnused Nil $ Scoped $ TUniv mempty (UBase 0)))
+          Just tyInfo ->
+            cc "case motive" (vv motive) (doApps (ee (makeMotiveType tyName tyInfo)) applyParams)
               `seqOrConst`
-            checkFor "Wrong case names" (Map.keys typeConstrs == Map.keys cases)
-              `seqOrConst`
-            checkFor "Wrong case types" do
-              alignAll typeConstrs cases \conName -> \case
-                That _ -> error "Extra case"
-                This _ -> error "Missing case"
-                These constr caseTerm ->
-                  let
-                    !caseFnType = traceEval "caseFnType" $ ee (makeCaseFnType tyName tyInfo conName constr)
-                    !caseType = traceEval "caseType" $ checkGlobal ctx $ doApps caseFnType (Stack.fromFoldable chosenParams :> motiveHere)
-                  in cc ("Wrong case type for " <> show conName) caseType (vv caseTerm) `seqOrConst` True
+            let
+              !caseRecordType = {- traceEval "caseRecordType" $ -} ee (makeCaseRecordType tyName tyInfo)
+              !caseType = {- traceEval "caseType" $ -} checkGlobal ctx $ doApps caseRecordType (applyParams :> motiveHere)
+            in cc "Wrong case types" caseType (vv cases) `seqOrConst` True
           _ -> error "Undefined type constructor"
       _ty -> error $ termTrace "Not a type constructor in case annotation" $ quote quoteCtxHere _ty
+  TRecordTy _ fields -> uncurry EUniv $
+    foldl' (\(m1, u1) (EUniv m2 u2) -> (m1 <> m2, umax u1 u2)) (mempty, UBase 0) (vv <$> fields)
+  TRecordTm meta fields -> ERecordTy meta $ vv <$> fields
+  TField _ focus field -> case vvv focus of
+    ERecordTy _ fields | Just ty <- Map.lookup field fields -> ty
+    _ -> error "Bad record field"
   TLift _ ty -> case vvv ty of
     EUniv m1 (UBase n) -> EUniv m1 (UMeta n)
     _ -> error "Must be a type in the base"
@@ -382,6 +384,7 @@ validateOrNot seqOrConst ctx = \case
   evalCtxHere = toEvalCtx ctx :: EvalCtx
   quoteCtxHere = mapCtx (\_ _ _ -> ()) ctx :: QuoteCtx
 
+  _noWarn = (traceEval, traceTerm)
   traceEval desc = traceTermWith desc (quote quoteCtxHere)
   traceTerm desc = traceTermWith desc id
   traceTermWith :: forall x. String -> (x -> Term) -> x -> x
@@ -447,6 +450,28 @@ makeMotiveType tyName (GlobalTypeInfo { typeParams, typeIndices }) =
     motive = TPi mempty Explicit BUnused chosenType $ Scoped (TUniv mempty (UBase 0))
   in prependParams $ prependIndices $ motive
 
+makeCaseRecordType :: Name -> GlobalTypeInfo -> Term
+makeCaseRecordType tyName tyInfo@(GlobalTypeInfo { typeParams, typeConstrs }) =
+  let
+    -- Make a telescope of *lambdas* to accept the chosen parameter types
+    prependParams inner = foldr prependParam inner typeParams
+    prependParam (p, b, paramType) inner =
+      TLambda mempty p b paramType $ Scoped inner
+    -- Now take a motive for those parameters
+    abstractedMotiveType = makeMotiveType tyName tyInfo
+    chosenParamForMotive i = TVar mempty $ Index $ (length typeParams - 1 - i)
+    chosenMotiveType = Vector.ifoldl
+      (\motiveTypeFn i _ -> TApp mempty motiveTypeFn $ chosenParamForMotive i)
+      abstractedMotiveType typeParams
+    prependMotive inner = TLambda mempty Explicit BFresh chosenMotiveType $ Scoped inner
+    applyParams abstracted = Vector.ifoldl
+      (\fun i _ -> TApp mempty fun $ chosenParamForMotive (i - 1))
+      abstracted typeParams
+    applyParamsAndMotive abstracted =
+      TApp mempty (applyParams abstracted) $ TVar mempty $ Index 0
+    caseTypes = typeConstrs & Map.mapWithKey \conName ctorInfo ->
+      applyParamsAndMotive $ makeCaseFnType tyName tyInfo conName ctorInfo
+  in prependParams $ prependMotive $ TRecordTy mempty $ caseTypes
 
 -- TODO: share this evaluation
 makeCaseFnType :: Name -> GlobalTypeInfo -> Name -> ConstructorInfo -> Term

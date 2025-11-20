@@ -59,8 +59,9 @@ doPrj (ENeut (Neutral blocker prjs)) prj = ENeut (Neutral blocker (prjs :> prj))
 doPrj (EPair _ _ left _) (NFst _) = left
 doPrj (EPair _ _ _ right) (NSnd _) = right
 doPrj (ELambda _ _ _ _ body) (NApp _ arg) = instantiateClosure body arg
+doPrj (ERecordTm _ fields) (NField _ name) = fields Map.! name
 doPrj (EConstr _meta (_tyName, conName) _params args) (NCase _ _ cases) =
-  doApps (cases Map.! conName) (Stack.fromFoldable args)
+  doApps (doField cases conName) (Stack.fromFoldable args)
 doPrj (EDeferred _ _ _ _ term) prj = doPrj term prj
 doPrj e prj = error $ mconcat
   [ "Type error in doPrj "
@@ -70,6 +71,7 @@ doPrj e prj = error $ mconcat
       NSnd _ -> "Snd"
       NSplice _ -> "Splice"
       NCase {} -> "Case"
+      NField _ _ -> "Field"
   , ":"
   -- FIXME: no scope available, indices will be wrong
   , "\n", T.unpack $ formatCoreWithSpan Ansi $ quote (ctxOfSize freshGlobals 100) e
@@ -84,6 +86,9 @@ doFst tgt = doPrj tgt (NFst mempty)
 doSnd :: HasCallStack => Eval -> Eval
 doSnd tgt = doPrj tgt (NSnd mempty)
 
+doField :: HasCallStack => Eval -> Name -> Eval
+doField tgt field = doPrj tgt (NField mempty field)
+
 -- Do a stack of projections on `Eval`
 doPrjs :: HasCallStack => Eval -> Stack NeutPrj -> Eval
 doPrjs focus (prjs :> prj) = doPrj (doPrjs focus prjs) prj
@@ -94,7 +99,11 @@ doApps focus = doPrjs focus . fmap (NApp mempty)
 
 -- Eta expand the pair constructor, for sigma types
 etaPair :: HasCallStack => "type" @:: Eval -> "pair" @:: Eval -> Eval
-etaPair ty e = EPair mempty ty (doPrj e (NFst mempty)) (doPrj e (NSnd mempty))
+etaPair ty e = EPair mempty ty (doFst e) (doSnd e)
+
+-- Eta expand a record constructor
+etaRecord :: HasCallStack => "fields" @:: Map.Map Name ignored -> "record" @:: Eval -> Eval
+etaRecord fields e = ERecordTm mempty $ Map.mapWithKey (const . doField e) fields
 
 -- Inline the global if it has reached its arity and its arguments are not all
 -- neutrals themselves, otherwise keep it “neutral”.
@@ -239,10 +248,13 @@ evaling = \case
   TCase meta motive cases inspect -> \ctx ->
     case undeferred $ evaling inspect ctx of
       EConstr _meta (_tyName, conName) _params args ->
-        checkGlobal ctx $ doApps (evaling (cases Map.! conName) ctx) (Stack.fromFoldable args)
+        checkGlobal ctx $ doApps (doField (evaling cases ctx) conName) (Stack.fromFoldable args)
       ENeut (Neutral focus prjs) ->
-        checkGlobal ctx $ ENeut (Neutral focus (prjs :> NCase meta (evaling motive ctx) (eval ctx <$> cases)))
+        checkGlobal ctx $ ENeut (Neutral focus (prjs :> NCase meta (evaling motive ctx) (evaling cases ctx)))
       _ -> error "Type error: cannot case on non-inductive"
+  TRecordTy meta fields -> ERecordTy meta <$> traverse evaling fields
+  TRecordTm meta fields -> ERecordTm meta <$> traverse evaling fields
+  TField meta focus field -> doPrj <$> evaling focus <*> pure (NField meta field)
   TLift meta ty -> ELift meta <$> evaling ty
   TQuote meta tm -> doQuote meta <$> evaling tm
   TSplice meta tm -> doSplice meta <$> evaling tm
@@ -288,7 +300,8 @@ eval2termWith forceGlobals handleClosure = \case
         NFst meta -> TFst meta soFar
         NSnd meta -> TSnd meta soFar
         NSplice meta -> TSplice meta soFar
-        NCase meta motive cases -> TCase meta (e2t motive ctx) (flip e2t ctx <$> cases) soFar
+        NCase meta motive cases -> TCase meta (e2t motive ctx) (e2t cases ctx) soFar
+        NField meta field -> TField meta soFar field
       go Nil result = result
     in go prjs base
   EUniv meta univ -> pure $ TUniv meta univ
@@ -304,6 +317,8 @@ eval2termWith forceGlobals handleClosure = \case
     TTyCtor meta name <$> traverse e2t params <*> traverse e2t indices
   EConstr meta name params args ->
     TConstr meta name <$> traverse e2t params <*> traverse e2t args
+  ERecordTy meta fields -> TRecordTy meta <$> traverse e2t fields
+  ERecordTm meta fields -> TRecordTm meta <$> traverse e2t fields
   EDeferred _ _ _ _ tm -> e2t tm
   ELift meta ty -> TLift meta <$> e2t ty
   EQuote meta tm -> TQuote meta <$> e2t tm
@@ -366,7 +381,10 @@ shiftFrom base delta = \case
   TApp meta fun arg -> TApp meta (go fun) (go arg)
   TTyCtor meta name params indices -> TTyCtor meta name (go <$> params) (go <$> indices)
   TConstr meta name params args -> TConstr meta name (go <$> params) (go <$> args)
-  TCase meta motive cases inspect -> TCase meta (go motive) (go <$> cases) (go inspect)
+  TCase meta motive cases inspect -> TCase meta (go motive) (go cases) (go inspect)
+  TRecordTy meta fields -> TRecordTy meta (go <$> fields)
+  TRecordTm meta fields -> TRecordTm meta (go <$> fields)
+  TField meta focus field -> TField meta (go focus) field
   TLift meta ty -> TLift meta $ go ty
   TQuote meta tm -> TQuote meta $ go tm
   TSplice meta tm -> TSplice meta $ go tm

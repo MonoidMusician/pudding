@@ -132,8 +132,23 @@ printCore = \case
     sexp
       [ pure "case"
       , printCore motive
-      , sexp $ (\(name, fn) -> sexp [ pure $ Doc.pretty name, printCore fn ]) <$> Map.toList cases
+      , printCore cases
       , printCore inspect
+      ]
+  TRecordTy _m fields ->
+    sexp
+      [ pure "Record"
+      , foldMap (\(name, fn) -> sexp [ pure $ Doc.pretty name, printCore fn ]) (Map.toList fields)
+      ]
+  TRecordTm _m fields ->
+    sexp
+      [ pure "record"
+      , foldMap (\(name, fn) -> sexp [ pure $ Doc.pretty name, printCore fn ]) (Map.toList fields)
+      ]
+  TField _m focus field ->
+    sexp
+      [ pure $ "." <> Doc.pretty field
+      , printCore focus
       ]
   TLift _m ty -> sexp [ pure "Lift", printCore ty ]
   TQuote _m ty -> sexp [ pure "quote", printCore ty ]

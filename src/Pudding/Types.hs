@@ -177,13 +177,16 @@ data Term
   -- | TElim
   --     Metadata
   --     ("motive" @:: Term)
-  --     ("cases" @:: Map Name Term)
+  --     ("cases" @:: Term)
   --     !("inspect" @:: Term)
   | TCase
       Metadata
       ("motive" @:: Term)
-      ("cases" @:: Map Name Term)
+      ("cases" @:: Term)
       !("inspect" @:: Term)
+  | TRecordTy Metadata (Map Name Term)
+  | TRecordTm Metadata (Map Name Term)
+  | TField Metadata Term Name
   | TLift Metadata Term
   | TQuote Metadata Term
   | TSplice Metadata Term
@@ -236,6 +239,8 @@ data Eval
       !("type name" @:: Name, "constr name" @:: Name)
       ("params" @:: Vector Eval)
       ("args" @:: Vector Eval)
+  | ERecordTy Metadata (Map Name Eval)
+  | ERecordTm Metadata (Map Name Eval)
   | EDeferred ("reason" @:: Meta Text) ("type" @:: Eval) !("sharing" @:: Maybe (StableName Eval)) Metadata ("deferred term" @:: Eval)
   | ELift Metadata Eval
   | EQuote Metadata Eval
@@ -272,7 +277,8 @@ data NeutPrj
   | NCase
       Metadata
       ("motive" @:: Eval)
-      !("cases" @:: Map Name Eval)
+      !("cases" @:: Eval)
+  | NField Metadata Name
   deriving (Generic, NFData)
 
 -- Alternatively: we could just implement it as a recursive type
@@ -456,8 +462,18 @@ instance HasMetadata Term where
       TCase
         <$> f old
         <.*> traverseMetadataDepth d (apply f) motive
-        <.*> traverse (traverseMetadataDepth d (apply f)) cases
+        <.*> traverseMetadataDepth d (apply f) cases
         <.*> traverseMetadataDepth d (apply f) inspect
+    TRecordTy old fields -> TRecordTy
+      <$> f old
+      <.*> traverse (traverseMetadataDepth d (apply f)) fields
+    TRecordTm old fields -> TRecordTm
+      <$> f old
+      <.*> traverse (traverseMetadataDepth d (apply f)) fields
+    TField old focus field -> TField
+      <$> f old
+      <.*> traverseMetadataDepth d (apply f) focus
+      <.*> pure field
     TLift old t -> TLift <$> f old <.*> traverseMetadataDepth d (apply f) t
     TQuote old t -> TQuote <$> f old <.*> traverseMetadataDepth d (apply f) t
     TSplice old t -> TSplice <$> f old <.*> traverseMetadataDepth d (apply f) t
@@ -505,6 +521,12 @@ instance HasMetadata Eval where
         -- Traverse term first!
         <$> traverseMetadata1Depth d f term
         <.*> traverseMetadataDepth d (apply f) ty
+    ERecordTy old fields -> ERecordTy
+      <$> f old
+      <.*> traverse (traverseMetadataDepth d (apply f)) fields
+    ERecordTm old fields -> ERecordTm
+      <$> f old
+      <.*> traverse (traverseMetadataDepth d (apply f)) fields
     ELift old t -> ELift <$> f old <.*> traverseMetadataDepth d (apply f) t
     EQuote old t -> EQuote <$> f old <.*> traverseMetadataDepth d (apply f) t
 
@@ -532,7 +554,8 @@ instance HasMetadata NeutPrj where
       NCase
         <$> f old
         <.*> traverseMetadataDepth d (apply f) motive
-        <.*> traverse (traverseMetadataDepth d (apply f)) cases
+        <.*> traverseMetadataDepth d (apply f) cases
+    NField old name -> NField <$> f old <.*> pure name
 
 instance HasMetadata Closure where
   traverseMetadata1Depth d f (Closure bdr ctx term) =

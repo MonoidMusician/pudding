@@ -73,7 +73,7 @@ parensMany = parens . many
 
 ident :: Parser Name
 ident = do
-  t <- word $ (:) <$> P.letter <*> many P.alphaNum
+  t <- word $ (:) <$> P.letter <*> many (P.alphaNum <|> P.char '_')
   tbl <- asks table
   internalize tbl $ T.pack t
 
@@ -127,17 +127,25 @@ term = var <|> (lp *> (P.choice terms <|> app) <* rp)
         lvl <- P.option 0 int
         pure \meta -> TUniv meta (univKind lvl)
     , trackMeta do
+        _ <- keyword ["Record"]
+        fields <- P.many $ parens $ liftA2 (,) ident term
+        pure \meta -> TRecordTy meta $ Map.fromList fields
+    , trackMeta do
+        _ <- keyword ["record"]
+        fields <- P.many $ parens $ liftA2 (,) ident term
+        pure \meta -> TRecordTm meta $ Map.fromList fields
+    , trackMeta do
         _ <- keyword ["case"]
         motive <- term
-        cases <- parens $ P.many $ parens $ liftA2 (,) ident term
+        cases <- term
         inspect <- term
-        pure \meta -> TCase meta motive (Map.fromList cases) inspect
+        pure \meta -> TCase meta motive cases inspect
     , trackMeta do
         _ <- keyword ["caseOn"]
         motive <- term
         inspect <- term
-        cases <- parens $ P.many $ parens $ liftA2 (,) ident term
-        pure \meta -> TCase meta motive (Map.fromList cases) inspect
+        cases <- term
+        pure \meta -> TCase meta motive cases inspect
     ]
 
 data ParseCtx = ParseCtx

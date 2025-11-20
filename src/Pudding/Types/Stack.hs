@@ -1,3 +1,4 @@
+{-# LANGUAGE QuantifiedConstraints #-}
 module Pudding.Types.Stack where
 
 import Control.DeepSeq (NFData)
@@ -10,6 +11,7 @@ import Prettyprinter (Pretty)
 import Data.Monoid (Dual(Dual, getDual))
 import Control.Applicative.Backwards (Backwards(Backwards, forwards))
 import Data.Foldable (foldl')
+import qualified Data.Vector as Vector
 
 -- | Finite mapping of indices `i` to elements `Elem`
 class StackLike c where
@@ -23,6 +25,13 @@ class StackLike c where
   empty :: c
   push' :: c -> Elem c -> c
   pop :: c -> Maybe (c, Elem c)
+
+class (Traversable f, forall t. StackLike (f t)) => StackFunctor f where
+  mapWithLevel :: ((Level, Index) -> x -> y) -> (f x -> f y)
+  toLevels :: f x -> f Level
+  toLevels = mapWithLevel \(lvl, _) _ -> lvl
+  toIndices :: f x -> f Index
+  toIndices = mapWithLevel \(_, idx) _ -> idx
 
 push :: StackLike c => Elem c -> c -> (Level, c)
 push e c = (Level (size c), push' c e)
@@ -47,6 +56,17 @@ instance StackLike Int where
   push' i _ = i + 1
   pop 0 = Nothing
   pop n = Just (n - 1, ())
+
+instance StackLike (Vector.Vector t) where
+  type Elem (Vector.Vector t) = t
+  v @@ i = v Vector.! case level v (index v i) of Level lvl -> lvl
+  size = Vector.length
+  empty = Vector.empty
+  push' = Vector.snoc
+  pop = Vector.unsnoc
+
+instance StackFunctor Vector.Vector where
+  mapWithLevel f v = Vector.imap (\i -> f (Level i, index v (Level i))) v
 
 -- DeBruijn index: 0 is the most recently bound variable (inner scope). Useful
 -- for syntax manipulation: closed terms have well-defined semantics with
@@ -114,6 +134,10 @@ instance StackLike (Stack a) where
   pop (Stack sz elems) = do
     (x, xs) <- RAL.uncons elems
     return (Stack (sz - 1) xs, x)
+
+instance StackFunctor Stack where
+  mapWithLevel f (Stack sz elems) = Stack sz
+    (RAL.imap (\i -> f (level sz (Index i), Index i)) elems)
 
 -- | Construct a stack, `head` being the outermost binder
 stack :: Iso [a] [b] (Stack a) (Stack b)

@@ -22,17 +22,26 @@
 (inductive Decide ((P (Type0))) ()
   (proven ((proof P))) (disproven ((disproof (Not P)))))
 
+(inductive Eq ((T (Type0))) ((x T) (z T))
+  (refl ((y T)) ((y) (y))))
+
 (define not
   (lambda (b Bool)
     (caseOn (lambda (b Bool) Bool) b
-      ((true false) (false true)))))
+      (record (true false) (false true)))))
+
+(define not_not
+  (lambda (b Bool)
+    (caseOn (lambda (b Bool) (Eq Bool (not (not b)) b)) b
+      (record (true (refl Bool true)) (false (refl Bool false))))))
 
 (define isJust
   (lambda (T (Type0))
     (lambda (m (Maybe T))
       (caseOn (lambda (m (Maybe T)) Bool) m
-        ((nothing false)
-         (just (lambda (v T) true)))))))
+        (record
+          (nothing false)
+          (just (lambda (v T) true)))))))
 
 -- Tests
 
@@ -49,8 +58,22 @@
     (defEq (not true) (false))
     (defEq (not false) (true))))
 
-(namedTest "isJust/typechecks"
-  (hasType (Pi (T (Type0)) (Pi (m (Maybe T)) Bool)) (isJust)))
-(namedTest "isJust/specializes"
-  (hasType (Pi (m (Maybe Unit)) Bool) (isJust Unit)))
+(namedTest "not_not"
+  (namedTest "typechecks"
+    (hasType (Pi (b Bool) (Eq Bool (not (not b)) b)) (not_not)))
+  (namedTest "reduces"
+    (defEq (not_not true) (refl Bool true))
+    (defEq (not_not false) (refl Bool false))))
+
+(namedTest "isJust"
+  (namedTest "typechecks"
+    (hasType (Pi (T (Type0)) (Pi (m (Maybe T)) Bool)) (isJust)))
+  (namedTest "specializes"
+    (hasType (Pi (m (Maybe Unit)) Bool) (isJust Unit)))
+  (namedTest "reduces"
+    (defEq (isJust Unit (nothing Unit)) (false))
+    (defEq (isJust Unit (just Unit unit)) (true))
+
+    (defEq (lambda (T (Type0)) (isJust T (nothing T))) (lambda (T (Type0)) false))
+    (defEq (lambda (T (Type0)) (lambda (t T) (isJust T (just T t)))) (lambda (T (Type0)) (lambda (t T) true)))))
 
