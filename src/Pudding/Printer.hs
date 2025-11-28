@@ -122,18 +122,18 @@ printCore = \case
       , printCore <$> Vector.toList params
       , printCore <$> Vector.toList indices
       ]
-  TConstr _m (_, name) params args ->
+  TTmCtor _m (_, name) params args ->
     sexp $ join
       [ pure $ pure $ "$" <> Doc.pretty name
       , printCore <$> Vector.toList params
       , printCore <$> Vector.toList args
       ]
-  TCase _m motive cases inspect ->
+  TCase _m motive cases scrutinee ->
     sexp
       [ pure "case"
       , printCore motive
       , printCore cases
-      , printCore inspect
+      , printCore scrutinee
       ]
   TRecordTy _m fields ->
     sexp

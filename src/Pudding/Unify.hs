@@ -65,19 +65,19 @@ bootGlobalTypes globals =
   where
   disjointUnion = Map.unionWithKey \k _ _ -> error $ "Duplicate global: " <> show k
   fakeGlobal tm = GlobalDefn (arityOfTerm tm) undefined (GlobalTerm tm undefined)
-  constructors = fold . Map.mapWithKey \tyName -> \case
+  constructors = fold . Map.mapWithKey \typeName -> \case
     GlobalTypeInfo { typeParams, typeIndices, typeConstrs } -> fold
       -- The type constructor: take all of the parameters and the indices,
       -- and then make the fully applied type constructor term.
-      [ Map.singleton tyName $ fakeGlobal $
+      [ Map.singleton typeName $ fakeGlobal $
           abstract (Vector.toList typeParams <> Vector.toList typeIndices) $
-            TTyCtor mempty tyName (toVars (Vector.length typeIndices) typeParams) (toVars 0 typeIndices)
+            TTyCtor mempty typeName (toVars (Vector.length typeIndices) typeParams) (toVars 0 typeIndices)
       -- The term constructors: take all of the parameters and constructor
       -- arguments, then make the fully applied inductive constructor. (Note
       -- that the type indices are inferred from the parameters and arguments.)
-      , flip Map.mapWithKey typeConstrs \conName (ConstructorInfo { ctorArguments }) -> fakeGlobal $
+      , flip Map.mapWithKey typeConstrs \ctorName (ConstructorInfo { ctorArguments }) -> fakeGlobal $
           abstract (Vector.toList typeParams <> Vector.toList ctorArguments) $
-            TConstr mempty (tyName, conName) (toVars (Vector.length ctorArguments) typeParams) (toVars 0 ctorArguments)
+            TTmCtor mempty (typeName, ctorName) (toVars (Vector.length ctorArguments) typeParams) (toVars 0 ctorArguments)
       ]
   -- Form repeated lambdas to turn the raw constructor into a curried function
   abstract ((p, b, paramType) : more) focus =
@@ -123,7 +123,7 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
       && all (uncurry cc) (Vector.zip paramsL paramsR)
       && List.length indicesL == List.length indicesR
       && all (uncurry cc) (Vector.zip indicesL indicesR)
-  (EConstr _ nameL paramsL argsL, EConstr _ nameR paramsR argsR) ->
+  (ETmCtor _ nameL paramsL argsL, ETmCtor _ nameR paramsR argsR) ->
     nameL == nameR
       && List.length paramsL == List.length paramsR
       && all (uncurry cc) (Vector.zip paramsL paramsR)
@@ -299,7 +299,7 @@ validateOrNot seqOrConst ctx = \case
     (EPi _ _ _ argTyExpected body, argTyActual) ->
       cc "argument type mismatch" argTyExpected argTyActual `seq` instantiateClosure body (evalHere arg)
     _ -> error "Bad app"
-  TTyCtor _ tyName params indices -> case Map.lookup tyName (globalTypes $ ctxGlobals ctx) of
+  TTyCtor _ typeName params indices -> case Map.lookup typeName (globalTypes $ ctxGlobals ctx) of
     Just (GlobalTypeInfo { typeParams, typeIndices, typeConstrs = _ }) ->
       checkFor "Wrong number of parameters" (Vector.length params == Vector.length typeParams) `seqOrConst`
       checkFor "Wrong number of indices" (Vector.length indices == Vector.length typeIndices) `seqOrConst`
@@ -308,9 +308,9 @@ validateOrNot seqOrConst ctx = \case
       -- FIXME: do a proper universe check
       EUniv mempty (UBase 0)
     _ -> error "Bad type constructor name"
-  TConstr _ (tyName, conName) params args -> case Map.lookup tyName (globalTypes $ ctxGlobals ctx) of
+  TTmCtor _ (typeName, ctorName) params args -> case Map.lookup typeName (globalTypes $ ctxGlobals ctx) of
     Just (GlobalTypeInfo { typeParams, typeIndices = _, typeConstrs })
-      | Just (ConstructorInfo { ctorArguments, ctorIndices }) <- Map.lookup conName typeConstrs ->
+      | Just (ConstructorInfo { ctorArguments, ctorIndices }) <- Map.lookup ctorName typeConstrs ->
       checkFor "Wrong number of parameters" (Vector.length params == Vector.length typeParams) `seqOrConst`
       validateTelescope "Invalid constructor parameter" 0 ctx params (ctxOfGlobals $ ctxGlobals ctx) typeParams \ctxParams ->
       validateTelescope "Invalid constructor argument" 0 ctx args ctxParams ctorArguments \ctxArgs ->
@@ -320,19 +320,19 @@ validateOrNot seqOrConst ctx = \case
           -- then we need to evaluate the indices, now that the arguments are
           -- all bound as well
           indexValues = eval ctxArgs <$> ctorIndices
-        in ETyCtor mempty tyName paramValues indexValues
+        in ETyCtor mempty typeName paramValues indexValues
     _ -> error "Bad constructor name"
-  TCase _ motive cases inspect ->
+  TCase _ motive cases scrutinee ->
     let motiveHere = evalHere motive in
-    flip seqOrConst (doApp motiveHere (evalHere inspect))
-    case vvv inspect of
-      ETyCtor _ tyName chosenParams _ | applyParams <- Stack.fromFoldable chosenParams ->
-        case Map.lookup tyName (globalTypes $ ctxGlobals ctx) of
+    flip seqOrConst (doApp motiveHere (evalHere scrutinee))
+    case vvv scrutinee of
+      ETyCtor _ typeName chosenParams _ | applyParams <- Stack.fromFoldable chosenParams ->
+        case Map.lookup typeName (globalTypes $ ctxGlobals ctx) of
           Just tyInfo ->
-            cc "case motive" (vv motive) (doApps (ee (makeMotiveType tyName tyInfo)) applyParams)
+            cc "case motive" (vv motive) (doApps (ee (makeMotiveType typeName tyInfo)) applyParams)
               `seqOrConst`
             let
-              !caseRecordType = {- traceEval "caseRecordType" $ -} ee (makeCaseRecordType tyName tyInfo)
+              !caseRecordType = {- traceEval "caseRecordType" $ -} ee (makeCaseRecordType typeName tyInfo)
               !caseType = {- traceEval "caseType" $ -} checkGlobal ctx $ doApps caseRecordType (applyParams :> motiveHere)
             in cc "Wrong case types" caseType (vv cases) `seqOrConst` True
           _ -> error "Undefined type constructor"
@@ -428,7 +428,7 @@ alignAll xs ys f = and $ ialignWith f xs ys
 -- We need to abstract over the *parameters* of the type, so to keep it as a
 -- closed term, we take those as lambda arguments for the caller to apply.
 makeMotiveType :: Name -> GlobalTypeInfo -> Term
-makeMotiveType tyName (GlobalTypeInfo { typeParams, typeIndices }) =
+makeMotiveType typeName (GlobalTypeInfo { typeParams, typeIndices }) =
   let
     -- Make a telescope of *lambdas* to accept the chosen parameter types
     prependParams inner = foldr prependParam inner typeParams
@@ -443,7 +443,7 @@ makeMotiveType tyName (GlobalTypeInfo { typeParams, typeIndices }) =
     -- Level <$> (#indices - 1)..0
     chosenParam i = TVar mempty $ Index $ (length typeParams - 1 - i) + length typeIndices
     chosenIndex i = TVar mempty $ Index $ (length typeIndices - 1 - i) + 0
-    chosenType = TTyCtor mempty tyName
+    chosenType = TTyCtor mempty typeName
       (Vector.imap (const . chosenParam) typeParams)
       (Vector.imap (const . chosenIndex) typeIndices)
     -- And a motive takes that specific type and returns the goal type for it
@@ -451,14 +451,14 @@ makeMotiveType tyName (GlobalTypeInfo { typeParams, typeIndices }) =
   in prependParams $ prependIndices $ motive
 
 makeCaseRecordType :: Name -> GlobalTypeInfo -> Term
-makeCaseRecordType tyName tyInfo@(GlobalTypeInfo { typeParams, typeConstrs }) =
+makeCaseRecordType typeName tyInfo@(GlobalTypeInfo { typeParams, typeConstrs }) =
   let
     -- Make a telescope of *lambdas* to accept the chosen parameter types
     prependParams inner = foldr prependParam inner typeParams
     prependParam (p, b, paramType) inner =
       TLambda mempty p b paramType $ Scoped inner
     -- Now take a motive for those parameters
-    abstractedMotiveType = makeMotiveType tyName tyInfo
+    abstractedMotiveType = makeMotiveType typeName tyInfo
     chosenParamForMotive i = TVar mempty $ Index $ (length typeParams - 1 - i)
     chosenMotiveType = Vector.ifoldl
       (\motiveTypeFn i _ -> TApp mempty motiveTypeFn $ chosenParamForMotive i)
@@ -469,20 +469,20 @@ makeCaseRecordType tyName tyInfo@(GlobalTypeInfo { typeParams, typeConstrs }) =
       abstracted typeParams
     applyParamsAndMotive abstracted =
       TApp mempty (applyParams abstracted) $ TVar mempty $ Index 0
-    caseTypes = typeConstrs & Map.mapWithKey \conName ctorInfo ->
-      applyParamsAndMotive $ makeCaseFnType tyName tyInfo conName ctorInfo
+    caseTypes = typeConstrs & Map.mapWithKey \ctorName ctorInfo ->
+      applyParamsAndMotive $ makeCaseFnType typeName tyInfo ctorName ctorInfo
   in prependParams $ prependMotive $ TRecordTy mempty $ caseTypes
 
 -- TODO: share this evaluation
 makeCaseFnType :: Name -> GlobalTypeInfo -> Name -> ConstructorInfo -> Term
-makeCaseFnType tyName tyInfo@(GlobalTypeInfo { typeParams, typeIndices = _ }) conName (ConstructorInfo { ctorArguments, ctorIndices }) =
+makeCaseFnType typeName tyInfo@(GlobalTypeInfo { typeParams, typeIndices = _ }) ctorName (ConstructorInfo { ctorArguments, ctorIndices }) =
   let
     -- Make a telescope of *lambdas* to accept the chosen parameter types
     prependParams inner = foldr prependParam inner typeParams
     prependParam (p, b, paramType) inner =
       TLambda mempty p b paramType $ Scoped inner
     -- Now take a motive for those parameters
-    abstractedMotiveType = makeMotiveType tyName tyInfo
+    abstractedMotiveType = makeMotiveType typeName tyInfo
     chosenParamForMotive i = TVar mempty $ Index $ (length typeParams - 1 - i)
     chosenMotiveType = Vector.ifoldl
       (\motiveTypeFn i _ -> TApp mempty motiveTypeFn $ chosenParamForMotive i)
@@ -498,7 +498,7 @@ makeCaseFnType tyName tyInfo@(GlobalTypeInfo { typeParams, typeIndices = _ }) co
     -- (The parameters have shifted)
     chosenParam i = TVar mempty $ Index $ (length typeParams - 1 - i) + 1 {- motive -} + length ctorArguments
     -- ... So we can reconstruct the inspected value
-    chosenValue = TConstr mempty (tyName, conName)
+    chosenValue = TTmCtor mempty (typeName, ctorName)
       (Vector.imap (const . chosenParam) typeParams)
       (Vector.imap (const . chosenArgument) ctorArguments)
     -- And we know the abstract motive, waiting for indices and the constructed value

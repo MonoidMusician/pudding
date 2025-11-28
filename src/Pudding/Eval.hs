@@ -60,8 +60,8 @@ doPrj (EPair _ _ left _) (NFst _) = left
 doPrj (EPair _ _ _ right) (NSnd _) = right
 doPrj (ELambda _ _ _ _ body) (NApp _ arg) = instantiateClosure body arg
 doPrj (ERecordTm _ fields) (NField _ name) = fields Map.! name
-doPrj (EConstr _meta (_tyName, conName) _params args) (NCase _ _ cases) =
-  doApps (doField cases conName) (Stack.fromFoldable args)
+doPrj (ETmCtor _meta (_tyName, ctorName) _params args) (NCase _ _ cases) =
+  doApps (doField cases ctorName) (Stack.fromFoldable args)
 doPrj (EDeferred _ _ _ _ term) prj = doPrj term prj
 doPrj e prj = error $ mconcat
   [ "Type error in doPrj "
@@ -244,11 +244,11 @@ evaling = \case
   -- neutrals for abstract variables, which are introduced *outside* of eval.
   THole meta hole -> pure $ ENeut (Neutral (NHole meta hole) Nil)
   TTyCtor meta name params indices -> ETyCtor meta name <$> traverse evaling params <*> traverse evaling indices
-  TConstr meta name params args -> EConstr meta name <$> traverse evaling params <*> traverse evaling args
-  TCase meta motive cases inspect -> \ctx ->
-    case undeferred $ evaling inspect ctx of
-      EConstr _meta (_tyName, conName) _params args ->
-        checkGlobal ctx $ doApps (doField (evaling cases ctx) conName) (Stack.fromFoldable args)
+  TTmCtor meta name params args -> ETmCtor meta name <$> traverse evaling params <*> traverse evaling args
+  TCase meta motive cases scrutinee -> \ctx ->
+    case undeferred $ evaling scrutinee ctx of
+      ETmCtor _meta (_tyName, ctorName) _params args ->
+        checkGlobal ctx $ doApps (doField (evaling cases ctx) ctorName) (Stack.fromFoldable args)
       ENeut (Neutral focus prjs) ->
         checkGlobal ctx $ ENeut (Neutral focus (prjs :> NCase meta (evaling motive ctx) (evaling cases ctx)))
       _ -> error "Type error: cannot case on non-inductive"
@@ -315,8 +315,8 @@ eval2termWith forceGlobals handleClosure = \case
     TPair meta <$> e2t ty <*> e2t left <*> e2t right
   ETyCtor meta name params indices ->
     TTyCtor meta name <$> traverse e2t params <*> traverse e2t indices
-  EConstr meta name params args ->
-    TConstr meta name <$> traverse e2t params <*> traverse e2t args
+  ETmCtor meta name params args ->
+    TTmCtor meta name <$> traverse e2t params <*> traverse e2t args
   ERecordTy meta fields -> TRecordTy meta <$> traverse e2t fields
   ERecordTm meta fields -> TRecordTm meta <$> traverse e2t fields
   EDeferred _ _ _ _ tm -> e2t tm
@@ -380,8 +380,8 @@ shiftFrom base delta = \case
   TSnd meta tm -> TSnd meta $ go tm
   TApp meta fun arg -> TApp meta (go fun) (go arg)
   TTyCtor meta name params indices -> TTyCtor meta name (go <$> params) (go <$> indices)
-  TConstr meta name params args -> TConstr meta name (go <$> params) (go <$> args)
-  TCase meta motive cases inspect -> TCase meta (go motive) (go cases) (go inspect)
+  TTmCtor meta name params args -> TTmCtor meta name (go <$> params) (go <$> args)
+  TCase meta motive cases scrutinee -> TCase meta (go motive) (go cases) (go scrutinee)
   TRecordTy meta fields -> TRecordTy meta (go <$> fields)
   TRecordTm meta fields -> TRecordTm meta (go <$> fields)
   TField meta focus field -> TField meta (go focus) field

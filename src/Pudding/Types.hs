@@ -167,9 +167,9 @@ data Term
       ("indices" @:: Vector Term)
   | -- A term constructor: the actual constructor of the inductive type applied
     -- to its arguments (from which the indices are also derived)
-    TConstr
+    TTmCtor
       Metadata
-      !("type name" @:: Name, "constr name" @:: Name)
+      !("type name" @:: Name, "constructor name" @:: Name)
       ("params" @:: Vector Term)
       -- args are the actual data stored in the constructor, from which the
       -- indices are inferred based on the constructor declaration
@@ -178,12 +178,12 @@ data Term
   --     Metadata
   --     ("motive" @:: Term)
   --     ("cases" @:: Term)
-  --     !("inspect" @:: Term)
+  --     !("scrutinee" @:: Term)
   | TCase
       Metadata
       ("motive" @:: Term)
       ("cases" @:: Term)
-      !("inspect" @:: Term)
+      !("scrutinee" @:: Term)
   | TRecordTy Metadata (Map Name Term)
   | TRecordTm Metadata (Map Name Term)
   | TField Metadata Term Name
@@ -234,7 +234,7 @@ data Eval
       !("type name" @:: Name)
       ("params" @:: Vector Eval)
       ("indices" @:: Vector Eval)
-  | EConstr
+  | ETmCtor
       Metadata
       !("type name" @:: Name, "constr name" @:: Name)
       ("params" @:: Vector Eval)
@@ -453,17 +453,17 @@ instance HasMetadata Term where
         <$> f old
         <.*> traverse (traverseMetadataDepth d (apply f)) params
         <.*> traverse (traverseMetadataDepth d (apply f)) indices
-    TConstr old name params args ->
-      (\new -> TConstr new name)
+    TTmCtor old name params args ->
+      (\new -> TTmCtor new name)
         <$> f old
         <.*> traverse (traverseMetadataDepth d (apply f)) params
         <.*> traverse (traverseMetadataDepth d (apply f)) args
-    TCase old motive cases inspect ->
+    TCase old motive cases scrutinee ->
       TCase
         <$> f old
         <.*> traverseMetadataDepth d (apply f) motive
         <.*> traverseMetadataDepth d (apply f) cases
-        <.*> traverseMetadataDepth d (apply f) inspect
+        <.*> traverseMetadataDepth d (apply f) scrutinee
     TRecordTy old fields -> TRecordTy
       <$> f old
       <.*> traverse (traverseMetadataDepth d (apply f)) fields
@@ -511,8 +511,8 @@ instance HasMetadata Eval where
         <$> f old
         <.*> traverse (traverseMetadataDepth d (apply f)) params
         <.*> traverse (traverseMetadataDepth d (apply f)) indices
-    EConstr old name params args ->
-      (\new -> EConstr new name)
+    ETmCtor old name params args ->
+      (\new -> ETmCtor new name)
         <$> f old
         <.*> traverse (traverseMetadataDepth d (apply f)) params
         <.*> traverse (traverseMetadataDepth d (apply f)) args

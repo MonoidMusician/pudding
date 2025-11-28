@@ -138,14 +138,14 @@ term = var <|> (lp *> (P.choice terms <|> app) <* rp)
         _ <- keyword ["case"]
         motive <- term
         cases <- term
-        inspect <- term
-        pure \meta -> TCase meta motive cases inspect
+        scrutinee <- term
+        pure \meta -> TCase meta motive cases scrutinee
     , trackMeta do
         _ <- keyword ["caseOn"]
         motive <- term
-        inspect <- term
+        scrutinee <- term
         cases <- term
-        pure \meta -> TCase meta motive cases inspect
+        pure \meta -> TCase meta motive cases scrutinee
     ]
 
 data ParseCtx = ParseCtx
@@ -225,13 +225,13 @@ binderList cont = lp *> go []
 
 assembleInductive :: Name -> [Binding] -> [Binding] -> [(Name, ([Binding], [Term]))] -> Parser GlobalTypeInfo
 assembleInductive typeName parameters indices constrs = do
-  constructors <- checkMap "constructors" constrs >>= Map.traverseWithKey \conName (args, chosen) -> do
+  constructors <- checkMap "constructors" constrs >>= Map.traverseWithKey \ctorName (args, chosen) -> do
     when (L.length chosen /= L.length indices) do
       fail $ mconcat
         [ "Gave "
         , show $ L.length chosen
         , " indices in constructor "
-        , show conName
+        , show ctorName
         , " but needed "
         , show $ L.length indices
         ]
@@ -272,9 +272,9 @@ declaration = parens $ P.choice
         -- Indices can vary between constructors
         indices <- binderList pure
         constructors <- many $ parens do
-          conName <- ident
+          ctorName <- ident
           -- So each constructor binds data arguments
-          fmap (conName,) $ P.option ([], []) $ binderList \args ->
+          fmap (ctorName,) $ P.option ([], []) $ binderList \args ->
             -- And says what each index should be
             fmap (args,) $ P.option [] $ parensMany term
         info <- assembleInductive typeName parameters indices constructors
