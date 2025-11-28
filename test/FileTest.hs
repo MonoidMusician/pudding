@@ -14,6 +14,8 @@ import Pudding.Unify (bootGlobals)
 import Control.Monad.Trans.Class (MonadTrans(lift))
 import Control.Monad.Trans.Cont (ContT (ContT))
 import qualified Data.Text.IO.Utf8 as Text
+import Control.Monad.Reader.Class (MonadReader(local))
+import Pudding.Name (canonicalName)
 
 plumTest :: TestSuite
 plumTest = TestSuite "PlumTests" do
@@ -62,12 +64,12 @@ testAction = P.try do lp *> testActions <* rp
         name <- str
         ContT inner <- plumStatements
         pure $ ContT (=<< testCase (T.unpack name) (inner pure))
-    -- , do
-    --     _ <- keyword ["parameter"]
-    --     name <- ident
-    --     ty <- term
-    --     ContT inner <- plumStatements
-    --     pure $ ContT (=<< addVar (nameText name) ty (inner pure))
+    , do
+        _ <- keyword ["parameter"]
+        name <- ident
+        ty <- term
+        ContT inner <- local (bindIdent name) plumStatements
+        pure $ ContT (=<< addParam name ty (inner pure))
     ]
 
 runPlumFile :: String -> Test () ()
@@ -85,24 +87,29 @@ runPlumSource sourceName source = do
 plumContents :: Parser (Test () ())
 plumContents = uncont <$> plumStatements
 
--- Bare globals, lazily booted globals
-type RunningEnv = (Globals, Globals)
+-- Bare globals, and local parameters with lazily booted globals
+type RunningEnv = (Globals, Ctx (Name, Term))
 -- Turn reader into state, basically
 type PlumTest = ContT () (Test RunningEnv) ()
 
 uncont :: PlumTest -> Test () ()
 uncont (ContT withFinish) =
-  withContext (freshGlobals, freshGlobals) $
+  withContext (freshGlobals, ctxOfGlobals freshGlobals) $
     withFinish \() -> pure ()
 
 intoEnv :: (Name, GlobalInfo) -> PlumTest
 intoEnv (name, entry) = ContT \cont ->
   changeContext envppend (cont ())
   where
-  envppend (prev, _) =
+  envppend (prev, Ctx _ params) =
     let globals = addGlobal prev name entry in
-    (globals, bootGlobals globals)
+    (globals, Ctx (bootGlobals globals) params)
 
 inEnv :: EvalTest () -> PlumTest
 inEnv wrapped = lift $
-  changeContext (ctxOfGlobals . snd) wrapped
+  changeContext snd wrapped
+
+addParam :: Name -> Term -> Test RunningEnv a -> Test RunningEnv a
+addParam name ty inner = do
+  local (fmap \ctx -> ctx :> (BVar (Meta (canonicalName name)), (name, ty))) do
+    inner

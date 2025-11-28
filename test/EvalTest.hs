@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wno-type-defaults #-}
 module EvalTest where
 
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.IO.Class (liftIO, MonadIO)
 import qualified Data.Text as T
 
 import Pudding.Unify ( validateQuoteNeutrals, conversionCheck )
@@ -26,7 +26,9 @@ default (Text)
 type EvalTestCtx = Ctx (Name, "type" @:: Term)
 type EvalTest = Test EvalTestCtx
 
-addVar :: "name" @:: Text -> "type" @:: Term -> EvalTest a -> EvalTest a
+addVar ::
+  (MonadIO m, MonadReader (Ctx (Name, Term)) m) =>
+  Text -> Term -> m a -> m a
 addVar nameText ty inner = do
   name <- liftIO $ internalize globalTable nameText
   local (\ctx -> ctx :> (BVar (Meta (canonicalName name)), (name, ty))) do

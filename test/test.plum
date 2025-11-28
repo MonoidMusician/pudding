@@ -8,6 +8,7 @@
 (inductive Void () ())
 (inductive Unit () () (unit))
 (inductive Bool () () (true) (false))
+(inductive IsTrue () ((b Bool)) (proveTrue () (true)))
 
 -- Non-dependent function type
 (define Fun (lambda (I (Type0)) (lambda (O (Type0)) (Pi (x I) O))))
@@ -77,3 +78,11 @@
     (defEq (lambda (T (Type0)) (isJust T (nothing T))) (lambda (T (Type0)) false))
     (defEq (lambda (T (Type0)) (lambda (t T) (isJust T (just T t)))) (lambda (T (Type0)) (lambda (t T) true)))))
 
+
+(namedTest "isJust"
+  (parameter T (Type0)
+    (namedTest "typechecks"
+      (hasType (Pi (m (Maybe T)) Bool) (isJust T)))
+    (namedTest "reduces"
+      (defEq (isJust T (nothing T)) false)
+      (defEq (lambda (t T) (isJust T (just T t))) (lambda (t T) true)))))
