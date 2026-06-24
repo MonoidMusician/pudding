@@ -253,9 +253,6 @@ data Neutral = Neutral
     -- | Spine of projections/function applications/eliminators to apply,
     -- either to reconstruct the syntax around the variable, or to finish
     -- evaluating it once it is known.
-    --
-    -- This should **really** be a Snoc list (in terms of order of
-    -- evaluation), but I've been lazy thus far.
     neutralSpine :: Stack NeutPrj
   }
   deriving (Generic, NFData)
@@ -280,6 +277,15 @@ data NeutPrj
       !("cases" @:: Eval)
   | NField Metadata Name
   deriving (Generic, NFData)
+
+data Side = Before | After
+neutSide :: NeutPrj -> Side
+neutSide (NApp _ _) = After
+neutSide (NFst _) = Before
+neutSide (NSnd _) = Before
+neutSide (NSplice _) = Before
+neutSide (NCase _ _ _) = Before
+neutSide (NField _ _) = After
 
 -- Alternatively: we could just implement it as a recursive type
 -- Neutral = NVar Level | NFst Neutral | NApp ("fun" @:: Neutral) ("arg" @:: Eval)
@@ -561,3 +567,94 @@ instance HasMetadata Closure where
   traverseMetadata1Depth d f (Closure bdr ctx term) =
     Closure bdr ctx
       <$> traverseMetadata1Depth d f term
+
+data Visit m
+  -- Skip evaluating the children
+  = ShortCircuit m
+  -- Evaluate the children and append this value
+  | Append m
+  -- Customize the result of evaluating the children
+  | Continue (Maybe m -> m)
+
+data Summarize m = Summarize
+  { onEval :: Eval -> Visit m
+  , onNeutPrj :: NeutPrj -> Visit m
+  , onNeutFocus :: NeutFocus -> m
+  , onTerm :: Term -> Visit m
+  }
+
+summarize :: forall m. Semigroup m => Summarize m -> Either Eval Term -> m
+summarize (Summarize { onEval, onNeutPrj, onNeutFocus, onTerm }) =
+  either summarizeEval summarizeTerm
+  where
+  visit :: Visit m -> Maybe m -> m
+  visit (ShortCircuit m) _ = m
+  visit (Append m) Nothing = m
+  visit (Append m) (Just m2) = m <> m2
+  visit (Continue f) mm = f mm
+
+  summarizeTerm = visit <$> onTerm <*> termChildren
+  summarizeEval = visit <$> onEval <*> evalChildren
+
+  summTerm = Just . summarizeTerm
+  summEval = Just . summarizeEval
+  summScoped (Scoped term) = summTerm term
+  summClosure (Closure _ _ term) = summScoped term
+
+  termChildren :: Term -> Maybe m
+  termChildren = \case
+    TVar _ _ -> mempty
+    THole _ _ -> mempty
+    TUniv _ _ -> mempty
+    TGlobal _ _ -> mempty
+    TLambda _ p b ty body -> summTerm ty <> summScoped body
+    TPi _ p b ty body -> summTerm ty <> summScoped body
+    TApp _ fun arg -> summTerm fun <> summTerm arg
+    TSigma _ p b ty body -> summTerm ty <> summScoped body
+    TPair _ t l r -> summTerm t <> summTerm l <> summTerm r
+    TFst _ t -> summTerm t
+    TSnd _ t -> summTerm t
+    TTyCtor _ _ params indices -> foldMap summTerm params <> foldMap summTerm indices
+    TTmCtor _ _ params args -> foldMap summTerm params <> foldMap summTerm args
+    TCase _ motive cases scrutinee -> summTerm motive <> summTerm cases <> summTerm scrutinee
+    TRecordTy _ fields -> foldMap summTerm fields
+    TRecordTm _ fields -> foldMap summTerm fields
+    TField _ focus field -> summTerm focus
+    TLift _ t -> summTerm t
+    TQuote _ t -> summTerm t
+    TSplice _ t -> summTerm t
+
+  handleNeutral :: Stack NeutPrj -> NeutFocus -> m
+  handleNeutral Nil focus = onNeutFocus focus
+  handleNeutral (prjs :> prj) focus =
+    let
+      immediate = neutPrjChildren prj
+      deeper = Just (handleNeutral prjs focus)
+    in visit (onNeutPrj prj) case neutSide prj of
+      Before -> immediate <> deeper
+      After -> deeper <> immediate
+
+  neutPrjChildren :: NeutPrj -> Maybe m
+  neutPrjChildren = \case
+    NApp _ arg -> summEval arg
+    NFst _ -> mempty
+    NSnd _ -> mempty
+    NSplice _ -> mempty
+    NCase _ motive cases -> summEval motive <> summEval cases
+    NField _ _ -> mempty
+
+  evalChildren :: Eval -> Maybe m
+  evalChildren = \case
+    ENeut (Neutral focus prjs) -> Just $ handleNeutral prjs focus
+    EUniv _ _ -> mempty
+    ELambda _ p b ty body -> summEval ty <> summClosure body
+    EPi _ p b ty body -> summEval ty <> summClosure body
+    ESigma _ p b ty body -> summEval ty <> summClosure body
+    EPair _ t l r -> summEval t <> summEval l <> summEval r
+    ETyCtor _ _ params indices -> foldMap summEval params <> foldMap summEval indices
+    ETmCtor _ _ params args -> foldMap summEval params <> foldMap summEval args
+    EDeferred _ ty _ _ term -> summEval term <> summEval ty -- TODO: revisit?
+    ERecordTy _ fields -> foldMap summEval fields
+    ERecordTm _ fields -> foldMap summEval fields
+    ELift _ t -> summEval t
+    EQuote _ t -> summEval t

@@ -70,6 +70,7 @@ class Constraints c m => Unification c m | m -> c where
 -- saveCheckpoint :: m (m ()) -- or something more scoped?
 -- logging...
 
+-- MonadMask
 class MonadError e m => Proving e m where
   typecheckEval ::
     ("expected type" @:: Maybe Eval, "term" @:: Term) -> m

@@ -18,6 +18,9 @@ import Debug.Trace (traceWith)
 import qualified Data.Text as T
 import qualified Pudding.Printer as P
 import Data.Align (Semialign(alignWith))
+import Data.Monoid (Any)
+import GHC.Generics (Generic)
+import Control.DeepSeq (NFData)
 
 -- Validate the type of a term, as an evaluated type
 validate :: EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
@@ -514,3 +517,42 @@ makeCaseFnType typeName tyInfo@(GlobalTypeInfo { typeParams, typeIndices = _ }) 
   -- Now we fit it all together, then let the caller apply it
   in prependParams $ prependMotive $ prependArguments $ appliedMotive
 
+data StrictPositivityM t
+  = NotPositive
+  | NotStrictlyPositive
+  | PositivityIrrelevant t
+  | StrictlyPositive t
+  deriving stock (Eq, Ord, Functor, Foldable, Traversable, Generic)
+  deriving anyclass (NFData)
+
+instance Applicative StrictPositivityM where
+  NotPositive <*> _ = NotPositive
+  _ <*> NotPositive = NotPositive
+  NotStrictlyPositive <*> _ = NotStrictlyPositive
+  _ <*> NotStrictlyPositive = NotStrictlyPositive
+
+  PositivityIrrelevant f <*> PositivityIrrelevant a = PositivityIrrelevant (f a)
+  PositivityIrrelevant f <*> StrictlyPositive a = StrictlyPositive (f a)
+  StrictlyPositive f <*> PositivityIrrelevant a = StrictlyPositive (f a)
+  StrictlyPositive f <*> StrictlyPositive a = StrictlyPositive (f a)
+
+  pure = PositivityIrrelevant
+
+-- checkForType :: Name -> Either Eval Term -> Any
+-- checkForType name = summarize $ Summarize
+--   { onTerm = _
+--   , onEval = _
+--   , onNeutFocus = _
+--   , onNeutPrj = _
+--   }
+
+-- strictlyPositiveCtorArg :: Name -> QuoteCtx -> Eval -> StrictPositivityM Term
+-- strictlyPositiveCtorArg selfName ctx = go
+--   where
+--   go = test . undeferred
+--   test (EPi _meta p b ty body) = do
+--     irrelevant ty
+--   test (ETyCtor _meta tyName params indices) = do
+--     _
+--   test ty = case irrelevant ty of
+--     _ -> _
