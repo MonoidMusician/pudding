@@ -2,40 +2,20 @@ module Pudding.Surface.Lexer where
 
 import Prelude hiding (lex)
 import Control.Applicative (many, (<|>), empty, asum, Alternative (some))
-import Control.Monad (when)
-import Control.Monad.IO.Class (MonadIO(liftIO))
-import Control.Monad.Reader ( MonadReader(local), asks, ReaderT (runReaderT) )
 import Data.Foldable (fold, traverse_)
 import Data.Functor (void, (<&>))
 import Data.Function ((&))
-import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import qualified Data.List as L
-import qualified Data.Map as Map
-import Data.Map (Map)
-import Data.Set (singleton)
 import qualified Data.Text as T
 import Data.Text (Text)
-import Data.Traversable (for)
-import qualified Data.Vector as Vector
-import GHC.IO (unsafePerformIO)
-import Pudding.Name (NameTable)
-import Pudding.Parser.Base
 import Pudding.Types ()
 import qualified Text.Parsec as P
 import qualified Data.Set as Set
-import Control.Monad.Error.Class (MonadError(throwError))
-import Control.Monad.RWS (gets, MonadState (get, put))
 import GHC.Unicode (isAlpha, isAlphaNum, generalCategory, GeneralCategory (..))
 import qualified Data.Text.IO.Utf8 as TIO
 import GHC.Generics (Generic)
 import Control.DeepSeq (NFData, rnf)
 import Control.Monad.Identity (Identity (runIdentity))
 import Witherable (Filterable(catMaybes))
-import Data.Foldable1 (Foldable1)
-import Data.Semigroup.Traversable.Class (Traversable1)
-import Control.Monad.State.Strict (State, runState)
-import qualified Debug.Trace as Dbg
-import Data.Foldable (all, any)
 
 instance NFData P.SourcePos where
   rnf a = seq a ()
@@ -104,7 +84,7 @@ builtins =
   , "|", "&"
   , ":=", "=:"
   , "?=", "=?", "??"
-  , "\\", "Π", "Σ", "λ"
+  , "\\", "λ", "Π", "Σ"
   ]
 
 -- | A lexeme from prelexing, with its source position and lexeme data.
@@ -122,7 +102,7 @@ data Comment
 
 -- | A piece of syntax with comments, before and after if applicable.
 data Commented t = Commented ![Comment] !t ![Comment]
-  deriving (Eq, Ord, Generic, NFData, Functor, Foldable, Traversable, Foldable1, Traversable1)
+  deriving (Eq, Ord, Generic, NFData, Functor, Foldable, Traversable)
 
 -- TODO
 -- I really think there should be some kind of hashconsed Name structure that
@@ -360,7 +340,12 @@ data Tok
   | Syntax !Syntax
   -- Comments
   | Comment !Comment
-  deriving (Eq, Ord, Show, Generic, NFData)
+  deriving (Eq, Ord, Generic, NFData)
+
+instance Show Tok where
+  show (Content c) = show c
+  show (Syntax s) = show s
+  show (Comment c) = show c
 
 data VariableDB
   = PlainVar
@@ -403,7 +388,7 @@ data Content
   -- | An attribute annotation `@(derive stuff ...)`, `@(Qualified'attribute data ...)`
   | Attribute ![Text] !Text ![Token]
   -- | An implicit argument `@{Int}`, `@{T := Int}`
-  | Implicit ![Token]
+  | ImplicitArg ![Token]
   -- | An operator section, like `(: 2 + _ :)`
   | Section ![Token]
   | Parens ![Token]
@@ -423,9 +408,9 @@ data Syntax
   | SPeriod -- .
   | SPlaceholder -- _
 
+  | SLambda
   | SPi
   | SSigma
-  | SLambda
   deriving (Eq, Ord, Show, Generic, NFData)
 -- | Forms of names.
 data NameForm
@@ -496,9 +481,9 @@ spaces1 :: Relexer ()
 spaces1 = P.try $ asum
   [ P.getState >>= maybe empty (pure . const ())
   , do
-      comments <- catMaybes <$> some do
+      savedComments <- catMaybes <$> some do
         Nothing <$ pWHITESPACE <|> Just <$> pCOMMENT
-      void $ P.setState (Just comments)
+      void $ P.setState (Just savedComments)
   ]
 
 -- | Required whitespace on both sides of the given parser.
@@ -562,13 +547,13 @@ pB :: Text -> Relexer ()
 pB t = pBUILTIN & is t
 
 pBs :: [Text] -> Relexer ()
-pBs = traverse_ pB
+pBs = P.try . traverse_ pB
 
 parens :: forall t. Relexer t -> Relexer t
-parens inner = pB "(" *> spaces *> inner <* spaces <* (pB ")" P.<?> "Unclosed paren")
+parens inner = pB "(" *> spaces *> inner <* spaces <* pB ")"
 
 braces :: forall t. Relexer t -> Relexer t
-braces inner = pB "{" *> spaces *> inner <* spaces <* (pB "}" P.<?> "Unclosed brace")
+braces inner = pB "{" *> spaces *> inner <* spaces <* pB "}"
 
 qualifier :: Relexer [Text]
 qualifier = many pMOD
@@ -587,11 +572,11 @@ syntaxTable =
   , (SInspect, "??", id)
   , (SMatchL, "?=", id)
   , (SMatchR, "=?", id)
-  , (SPi, "Π", id)
-  , (SSigma, "Σ", id)
   , (SLambda, "λ", id)
   , (SLambda, "\\", id)
-  , (SPeriod, ".", (<* spaces1))
+  , (SPi, "Π", id)
+  , (SSigma, "Σ", id)
+  , (SPeriod, ".", P.try . (<* spaces1))
   ]
 
 
@@ -639,12 +624,10 @@ tokenize1 = liftA2 Token P.getPosition $ asum
     -- An attribute
     , do
         let inner = Attribute <$> qualifier <*> pNAME <*> tokenize
-        pB "@" *> pB "(" *> spaces *> inner
-          <* spaces <* (pB ")" P.<?> "Unclosed attribute")
+        pB "@" *> pB "(" *> spaces *> inner <* spaces <* pB ")"
     -- An implicit argument
-    , Implicit <$> do
-        pB "@" *> pB "{" *> spaces *> tokenize
-          <* spaces <* (pB "}" P.<?> "Unclosed implicit argument")
+    , ImplicitArg <$> do
+        pB "@" *> pB "{" *> spaces *> tokenize <* spaces <* pB "}"
     -- Field/index access
     , nospace *> pB "." *> do
         Field <$> pNAME <|> Index <$> pNUM
@@ -655,8 +638,7 @@ tokenize1 = liftA2 Token P.getPosition $ asum
     ]
   , asum
     [ Syntax SPlaceholder <$ pB "_" -- FIXME: re-disallow +_+
-    , pBs ["{", ":"] *> (Content . Section <$> tokenize) <*
-      (pBs [":", "}"] P.<?> "Unclosed operator section")
+    , pBs ["{", ":"] *> (Content . Section <$> tokenize) <* pBs [":", "}"]
     , Content . Parens <$> parens tokenize
     , Content . Braces <$> braces tokenize
     ]
@@ -726,6 +708,144 @@ compoundName = do
   parts <- liftA2 (:)
     do part <* sep
     do P.sepBy1 part sep
-  case any fst parts of
-    False -> P.unexpected "Compound name requires one part to be a name"
-    True -> pure $ snd <$> parts
+  if any fst parts
+    then pure $ snd <$> parts
+    else P.unexpected "Compound name requires one part to be a name"
+
+type Parser r = forall u m. Monad m => P.ParsecT [Token] u m r
+
+token :: forall u m r. Monad m => (Tok -> Maybe r) -> P.ParsecT [Token] u m r
+token f = P.tokenPrim show (\_ (Token pos _) _ -> pos)
+  \(Token _ tok) -> f tok
+
+content :: forall u m. Monad m => P.ParsecT [Token] u m Content
+content = token \case
+  Content c -> pure c
+  _ -> empty
+
+syntax :: forall u m. Monad m => P.ParsecT [Token] u m Syntax
+syntax = token \case
+  Syntax s -> pure s
+  _ -> empty
+
+pQualifiedName :: Parser NameForm
+pQualifiedName = token \case
+  Content (QualifiedName a) -> pure a
+  _ -> empty
+pVariableName :: Parser (NameForm, VariableDB)
+pVariableName = token \case
+  Content (VariableName a b) -> pure (a, b)
+  _ -> empty
+pModuleName :: Parser [Text]
+pModuleName = token \case
+  Content (ModuleName a) -> pure a
+  _ -> empty
+pQualifiedOp :: Parser OpForm
+pQualifiedOp = token \case
+  Content (QualifiedOp a) -> pure a
+  _ -> empty
+pCommand :: Parser ([Text], Text)
+pCommand = token \case
+  Content (Command a b) -> pure (a, b)
+  _ -> empty
+pNumber :: Parser Text
+pNumber = token \case
+  Content (Number a) -> pure a
+  _ -> empty
+pString :: Parser [Either Text [Token]]
+pString = token \case
+  Content (String a) -> pure a
+  _ -> empty
+pField :: Parser Text
+pField = token \case
+  Content (Field a) -> pure a
+  _ -> empty
+pIndex :: Parser Text
+pIndex = token \case
+  Content (Index a) -> pure a
+  _ -> empty
+pSymbol :: Parser Text
+pSymbol = token \case
+  Content (Symbol a) -> pure a
+  _ -> empty
+pDimension :: Parser Text
+pDimension = token \case
+  Content (Dimension a) -> pure a
+  _ -> empty
+pAttribute :: Parser ([Text], Text, [Token])
+pAttribute = token \case
+  Content (Attribute a b c) -> pure (a, b, c)
+  _ -> empty
+pImplicitArg :: Parser [Token]
+pImplicitArg = token \case
+  Content (ImplicitArg a) -> pure a
+  _ -> empty
+pSection :: Parser [Token]
+pSection = token \case
+  Content (Section a) -> pure a
+  _ -> empty
+pParens :: Parser [Token]
+pParens = token \case
+  Content (Parens a) -> pure a
+  _ -> empty
+pBraces :: Parser [Token]
+pBraces = token \case
+  Content (Braces a) -> pure a
+  _ -> empty
+
+pComma :: Parser ()
+pComma = token \case
+  Syntax SComma -> pure ()
+  _ -> empty
+pDisj :: Parser ()
+pDisj = token \case
+  Syntax SDisj -> pure ()
+  _ -> empty
+pConj :: Parser ()
+pConj = token \case
+  Syntax SConj -> pure ()
+  _ -> empty
+pAscribe :: Parser ()
+pAscribe = token \case
+  Syntax SAscribe -> pure ()
+  _ -> empty
+pAssignL :: Parser ()
+pAssignL = token \case
+  Syntax SAssignL -> pure ()
+  _ -> empty
+pAssignR :: Parser ()
+pAssignR = token \case
+  Syntax SAssignR -> pure ()
+  _ -> empty
+pInspect :: Parser ()
+pInspect = token \case
+  Syntax SInspect -> pure ()
+  _ -> empty
+pMatchL :: Parser ()
+pMatchL = token \case
+  Syntax SMatchL -> pure ()
+  _ -> empty
+pMatchR :: Parser ()
+pMatchR = token \case
+  Syntax SMatchR -> pure ()
+  _ -> empty
+pPeriod :: Parser ()
+pPeriod = token \case
+  Syntax SPeriod -> pure ()
+  _ -> empty
+pPlaceholder :: Parser ()
+pPlaceholder = token \case
+  Syntax SPlaceholder -> pure ()
+  _ -> empty
+pLambda :: Parser ()
+pLambda = token \case
+  Syntax SLambda -> pure ()
+  _ -> empty
+pPi :: Parser ()
+pPi = token \case
+  Syntax SPi -> pure ()
+  _ -> empty
+pSigma :: Parser ()
+pSigma = token \case
+  Syntax SSigma -> pure ()
+  _ -> empty

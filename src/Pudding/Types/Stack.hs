@@ -22,7 +22,7 @@ class StackLike c where
 
   size :: c -> Int
 
-  empty :: c
+  nil :: c
   push' :: c -> Elem c -> c
   pop :: c -> Maybe (c, Elem c)
 
@@ -43,7 +43,7 @@ pattern (:>) xs x <- (pop -> Just (xs, x)) where
 
 pattern Nil :: StackLike c => c
 pattern Nil <- (pop -> Nothing) where
-  Nil = empty
+  Nil = nil
 
 {-# COMPLETE (:>), Nil #-}
 
@@ -52,7 +52,7 @@ instance StackLike Int where
   type Elem Int = ()
   _ @@ _ = ()
   size = id
-  empty = 0
+  nil = 0
   push' i _ = i + 1
   pop 0 = Nothing
   pop n = Just (n - 1, ())
@@ -61,7 +61,7 @@ instance StackLike (Vector.Vector t) where
   type Elem (Vector.Vector t) = t
   v @@ i = v Vector.! case level v (index v i) of Level lvl -> lvl
   size = Vector.length
-  empty = Vector.empty
+  nil = Vector.empty
   push' = Vector.snoc
   pop = Vector.unsnoc
 
@@ -127,7 +127,7 @@ instance StackLike (Stack a) where
 
   size (Stack sz _) = sz
 
-  empty = Stack 0 RAL.empty
+  nil = Stack 0 RAL.empty
 
   push' (Stack sz elems) x = Stack (1 + sz) (RAL.cons x elems)
 

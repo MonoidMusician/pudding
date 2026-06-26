@@ -50,10 +50,10 @@ bound :: Binder -> (Term -> Printer) -> (ScopedTerm -> Printer)
 bound _ f (Scoped term) (PS i depth) = f term (PS i (depth + 1))
 
 formatCore :: Style -> Term -> Text
-formatCore style term = format style $ printCore term (PS 0 empty)
+formatCore style term = format style $ printCore term (PS 0 Nil)
 
 formatCoreWithSpan :: Style -> Term -> Text
-formatCoreWithSpan style term = format style $ withSpan printCore term (PS 0 empty)
+formatCoreWithSpan style term = format style $ withSpan printCore term (PS 0 Nil)
 
 withSpan :: (Term -> Printer) -> Term -> Printer
 withSpan main term = fold

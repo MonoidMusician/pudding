@@ -3,6 +3,7 @@ module Pudding.Types.Base where
 import GHC.Base (Symbol)
 import Prettyprinter (Pretty)
 import Control.DeepSeq (NFData)
+import GHC.Generics (Generic)
 
 -- Annotate a data field with a name
 infixr 9 @::
@@ -12,6 +13,13 @@ type (@::) (s :: Symbol) t = t
 -- E.g. for numbering typed holes
 newtype Fresh = Fresh Int
   deriving newtype (Eq, Ord, Show, Pretty, NFData)
+
+-- decl: Π (T : Type). T -> T
+-- surface syntax usage: f Nat 42
+-- decl: Π {T : Type}. T -> T
+-- surface syntax usage: f 42 = f @{T := Nat} 42
+data Plicit = Explicit | Implicit
+  deriving (Eq, Ord, Show, Generic, NFData)
 
 -- | When we go into the unification/conversion checking algorithm, we need to
 -- ask it how to relate its arguments. A "more general" type subsumes a

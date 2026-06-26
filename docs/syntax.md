@@ -26,9 +26,9 @@
   - other operators will be declared always-prefix, `f !!False`
 - `::` is unused-reserved, but `:::` is okay
 - `Module'name` for namespacing stuff
-  - `@import Data'List'{List, length}`
-  - `@import Data'List'{length} qualified as List'`
-  - `@import Data'Map'{Int} as IntMap'`
+  - `@import Data'List'.{List, length}`
+  - `@import Data'List'.{length} as List'`
+  - `@import Data'Map'.{Int} as IntMap'`
   - maybe `Data'List'_` for `Data'List'List`?, uhh `'List'_` for `'List'List`? nothanks
 - `.` is reserved
   - `expr.name` for record projection

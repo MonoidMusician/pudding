@@ -134,17 +134,20 @@ data Term
       -- Actual core data (influences equality, etc.)
       ("domain type" @:: Term)
       ("body" @:: ScopedTerm)
-  | TPi
+  | -- Pi type (dependent function / dependent product)
+    TPi
       Metadata
       !Plicit
       Binder
       ("domain type" @:: Term)
       ("codomain" @:: ScopedTerm)
-  | TApp
+  | -- Apply a function to an argument
+    TApp
       Metadata
       ("function" @:: Term)
       ("argument" @:: Term)
-  | TSigma
+  | -- Sigma type (dependent pair / dependent sum)
+    TSigma
       Metadata
       !Plicit
       Binder
@@ -156,8 +159,11 @@ data Term
       ("sigma type" @:: Term)
       ("fst value" @:: Term)
       ("snd value" @:: Term)
-  | TFst Metadata Term
-  | TSnd Metadata Term
+  | -- Project out the first term of a pair
+    TFst Metadata Term
+  | -- Project out the second term of a pair, whose type
+  -- depends on (the value of) the first projection
+    TSnd Metadata Term
   | -- A type constructor: the name of an inductive type applied to parameters
     -- and indices
     TTyCtor
@@ -349,7 +355,7 @@ instance StackLike (Ctx t) where
   size (Ctx _ s) = size s
 
   -- NB: Usually you want `ctxOfGlobals`
-  empty = Ctx freshGlobals empty
+  nil = Ctx freshGlobals nil
 
   push' (Ctx globals s) b = Ctx globals (s :> b)
 
@@ -401,13 +407,6 @@ mapCtx f ctx = snd (foldCtx z s ctx)
 --------------------------------------------------------------------------------
 -- Helper types!                                                              --
 --------------------------------------------------------------------------------
-
--- decl: Π(T : Type), T -> T
--- surface syntax usage: f Nat 42
--- decl: Π{T : Type}, T -> T
--- surface syntax usage: f 42
-data Plicit = Explicit | Implicit
-  deriving (Eq, Ord, Generic, NFData)
 
 data ULevel
   = UBase !Int

@@ -118,6 +118,7 @@ library
         Pudding.Printer,
         Pudding.Types,
         Pudding.Types.Base,
+        Pudding.Types.Structure,
         Pudding.Types.Config,
         Pudding.Types.Metadata,
         Pudding.Types.Stack,
@@ -130,9 +131,17 @@ library
         Pudding.Semantics.Universes.Fused,
         Pudding.Surface.Lexer,
         Pudding.Surface.Parser,
+        -- automatically compiled with Happy
+        Pudding.Surface.Happy,
+        Pudding.Surface.Surface,
+        Data.Show.Reshow,
 
     -- Modules included in this library but not exported.
     -- other-modules:
+
+    -- Compile Happy.y with Happy
+    build-tool-depends:
+        happy:happy ==2.2.1
 
     -- Directories containing source files.
     hs-source-dirs:   src

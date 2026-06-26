@@ -1,4 +1,6 @@
 dist-newstyle
+# symlink into dist-newstyle
+build-dir
 
 .DS_Store
 
