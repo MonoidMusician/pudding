@@ -134,6 +134,7 @@ library
         -- automatically compiled with Happy
         Pudding.Surface.Happy,
         Pudding.Surface.Surface,
+        Pudding.Surface.Elaborator,
         Data.Show.Reshow,
 
     -- Modules included in this library but not exported.

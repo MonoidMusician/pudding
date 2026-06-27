@@ -73,15 +73,15 @@ data GlobalInfo
 
 -- An inductive type declaration.
 data GlobalTypeInfo = GlobalTypeInfo
-  { typeParams :: !(Vector (Plicit, Binder, Term)),
-    typeIndices :: !(Vector (Plicit, Binder, Term)),
-    typeConstrs :: !(Map Name ConstructorInfo)
+  { typeParams :: !(Vector (Plicit, Binder, Term))
+  , typeIndices :: !(Vector (Plicit, Binder, Term))
+  , typeConstrs :: !(Map Name ConstructorInfo)
   }
   deriving (Generic, NFData)
 
 data ConstructorInfo = ConstructorInfo
-  { ctorArguments :: !(Vector (Plicit, Binder, Term)),
-    ctorIndices :: !(Vector Term)
+  { ctorArguments :: !(Vector (Plicit, Binder, Term))
+  , ctorIndices :: !(Vector Term)
   }
   deriving (Generic, NFData)
 

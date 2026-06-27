@@ -84,7 +84,7 @@ builtins =
   , "|", "&"
   , ":=", "=:"
   , "?=", "=?", "??"
-  , "\\", "λ", "Π", "Σ"
+  , "\\", "λ", "Π", "Σ", "\\*", "\\+", "∀"
   ]
 
 -- | A lexeme from prelexing, with its source position and lexeme data.
@@ -377,6 +377,8 @@ data Content
   | Number !Text
   -- | A string, lexed into its literal and template components
   | String ![Either Text [Token]]
+  -- | Universe
+  | Univ
   -- | A field `(expr).fieldName`
   | Field !Text
   -- | An index `(expr).0`
@@ -576,8 +578,11 @@ syntaxTable =
   , (SLambda, "\\", id)
   , (SPi, "Π", id)
   , (SSigma, "Σ", id)
+  , (SPi, "\\*", id)
+  , (SSigma, "\\+", id)
   , (SPeriod, ".", P.try . (<* spaces1))
   ]
+  -- λ(I O : Type) (i : I) (f : Π(i : I). O). f i : O
 
 
 
@@ -597,6 +602,7 @@ tokenize1 = liftA2 Token P.getPosition $ asum
   , Content <$> longestOf
     -- A number
     [ Number <$> pNUM
+    , Univ <$ do pNAME & is "Type"
     -- A variable, including a bare name and `x@^0`/`x@_0` index/level notation
     , VariableName
         <$> anyNameForm []

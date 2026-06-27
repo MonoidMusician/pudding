@@ -80,6 +80,9 @@ class MonadError e m => Proving e m where
   conversionCheck :: UnifyMode -> (Eval, Eval) -> m Bool
 
 
+-- class Proving e m => Elaborating e m where
+
+
 ---------------
 -- Extras... --
 ---------------

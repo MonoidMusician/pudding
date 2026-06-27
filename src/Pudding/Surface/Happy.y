@@ -45,6 +45,8 @@ import Data.Function ((&))
   '.'   { Token _ (Syntax SPeriod) }
   '_'   { Token _ (Syntax SPlaceholder) }
 
+  'Type' { Token _ (Content Univ) }
+
   QNAME { Token _ (Content (QualifiedName _)) }
   VNAME { Token _ (Content (VariableName _ _)) }
   MNAME { Token _ (Content (ModuleName _)) }
@@ -86,7 +88,7 @@ expr1 :: { CST }
   -- as a flat list of operators \/ expressions, which gets parsed into
   -- a tree after resolving namespaces. Being a list automatically takes care
   -- of parenthesization.
-  | someAux(wordAtom) word(expr2) { CSentence (NE.reverse (NE.cons $2 $1)) }
+  | someAux(wordAtom) word(expr2) { unamb (NE.reverse (NE.cons $2 $1)) }
 
   wordAtom :: { Either OpForm CST }
     : word(exprAtom) { $1 }
@@ -104,6 +106,7 @@ exprAtom :: { CST }
   : Parens {% parseExpr $1 }
   | var { $1 }
   | num { $1 }
+  | 'Type' { CUniv }
   | QualifiedName { CName $1 }
   | ModuleName { CMod $1 }
 

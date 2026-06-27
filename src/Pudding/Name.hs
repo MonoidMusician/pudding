@@ -11,6 +11,7 @@ import Data.Text (Text)
 import GHC.Generics (Generic)
 import GHC.StableName (StableName, hashStableName, makeStableName)
 import Prettyprinter (Pretty(pretty))
+import Control.Monad.ST.Unsafe (unsafeIOToST)
 
 data Name = Name { nameId :: !(StableName Text), nameText :: !Text }
 
@@ -45,9 +46,10 @@ internalize ref search = liftIO do
   case Map.lookup search names of
     Just found -> pure found
     Nothing -> do
-      named <- makeStableName search
-      let made = Name named search
-      modifyIORef' ref $ coerce $ Map.insert search made
+      let copied = T.copy search
+      named <- makeStableName copied
+      let made = Name named copied
+      modifyIORef' ref $ coerce $ Map.insert copied made
       pure made
 
 -- A canonical name, that is merged during unification

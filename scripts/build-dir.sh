@@ -9,6 +9,8 @@ cd -- "$(dirname "$0")/.."
 # (see optimization: False in cabal.project)
 BIN_PATH="$(cabal list-bin pudding)"
 BIN_PATH="$(realpath -s --relative-to="$PWD" -- "$BIN_PATH")"
+# Construct the path to the build directory
+# ... this may be missing stuff ...
 BUILD_DIR="$(
     echo "$BIN_PATH" | grep -oE ".+/pudding-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+"
 )$(

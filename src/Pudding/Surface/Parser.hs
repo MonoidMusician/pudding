@@ -1,7 +1,7 @@
 module Pudding.Surface.Parser where
 
 import Prelude hiding (lex)
-import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty (NonEmpty(..))
 import Data.Text (Text)
 import qualified Text.Parsec as P
 import GHC.Generics (Generic)
@@ -33,7 +33,7 @@ braces inner = do
 type CBinder = CST
 
 data Decl
-  = DDataType
+  = DDataType !Text
     ![(Plicit, CBinder, CST)]
     ![(Plicit, CBinder, CST)]
     ![(Text, [(Plicit, CBinder, CST)], [CST])]
@@ -53,6 +53,7 @@ data CST
   | CName !L.NameForm
   | CMod  ![Text]
 
+  | CUniv
   | CNum !Text
   | CStr ![Either Text CST]
   | CHole !(Maybe Text)
@@ -66,6 +67,17 @@ data CST
   | CAscribe !CST !CST
   | CAssign !CST !CST -- for patterns and do notation
   deriving (Eq, Ord, Show, Generic, NFData)
+
+unamb :: NonEmpty (Either L.OpForm CST) -> CST
+unamb sentence | Right appForm <- sequence sentence =
+  apps appForm
+unamb (Right l :| [Left (L.PlainOp qual op), Right r]) =
+  apps (CName (L.PlainName qual op) :| [l, r])
+unamb sentence = CSentence sentence
+
+apps :: NonEmpty CST -> CST
+apps (e :| []) = e
+apps (f :| args) = foldl CApp f args
 
 -- Lift: Text
 -- quote:
@@ -104,6 +116,11 @@ data CST
 -- map {A B : Quoted Type} : (Quoted A -> Quoted B) -> Quoted (List A) -> Quoted (List B)
 -- map A B f as := $[
 --   foldr @{A, List B} (λ a bs. cons @{B} .(f $[a]) bs) (nil @{B})
+-- ]
+
+-- map {A B : $^ Type} : ($^ A -> $^ B) -> $^ (List A) -> $^ (List B)
+-- map A B f as := $[
+--   foldr @{A, List B} (λ a bs. cons @{B} .(f $q[a]) bs) (nil @{B})
 -- ]
 
 -- map : (𝐴 𝐵 : ⇑U0) → (⇑ ∼𝐴 → ⇑ ∼𝐵) → ⇑(List0 ∼𝐴) → ⇑(List0 ∼𝐵)
