@@ -135,6 +135,7 @@ library
         Pudding.Surface.Happy,
         Pudding.Surface.Surface,
         Pudding.Surface.Elaborator,
+        Pudding.Surface.Delaborator,
         Data.Show.Reshow,
 
     -- Modules included in this library but not exported.

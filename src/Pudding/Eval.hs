@@ -58,7 +58,7 @@ doPrj :: HasCallStack => Eval -> NeutPrj -> Eval
 doPrj (ENeut (Neutral blocker prjs)) prj = ENeut (Neutral blocker (prjs :> prj))
 doPrj (EPair _ _ left _) (NFst _) = left
 doPrj (EPair _ _ _ right) (NSnd _) = right
-doPrj (ELambda _ _ _ _ body) (NApp _ arg) = instantiateClosure body arg
+doPrj (ELambda _ _ _ _ body) (NApp _ _ arg) = instantiateClosure body arg
 doPrj (ERecordTm _ fields) (NField _ name) = fields Map.! name
 doPrj (ETmCtor _meta (_tyName, ctorName) _params args) (NCase _ _ cases) =
   doApps (doField cases ctorName) (Stack.fromFoldable args)
@@ -66,7 +66,7 @@ doPrj (EDeferred _ _ _ _ term) prj = doPrj term prj
 doPrj e prj = error $ mconcat
   [ "Type error in doPrj "
   , case prj of
-      NApp _ _ -> "App"
+      NApp _ _ _ -> "App"
       NFst _ -> "Fst"
       NSnd _ -> "Snd"
       NSplice _ -> "Splice"
@@ -78,7 +78,7 @@ doPrj e prj = error $ mconcat
   ]
 
 doApp :: HasCallStack => "fun" @:: Eval -> "arg" @:: Eval -> Eval
-doApp fun arg = doPrj fun (NApp mempty arg)
+doApp fun arg = doPrj fun (NApp mempty Explicit arg)
 
 doFst :: HasCallStack => Eval -> Eval
 doFst tgt = doPrj tgt (NFst mempty)
@@ -95,7 +95,7 @@ doPrjs focus (prjs :> prj) = doPrj (doPrjs focus prjs) prj
 doPrjs focus Nil = focus
 
 doApps :: HasCallStack => Eval -> Stack Eval -> Eval
-doApps focus = doPrjs focus . fmap (NApp mempty)
+doApps focus = doPrjs focus . fmap (NApp mempty Explicit)
 
 -- Eta expand the pair constructor, for sigma types
 etaPair :: HasCallStack => "type" @:: Eval -> "pair" @:: Eval -> Eval
@@ -114,9 +114,9 @@ checkGlobal ctx e@(ENeut (Neutral (NGlobal arity _ _name) prjs))
   where
     idlePrjs :: Stack NeutPrj -> Bool
     -- Neutral argument: see what happens with the rest
-    idlePrjs (prjs' :> NApp _ (ENeut _)) = idlePrjs prjs'
+    idlePrjs (prjs' :> NApp _ _ (ENeut _)) = idlePrjs prjs'
     -- Have a concrete argument: reduce now, hopefully it simplifies
-    idlePrjs (_ :> NApp _ _) = False
+    idlePrjs (_ :> NApp _ _ _) = False
     -- Have a different kind of projection: reduce now
     idlePrjs (_ :> _) = False
     -- All arguments were neutral
@@ -196,7 +196,7 @@ evaling = \case
   TSigma meta plicit binder ty body ->
     ESigma meta plicit binder <$> evaling ty <*> captureClosure binder body
   -- Application is interesting
-  TApp metaApp fun arg -> \ctx ->
+  TApp metaApp plicit fun arg -> \ctx ->
     -- `($) :: (a -> b) -> a -> b` is strict in its first argument: we always
     -- want to evaluate that and see what it does: thus evaluating `fun` as
     -- `evaling fun ctx` and casing on it immediately, *not* examining the raw
@@ -214,7 +214,7 @@ evaling = \case
       (ENeut (Neutral focus prjs), evalingArg) ->
         checkGlobal ctx $ ENeut $ Neutral
           { neutralBlocking = focus
-          , neutralSpine = prjs :> NApp metaApp evalingArg
+          , neutralSpine = prjs :> NApp metaApp plicit evalingArg
           }
       _ -> error "Type error: cannot apply to non-function"
   TPair meta ty left right ->
@@ -296,7 +296,7 @@ eval2termWith forceGlobals handleClosure = \case
               Map.lookup name (globalDefns $ ctxGlobals ctx) -> term
         NGlobal _arity meta name -> TGlobal meta name
       go (more :> prj) soFar = go more case prj of
-        NApp meta arg -> TApp meta soFar (e2t arg ctx)
+        NApp meta plicit arg -> TApp meta plicit soFar (e2t arg ctx)
         NFst meta -> TFst meta soFar
         NSnd meta -> TSnd meta soFar
         NSplice meta -> TSplice meta soFar
@@ -363,6 +363,7 @@ shift = shiftFrom 0
 
 -- Only indices >= base are affected, which is incremented under binders
 shiftFrom :: Int -> Int -> Term -> Term
+shiftFrom _ 0 = id
 shiftFrom base delta = \case
   TVar meta (Index idx) -> TVar meta (Index (if idx >= base then idx + delta else idx))
   TGlobal meta name -> TGlobal meta name
@@ -378,7 +379,7 @@ shiftFrom base delta = \case
     TPair meta (go ty) (go left) (go right)
   TFst meta tm -> TFst meta $ go tm
   TSnd meta tm -> TSnd meta $ go tm
-  TApp meta fun arg -> TApp meta (go fun) (go arg)
+  TApp meta plicit fun arg -> TApp meta plicit (go fun) (go arg)
   TTyCtor meta name params indices -> TTyCtor meta name (go <$> params) (go <$> indices)
   TTmCtor meta name params args -> TTmCtor meta name (go <$> params) (go <$> args)
   TCase meta motive cases scrutinee -> TCase meta (go motive) (go cases) (go scrutinee)

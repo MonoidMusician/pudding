@@ -16,6 +16,11 @@ import GHC.Generics (Generic)
 import Control.DeepSeq (NFData, rnf)
 import Control.Monad.Identity (Identity (runIdentity))
 import Witherable (Filterable(catMaybes))
+import qualified Data.List as List
+import qualified Prettyprinter as Doc
+import Data.List.NonEmpty (NonEmpty(..))
+import Data.Semigroup.Foldable (intercalateMap1)
+import Prettyprinter.Util (reflow)
 
 instance NFData P.SourcePos where
   rnf a = seq a ()
@@ -73,11 +78,12 @@ reserved = Set.fromList
 semiReserved :: Set.Set Char
 semiReserved = Set.fromList
   [ '_' -- uhh not sure on this!
+  , '[', ']'
   ] <> reserved
 
 -- | These are grabbed from the operator (or name) that they would match.
 builtins :: [String]
-builtins =
+builtins = List.nub $
   [ "@", "@^", "@_"
   , ":", "::"
   , ".", ";"
@@ -85,7 +91,7 @@ builtins =
   , ":=", "=:"
   , "?=", "=?", "??"
   , "\\", "λ", "Π", "Σ", "\\*", "\\+", "∀"
-  ]
+  ] <> (syntaxTable <&> \(_, b, _) -> T.unpack b)
 
 -- | A lexeme from prelexing, with its source position and lexeme data.
 data LEXED = LEXED !P.SourcePos !LEX
@@ -275,10 +281,11 @@ prelex1 = liftA2 LEXED P.getPosition $ (>>= \t -> t <$ P.setState t) $ asum
     , ((P.try (P.string "''") <* some P.space) <|> P.try (P.string "#!")) *> do
         COMMENT . LineC . T.pack <$> P.manyTill P.anyChar (void (P.char '\n') <|> P.eof)
     -- Multi line comments (plain nesting)
-    , P.string "/'" *> do
-        COMMENT . AreaC . T.pack <$> P.manyTill P.anyChar (P.string "'/")
+    , P.try (P.string "/'") *> do
+        COMMENT . AreaC . T.pack <$> P.manyTill P.anyChar (P.try (P.string "'/"))
     -- Multi line comments (tokenized nesting)
-    , P.string "/`" *> (COMMENT . CodeC <$> prelex) <* P.string "`/"
+    , P.try (P.string "/`") *> (COMMENT . CodeC <$> prelex) <* P.try (P.string "`/")
+    -- P.try (P.string "'\"'")
     -- Plain strings: returns the literal source
     , P.char '"' *> do
         STR . T.dropEnd 1 <$> sourceOf do
@@ -353,6 +360,12 @@ data VariableDB
   | DBLevel !Word
   deriving (Eq, Ord, Show, Generic, NFData)
 
+instance Doc.Pretty VariableDB where
+  pretty = \case
+    PlainVar -> mempty
+    DBIndex i -> reflow "@^" <> Doc.pretty i
+    DBLevel l -> reflow "@_" <> Doc.pretty l
+
 -- | Content words include names, operators, numbers, and so on. Names and
 -- | operators are tricky because operators can be turned into names and names
 -- | can serve as distfix operators, hence the need for pre-lexing. Also because
@@ -390,9 +403,15 @@ data Content
   -- | An attribute annotation `@(derive stuff ...)`, `@(Qualified'attribute data ...)`
   | Attribute ![Text] !Text ![Token]
   -- | An implicit argument `@{Int}`, `@{T := Int}`
-  | ImplicitArg ![Token]
+  | Implicits ![Token]
   -- | An operator section, like `(: 2 + _ :)`
   | Section ![Token]
+  -- | A splice or quote, `$s[ ... ]` and `$q[ ... ]`
+  | Splote ![Text] !Text ![Token]
+  -- | Bracketed operator, like `Module'+[ ... ]+` for `Module'(+[:]+)`
+  -- | (bracket *is* included in the texts)
+  | Bracketed ![Text] !Text ![Token] !Text
+
   | Parens ![Token]
   | Braces ![Token]
   deriving (Eq, Ord, Show, Generic, NFData)
@@ -429,7 +448,7 @@ data NameForm
   -- | Hehehe, you are not the first to suggest `&nbsp;`!
   -- |
   -- | Examples: `Quali§fied§+_commutative`, `Q'f'commutate·+`
-  | CompoundName ![Text] ![Text]
+  | CompoundName ![Text] !(NonEmpty Text)
   -- | Like Haskell, it is nice to refer to operators in positions where a name
   -- | is expected. This may need some workshopping, especially to handle
   -- | disfixes. Is more aspirational right now.
@@ -452,6 +471,39 @@ data OpForm
   | DistPostfix ![Text] !Text
   deriving (Eq, Ord, Show, Generic, NFData)
 
+
+prettyMod :: [Text] -> Doc.Doc ann
+prettyMod = foldMap \mname ->
+  Doc.pretty mname <> reflow "'"
+
+instance Doc.Pretty NameForm where
+  pretty = \case
+    PlainName qual name -> prettyMod qual <> Doc.pretty name
+    CompoundName qual name -> prettyMod qual <> intercalateMap1 (Doc.pretty ".") Doc.pretty name
+    OperatorName qual pre inf post -> prettyMod qual <> fold
+      [ reflow "("
+      , reflow $ T.intercalate ":"
+        [ fold pre
+        , T.intercalate ":" inf
+        , fold post
+        ]
+      , reflow ")"
+      ]
+    DistfixPhrase qual pre inf post -> prettyMod qual <> fold
+      [ reflow "("
+      , reflow $ T.intercalate ":"
+        [ fold pre
+        , T.intercalate ":" inf
+        , fold post
+        ]
+      , reflow ")"
+      ]
+instance Doc.Pretty OpForm where
+  pretty = \case
+    PlainOp qual name -> prettyMod qual <> Doc.pretty name
+    DistPrefix qual name -> prettyMod qual <> Doc.pretty name <> reflow ":"
+    DistInfix qual name -> prettyMod qual <> reflow ":" <> Doc.pretty name <> reflow ":"
+    DistPostfix qual name -> prettyMod qual <> reflow ":" <> Doc.pretty name
 
 -- | Match a lexeme and reset the cached whitespace/comment state.
 lexeme :: forall r. (LEX -> Maybe r) -> Relexer r
@@ -577,12 +629,12 @@ syntaxTable =
   , (SLambda, "λ", id)
   , (SLambda, "\\", id)
   , (SPi, "Π", id)
+  , (SPi, "∀", id)
   , (SSigma, "Σ", id)
   , (SPi, "\\*", id)
   , (SSigma, "\\+", id)
   , (SPeriod, ".", P.try . (<* spaces1))
   ]
-  -- λ(I O : Type) (i : I) (f : Π(i : I). O). f i : O
 
 
 
@@ -603,6 +655,9 @@ tokenize1 = liftA2 Token P.getPosition $ asum
     -- A number
     [ Number <$> pNUM
     , Univ <$ do pNAME & is "Type"
+    -- Splice/quote
+    , Splote <$> (is "$" pOP *> qualifier) <*> pNAME <*>
+        (pB "[" *> tokenize <* pB "]")
     -- A variable, including a bare name and `x@^0`/`x@_0` index/level notation
     , VariableName
         <$> anyNameForm []
@@ -632,7 +687,7 @@ tokenize1 = liftA2 Token P.getPosition $ asum
         let inner = Attribute <$> qualifier <*> pNAME <*> tokenize
         pB "@" *> pB "(" *> spaces *> inner <* spaces <* pB ")"
     -- An implicit argument
-    , ImplicitArg <$> do
+    , Implicits <$> do
         pB "@" *> pB "{" *> spaces *> tokenize <* spaces <* pB "}"
     -- Field/index access
     , nospace *> pB "." *> do
@@ -702,7 +757,7 @@ anyNameForm qual = longestOf
     pure $! ast pre ops post
 
 -- TODO: require that at least one is a name?
-compoundName :: Relexer [Text]
+compoundName :: Relexer (NonEmpty Text)
 compoundName = do
   let
     part = asum
@@ -711,12 +766,12 @@ compoundName = do
       , (False,) <$> pNUM
       ]
     sep = pB "_" <|> pB "·"
-  parts <- liftA2 (:)
+  parts <- liftA2 (:|)
     do part <* sep
     do P.sepBy1 part sep
   if any fst parts
     then pure $ snd <$> parts
-    else P.unexpected "Compound name requires one part to be a name"
+    else error "Compound name requires one part to be a name"
 
 type Parser r = forall u m. Monad m => P.ParsecT [Token] u m r
 
@@ -782,9 +837,9 @@ pAttribute :: Parser ([Text], Text, [Token])
 pAttribute = token \case
   Content (Attribute a b c) -> pure (a, b, c)
   _ -> empty
-pImplicitArg :: Parser [Token]
-pImplicitArg = token \case
-  Content (ImplicitArg a) -> pure a
+pImplicits :: Parser [Token]
+pImplicits = token \case
+  Content (Implicits a) -> pure a
   _ -> empty
 pSection :: Parser [Token]
 pSection = token \case

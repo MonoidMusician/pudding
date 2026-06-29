@@ -205,7 +205,7 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
     (NGlobal _ _ nameL, NGlobal _ _ nameR) -> nameL == nameR
     (_, _) -> False -- FIXME: handle holes via unification!!
   checkPrjs shouldCC = \case
-    (moreL :> NApp _ argL, moreR :> NApp _ argR) ->
+    (moreL :> NApp _ _ argL, moreR :> NApp _ _ argR) ->
       shouldCC argL argR && checkPrjs shouldCC (moreL, moreR)
     (moreL :> NFst _, moreR :> NFst _) ->
       checkPrjs shouldCC (moreL, moreR)
@@ -298,7 +298,7 @@ validateOrNot seqOrConst ctx = \case
     ESigma _ _ _ _ body ->
       instantiateClosure body (doPrj (evalHere tm) (NFst mempty))
     _ -> error "Bad snd"
-  TApp _ fun arg -> case (vvv fun, vv arg) of
+  TApp _ _ fun arg -> case (vvv fun, vv arg) of
     (EPi _ _ _ argTyExpected body, argTyActual) ->
       cc "argument type mismatch" argTyExpected argTyActual `seq` instantiateClosure body (evalHere arg)
     _ -> error "Bad app"
@@ -464,14 +464,14 @@ makeCaseRecordType typeName tyInfo@(GlobalTypeInfo { typeParams, typeConstrs }) 
     abstractedMotiveType = makeMotiveType typeName tyInfo
     chosenParamForMotive i = TVar mempty $ Index $ (length typeParams - 1 - i)
     chosenMotiveType = Vector.ifoldl
-      (\motiveTypeFn i _ -> TApp mempty motiveTypeFn $ chosenParamForMotive i)
+      (\motiveTypeFn i (p, _, _) -> TApp mempty p motiveTypeFn $ chosenParamForMotive i)
       abstractedMotiveType typeParams
     prependMotive inner = TLambda mempty Explicit BFresh chosenMotiveType $ Scoped inner
     applyParams abstracted = Vector.ifoldl
-      (\fun i _ -> TApp mempty fun $ chosenParamForMotive (i - 1))
+      (\fun i (p, _, _) -> TApp mempty p fun $ chosenParamForMotive (i - 1))
       abstracted typeParams
     applyParamsAndMotive abstracted =
-      TApp mempty (applyParams abstracted) $ TVar mempty $ Index 0
+      TApp mempty Explicit (applyParams abstracted) $ TVar mempty $ Index 0
     caseTypes = typeConstrs & Map.mapWithKey \ctorName ctorInfo ->
       applyParamsAndMotive $ makeCaseFnType typeName tyInfo ctorName ctorInfo
   in prependParams $ prependMotive $ TRecordTy mempty $ caseTypes
@@ -488,7 +488,7 @@ makeCaseFnType typeName tyInfo@(GlobalTypeInfo { typeParams, typeIndices = _ }) 
     abstractedMotiveType = makeMotiveType typeName tyInfo
     chosenParamForMotive i = TVar mempty $ Index $ (length typeParams - 1 - i)
     chosenMotiveType = Vector.ifoldl
-      (\motiveTypeFn i _ -> TApp mempty motiveTypeFn $ chosenParamForMotive i)
+      (\motiveTypeFn i (p, _, _) -> TApp mempty p motiveTypeFn $ chosenParamForMotive i)
       abstractedMotiveType typeParams
     prependMotive inner = TLambda mempty Explicit BFresh chosenMotiveType $ Scoped inner
     withMotive introed = shiftFrom introed 1
@@ -510,9 +510,9 @@ makeCaseFnType typeName tyInfo@(GlobalTypeInfo { typeParams, typeIndices = _ }) 
     -- (They are relative to the arguments abstracted in the same way)
     -- FIXME: this is not true! the parameters are one off! ugh
     relevantMotive = Vector.ifoldl
-      (\motiveFn i chosenIndex -> TApp mempty motiveFn (withMotive (i + Vector.length ctorArguments) chosenIndex))
+      (\motiveFn i chosenIndex -> TApp mempty Explicit motiveFn (withMotive (i + Vector.length ctorArguments) chosenIndex))
       givenMotive ctorIndices
-    appliedMotive = TApp mempty relevantMotive chosenValue
+    appliedMotive = TApp mempty Explicit relevantMotive chosenValue
     -- And plug in the value from the arguments
   -- Now we fit it all together, then let the caller apply it
   in prependParams $ prependMotive $ prependArguments $ appliedMotive

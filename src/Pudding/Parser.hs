@@ -207,7 +207,7 @@ app = do
     trackApp :: Tracked Term -> Tracked Term -> Tracked Term
     trackApp (Tracked s1 a) (Tracked s2 b) =
       let s = s1 <> s2 in
-        Tracked s (TApp (parseMetadata s) a b)
+        Tracked s (TApp (parseMetadata s) Explicit a b)
 
 -- List is in stack order, not binding order
 type Binding = (Plicit, Binder, Term)

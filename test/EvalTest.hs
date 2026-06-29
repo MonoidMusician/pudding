@@ -106,7 +106,7 @@ evalTest = TestSuite "EvalTest" $ withTestContext do
     t1 <- parseTerm "(lambda (x (Type0 1)) x)"
     t2 <- parseTerm "(Type0)"
     t3 <- parseTerm "(identity1 (Type0 1) (Type0))"
-    TApp mempty t1 t2 `defEqTo` t3
+    TApp mempty Explicit t1 t2 `defEqTo` t3
     testCase "SimpleDefinition" do
       "(Fun Unit Void)" `defEqTo` "(Pi (t Unit) Void)"
   testCase "EtaEquivalence" do
@@ -258,8 +258,8 @@ termEquiv (TLambda _ p1 _ t1 (Scoped b1)) (TLambda _ p2 _ t2 (Scoped b2)) =
   p1 == p2 && t1 `termEquiv` t2 && b1 `termEquiv` b2
 termEquiv (TPi _ p1 _ t1 (Scoped b1)) (TPi _ p2 _ t2 (Scoped b2)) =
   p1 == p2 && t1 `termEquiv` t2 && b1 `termEquiv` b2
-termEquiv (TApp _ a1 b1) (TApp _ a2 b2) =
-  a1 `termEquiv` a2 && b1 `termEquiv` b2
+termEquiv (TApp _ p1 a1 b1) (TApp _ p2 a2 b2) =
+  p1 == p2 && a1 `termEquiv` a2 && b1 `termEquiv` b2
 termEquiv _ _ = False
 
 newtype Term' = Term' Term

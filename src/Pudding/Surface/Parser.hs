@@ -11,6 +11,7 @@ import Control.Monad.Identity (Identity)
 import qualified Pudding.Surface.Lexer as L
 import Pudding.Types.Base (type (@::), Plicit (..))
 import Pudding.Surface.Lexer (VariableDB)
+import Data.Traversable (for)
 
 type Parser = P.ParsecT [L.Token] () Identity
 
@@ -34,20 +35,29 @@ type CBinder = CST
 
 data Decl
   = DDataType !Text
+    -- Parameters
     ![(Plicit, CBinder, CST)]
+    -- Indices into Type
     ![(Plicit, CBinder, CST)]
+    !(Maybe CST)
     ![(Text, [(Plicit, CBinder, CST)], [CST])]
   | DDefine !Text !(Maybe CST) !CST
   deriving (Eq, Ord, Show, Generic, NFData)
 
+data PartOfSpeech t
+  = SOp L.OpForm
+  | SImplicits ![(Maybe (L.NameForm, L.VariableDB), t)]
+  | Subexpr t
+  deriving (Eq, Ord, Show, Generic, NFData, Functor, Foldable, Traversable)
+
 data CST
   = CApp !CST !CST
-  | CLambda !(NonEmpty (Plicit, CBinder, "ty" @:: Maybe CST)) !CST
-  | CPi     !(NonEmpty (Plicit, CBinder, "ty" @:: Maybe CST)) !CST
-  | CSigma  !(NonEmpty (Plicit, CBinder, "ty" @:: Maybe CST)) !CST
+  | CLambda !(NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST)) !CST
+  | CPi     !(NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST)) !CST
+  | CSigma  !(NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST)) !CST
   | CLet    ![(CBinder, "ty" @:: Maybe CST, "tm" @:: CST)]    !CST
 
-  | CSentence !(NonEmpty (Either L.OpForm CST))
+  | CSentence !(NonEmpty (PartOfSpeech CST))
 
   | CVar  !L.NameForm !VariableDB
   | CName !L.NameForm
@@ -68,15 +78,29 @@ data CST
   | CAssign !CST !CST -- for patterns and do notation
   deriving (Eq, Ord, Show, Generic, NFData)
 
-unamb :: NonEmpty (Either L.OpForm CST) -> CST
-unamb sentence | Right appForm <- sequence sentence =
+-- | Construct a sentence, handling easy cases that do not rely on precedence
+-- | info (and thus name and import resolution).
+cSentence :: NonEmpty (PartOfSpeech CST) -> CST
+-- No operators, just function applications
+cSentence sentence | Just appForm <- for sentence x =
   apps appForm
-unamb (Right l :| [Left (L.PlainOp qual op), Right r]) =
-  apps (CName (L.PlainName qual op) :| [l, r])
-unamb sentence = CSentence sentence
+  where
+  x = \case
+    Subexpr e -> Just e
+    _ -> Nothing
+-- Single infix op
+cSentence (Subexpr l :| [SOp (L.PlainOp qual op), Subexpr r]) =
+  apps (CName (L.OperatorName qual Nothing [op] Nothing) :| [l, r])
+-- Single prefix op
+cSentence (SOp (L.PlainOp qual op) :| [Subexpr arg]) =
+  apps (CName (L.OperatorName qual (Just op) [] Nothing) :| [arg])
+-- Single postfix op
+cSentence (Subexpr arg :| [SOp (L.PlainOp qual op)]) =
+  apps (CName (L.OperatorName qual Nothing [] (Just op)) :| [arg])
+-- Needs disambiguation still
+cSentence sentence = CSentence sentence
 
 apps :: NonEmpty CST -> CST
-apps (e :| []) = e
 apps (f :| args) = foldl CApp f args
 
 -- Lift: Text
@@ -119,9 +143,30 @@ apps (f :| args) = foldl CApp f args
 -- ]
 
 -- map {A B : $^ Type} : ($^ A -> $^ B) -> $^ (List A) -> $^ (List B)
--- map A B f as := $[
+-- map A B f as := $q[
 --   foldr @{A, List B} (λ a bs. cons @{B} .(f $q[a]) bs) (nil @{B})
 -- ]
 
+-- map {A B : % Type} : (% A -> % B) -> % List A -> % List B
+-- map A B f as := $q[
+--   foldr @{A, List B} (λ a bs. cons @{B} $s[f $q[a]] bs) (nil @{B})
+-- ]
+
+-- map {A B : % Type} : (% A -> % B) -> % List A -> % List B
+-- map A B f as := $q[
+--   foldr @{A, List B} (λ a bs. cons @{B} $s[f $q[a]] bs) (nil @{B})
+-- ]
+-- map {A B : % Type} : (% $s[A] -> % $s[B]) -> % List $s[A] -> % List $s[B]
+-- map A B f as := $q[
+--   foldr @{$s[A], List $s[B]} (λ a bs. cons @{$s[B]} $s[f $q[a]] bs) (nil @{$s[B]})
+-- ]
+-- exp : Nat -> % Nat -> % Nat
+-- exp := λ x y. iter x (λ n. $q[ y * n ]) $q[ 1 ]
+-- exp : Nat -> % Nat -> % Nat
+-- exp := λ x y. iter x (λ n. $q[ $s[y] * $s[n] ]) $q[ 1 ]
+
 -- map : (𝐴 𝐵 : ⇑U0) → (⇑ ∼𝐴 → ⇑ ∼𝐵) → ⇑(List0 ∼𝐴) → ⇑(List0 ∼𝐵)
 -- map := 𝜆 𝐴 𝐵 𝑓 as. ⟨foldr0 ∼𝐴 (List0∼𝐵) (𝜆 𝑎 bs. cons0 ∼𝐵 ∼(𝑓 ⟨𝑎⟩) bs) (nil0 ∼𝐵) ∼𝑎𝑠⟩
+
+-- exp : Nat1 → ⇑Nat0 → ⇑Nat0
+-- exp := 𝜆 𝑥 𝑦. iter1 𝑥 (𝜆 𝑛. ⟨∼𝑦 ∗0 ∼𝑛⟩) ⟨1⟩

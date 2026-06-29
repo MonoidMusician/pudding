@@ -26,6 +26,7 @@ import Data.Function ((&))
 %name parseExpr expr
 %name parseExprInParens exprInParens
 %name parseBinderInner binderInner
+%name parseImplicits implicits
 
 
 %token
@@ -45,6 +46,8 @@ import Data.Function ((&))
   '.'   { Token _ (Syntax SPeriod) }
   '_'   { Token _ (Syntax SPlaceholder) }
 
+  '%'   { Token _ (Content (QualifiedOp (PlainOp [] "%"))) }
+
   'Type' { Token _ (Content Univ) }
 
   QNAME { Token _ (Content (QualifiedName _)) }
@@ -56,6 +59,7 @@ import Data.Function ((&))
 
   PARENS { Token _ (Content (Parens _)) }
   BRACES { Token _ (Content (Braces _)) }
+  IMPLICITS { Token _ (Content (Implicits _)) }
 
 %%
 
@@ -75,41 +79,62 @@ Parens :: { [Token] }
   : PARENS { case $1 of Token _ (Content (Parens ts)) -> ts }
 Braces :: { [Token] }
   : BRACES { case $1 of Token _ (Content (Braces ts)) -> ts }
+Implicits :: { [Token] }
+  : IMPLICITS { case $1 of Token _ (Content (Implicits ts)) -> ts }
 
 
 -- Main expression precedence ladder
 expr :: { CST }
-  : expr1 %shift { $1 }
-  | expr1 ':' expr { CAscribe $1 $3 }
+  : exprAscribe { $1 }
 
-expr1 :: { CST }
-  : expr2 { $1 }
+-- Type ascriptions are lowest precedence / bind weakest
+exprAscribe :: { CST }
+  -- %shift here disambiguates `\(X : Type). X : Type`
+  : exprSentence %shift { $1 }
+  | exprSentence ':' exprAscribe { CAscribe $1 $3 }
+
+-- A sentence is a sequence of operators and function applications
+exprSentence :: { CST }
+  : exprTrailing { $1 }
+  | '%' exprTrailing { CLift $2 }
   -- Handle things with operators (including function application)
   -- as a flat list of operators \/ expressions, which gets parsed into
   -- a tree after resolving namespaces. Being a list automatically takes care
   -- of parenthesization.
-  | someAux(wordAtom) word(expr2) { unamb (NE.reverse (NE.cons $2 $1)) }
+  | someAux(wordAtom) word(exprTrailing) { cSentence (NE.reverse (NE.cons $2 $1)) }
 
-  wordAtom :: { Either OpForm CST }
+  wordAtom :: { PartOfSpeech CST }
     : word(exprAtom) { $1 }
 
-  word(inner) :: { Either OpForm inner }
-    : QualifiedOp { Left $1 } | inner { Right $1 }
+  word(inner) :: { PartOfSpeech CST }
+    : QualifiedOp { SOp $1 }
+    | Implicits {% fmap SImplicits (parseImplicits $1) }
+    | inner { Subexpr $1 }
 
-expr2 :: { CST }
+  implicits :: { [(Maybe (NameForm, VariableDB), CST)] }
+    : commas(implicit) { $1 }
+
+  implicit :: { (Maybe (NameForm, VariableDB), CST) }
+    : VariableName ':=' expr { (Just $1, $3) }
+    | expr { (Nothing, $1) }
+
+-- Operators open on the right with trailing precedence
+exprTrailing :: { CST }
   : exprAtom { $1 }
   | 'λ' binders '.' expr { CLambda $2 $4 }
   | 'Π' binders '.' expr { CPi $2 $4 }
   | 'Σ' binders '.' expr { CSigma $2 $4 }
 
+-- Atomic expressions with well-defined start and end
 exprAtom :: { CST }
-  : Parens {% parseExpr $1 }
+  : Parens {% parseExprInParens $1 }
   | var { $1 }
   | num { $1 }
   | 'Type' { CUniv }
   | QualifiedName { CName $1 }
   | ModuleName { CMod $1 }
 
+-- Parse an expression inside parens
 exprInParens :: { CST }
   : expr { $1 }
   -- for patterns
@@ -122,13 +147,14 @@ var :: { CST }
 num :: { CST }
   : Number { CNum $1 }
 
-binders :: { NonEmpty (Plicit, CBinder, "ty" @:: Maybe CST) }
-  : some(binder) { join $1 }
+-- A list of binders
+binders :: { NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST) }
+  : some(binder) { $1 }
 
-binder :: { NonEmpty (Plicit, CBinder, "ty" @:: Maybe CST) }
-  : var { pure (Explicit, $1, Nothing) }
-  | Parens {% parseBinderInner $1 <&> \(vs, t) -> vs <&> (Explicit, , t) }
-  | Braces {% parseBinderInner $1 <&> \(vs, t) -> vs <&> (Implicit, , t) }
+binder :: { (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST) }
+  : var { (Explicit, pure $1, Nothing) }
+  | Parens {% parseBinderInner $1 <&> \(vs, t) -> (Explicit, vs, t) }
+  | Braces {% parseBinderInner $1 <&> \(vs, t) -> (Implicit, vs, t) }
 
 binderInner :: { (NonEmpty CBinder, Maybe CST) }
   : some(var) { ($1, Nothing) }
@@ -161,6 +187,16 @@ someSep(a, sep) :: { NE.NonEmpty a }
 someSepAux(a, sep) :: { NE.NonEmpty a }
   : a { pure $1 }
   | someSepAux(a, sep) sep a { NE.cons $3 $1 }
+
+commas(a) :: { [a] }
+  : commas1(a) ',' { NE.toList $1 }
+  | commas1(a)     { NE.toList $1 }
+  | {- empty -} { [] }
+  | ',' { [] }
+
+commas1(a) :: { NE.NonEmpty a }
+  : a %shift { pure $1 }
+  | a ',' commas1(a) { NE.cons $1 $3 }
 
 -- sep(a, s) :: { Separated a }
 --   : sep1(a, s) { separated $1 }

@@ -13,11 +13,11 @@ import Data.Vector (Vector)
 import GHC.Generics (Generic)
 import GHC.StableName (StableName)
 import Pudding.Name (CanonicalName (..), Name (..), initTable, internalize, newTable, NameTable, canonicalName)
-import Pudding.Types.Base (Plicit, type (@::))
+import Pudding.Types.Base (Plicit (Explicit), type (@::))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack
 import Control.Monad.State.Strict (State, StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift))
-import Pudding.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar), ScopedTerm (Scoped), Eval (ENeut), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase))
+import Pudding.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar), ScopedTerm (Scoped), Eval (ENeut, EUniv), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl (..), CST (..), CBinder)
@@ -25,7 +25,7 @@ import Data.Foldable (traverse_, Foldable (fold))
 import Data.Functor.Compose (Compose (Compose))
 import Data.Traversable (for)
 import Control.Monad.Reader.Class (MonadReader (local, ask), asks)
-import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty (NonEmpty(..))
 import Pudding.Eval (EvalTypeCtx)
 import qualified Pudding.Unify as U
 import qualified Pudding.Eval as E
@@ -33,6 +33,8 @@ import Pudding.Surface.Lexer (VariableDB(PlainVar), NameForm (PlainName), Conten
 import Data.Maybe (fromMaybe)
 import qualified Pudding.Printer as P
 import qualified Data.Text as T
+import Control.Arrow (Arrow(first))
+import qualified Data.List.NonEmpty as NE
 
 class Applicative m => TwoPhase m where
   twoPhases :: m (m r) -> m r
@@ -107,12 +109,6 @@ type Scoped = GInit (ReaderT GLScope IO)
 -- Stage 4: evaluate expressions with globals, locals, and names
 type GLM = Compose (ReaderT (IORef NameTable) IO) (GGather Scoped)
 
-c1 :: Functor f => Applicative g => f r -> Compose f g r
-c1 = Compose . fmap pure
-
-c2 :: Applicative f => g r -> Compose f g r
-c2 = Compose . pure
-
 willInitGLM :: Text -> (Name -> Scoped GlobalInfo) -> GLM ()
 willInitGLM name creator = Compose $ mintName id name <&>
   \name' -> void $ willInit name' (creator name')
@@ -158,9 +154,9 @@ elaborateDefn :: CST -> Scoped GlobalTerm
 elaborateDefn = fmap (\t -> GlobalTerm t undefined) . elab Nothing
 
 
-elab :: Maybe Eval -> CST -> Scoped Term
+elab :: Maybe ("expected type" @:: Eval) -> CST -> Scoped Term
 elab mexp = \case
-  CApp fun arg -> TApp mempty <$> elab Nothing fun <*> elab Nothing arg
+  CApp fun arg -> TApp mempty Explicit <$> elab Nothing fun <*> elab Nothing arg
   CUniv -> pure $ TUniv mempty (UBase 0)
 
   CLambda binders body -> elabBinders (TLambda mempty) binders body
@@ -186,9 +182,9 @@ elab mexp = \case
   -- | CStr ![Either Text CST]
   -- | CHole !(Maybe Text)
 
-  -- | CLift !CST
-  -- | CQuote !CST
-  -- | CSplice !CST
+  CLift t -> TLift mempty <$> elab (Just (EUniv mempty (UBase 0))) t
+  CQuote e -> TQuote mempty <$> elab Nothing e
+  CSplice e -> TSplice mempty <$> elab Nothing e
 
   -- | CMatch ![CST] !("cases" @:: [("pats" @:: [CST], "body" @:: CST)])
   -- | CField  !CST !Text
@@ -213,10 +209,10 @@ elab mexp = \case
 
 elabBinders ::
   (Plicit -> Binder -> Term -> ScopedTerm -> Term) ->
-  NonEmpty (Plicit, CBinder, "ty" @:: Maybe CST) -> CST -> Scoped Term
+  NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST) -> CST -> Scoped Term
 elabBinders cons binders body = foldr addBinder (elab Nothing body) binders
   where
-  addBinder :: (Plicit, CBinder, Maybe CST) -> Scoped Term -> Scoped Term
+  addBinder :: (Plicit, NonEmpty CBinder, Maybe CST) -> Scoped Term -> Scoped Term
   addBinder (plicit, binder, mty) inner = do
     tyT <- case mty of
       Nothing -> error "Missing type for lambda/pi/sigma"
@@ -224,11 +220,23 @@ elabBinders cons binders body = foldr addBinder (elab Nothing body) binders
     evalCtx <- asks ctx
     let tytyT = U.quickTermType evalCtx tyT
     let tyE = E.eval (snd <$> evalCtx) tyT
-    (binderB, chngCtx) <- elabBinder ((tyT, tyE), (tytyT)) binder
-    cons plicit binderB tyT . Scoped <$> local chngCtx inner
+    (binderB, chngCtx) <- elabMultiBinder tyE binder
+    multiCons plicit binderB tyT <$> local chngCtx inner
+  multiCons plicit bounders tyT inner =
+    foldr (\(i, b) -> cons plicit b (E.shift i tyT) . Scoped)
+      inner
+      (zip [0..] (NE.toList bounders))
 
-elabBinder :: ("ty" @:: (Term, Eval), "tyty" @:: (Eval)) -> CBinder -> Scoped (Binder, GLScope -> GLScope)
-elabBinder ((tyT, tyE), (tytyT)) = \case
+elabMultiBinder :: ("ty" @:: Eval) -> NonEmpty CBinder -> Scoped (NonEmpty Binder, GLScope -> GLScope)
+elabMultiBinder tyE (b0 :| []) = first pure <$> elabBinder1 tyE b0
+elabMultiBinder tyE (b0 :| (b1 : bs)) = do
+  (c0, f0) <- elabBinder1 tyE b0
+  local f0 do
+    (cs, fs) <- elabMultiBinder tyE (b1 :| bs)
+    pure (NE.cons c0 cs, fs . f0)
+
+elabBinder1 :: ("ty" @:: Eval) -> CBinder -> Scoped (Binder, GLScope -> GLScope)
+elabBinder1 tyE = \case
   CVar (PlainName [] text) PlainVar -> do
     name <- mintName names text
     let binder = BVar (Meta (canonicalName name))

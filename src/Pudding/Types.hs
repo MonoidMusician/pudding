@@ -144,6 +144,7 @@ data Term
   | -- Apply a function to an argument
     TApp
       Metadata
+      !Plicit
       ("function" @:: Term)
       ("argument" @:: Term)
   | -- Sigma type (dependent pair / dependent sum)
@@ -273,7 +274,7 @@ data NeutFocus
   deriving (Generic, NFData)
 
 data NeutPrj
-  = NApp Metadata ("arg" @:: Eval)
+  = NApp Metadata !Plicit ("arg" @:: Eval)
   | NFst Metadata
   | NSnd Metadata
   | NSplice Metadata
@@ -286,7 +287,7 @@ data NeutPrj
 
 data Side = Before | After
 neutSide :: NeutPrj -> Side
-neutSide (NApp _ _) = After
+neutSide (NApp _ _ _) = After
 neutSide (NFst _) = Before
 neutSide (NSnd _) = Before
 neutSide (NSplice _) = Before
@@ -334,7 +335,7 @@ arityOfTerm = go 0
 spine :: Term -> (Term, [Term])
 spine = go []
   where
-    go acc (TApp _ fun arg) = go (arg : acc) fun
+    go acc (TApp _ _ fun arg) = go (arg : acc) fun
     go acc fun = (fun, acc)
 
 --------------------------
@@ -435,9 +436,10 @@ instance HasMetadata Term where
         <$> f old
         <.*> traverseMetadataDepth d (apply f) ty
         <.*> traverseMetadataDepth d (apply f) body
-    TApp old fun arg ->
+    TApp old p fun arg ->
       TApp
         <$> f old
+        <.*> pure p
         <.*> traverseMetadataDepth d (apply f) fun
         <.*> traverseMetadataDepth d (apply f) arg
     TSigma old p b ty body ->
@@ -548,9 +550,10 @@ instance HasMetadata NeutFocus where
 
 instance HasMetadata NeutPrj where
   traverseMetadata1Depth d f = \case
-    NApp old arg ->
+    NApp old p arg ->
       NApp
         <$> f old
+        <.*> pure p
         <.*> traverseMetadataDepth d (apply f) arg
     NFst old -> NFst <$> f old
     NSnd old -> NSnd <$> f old
@@ -608,7 +611,7 @@ summarize (Summarize { onEval, onNeutPrj, onNeutFocus, onTerm }) =
     TGlobal _ _ -> mempty
     TLambda _ p b ty body -> summTerm ty <> summScoped body
     TPi _ p b ty body -> summTerm ty <> summScoped body
-    TApp _ fun arg -> summTerm fun <> summTerm arg
+    TApp _ _ fun arg -> summTerm fun <> summTerm arg
     TSigma _ p b ty body -> summTerm ty <> summScoped body
     TPair _ t l r -> summTerm t <> summTerm l <> summTerm r
     TFst _ t -> summTerm t
@@ -635,7 +638,7 @@ summarize (Summarize { onEval, onNeutPrj, onNeutFocus, onTerm }) =
 
   neutPrjChildren :: NeutPrj -> Maybe m
   neutPrjChildren = \case
-    NApp _ arg -> summEval arg
+    NApp _ _ arg -> summEval arg
     NFst _ -> mempty
     NSnd _ -> mempty
     NSplice _ -> mempty

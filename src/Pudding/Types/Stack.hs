@@ -96,10 +96,10 @@ class ToLevel l where
   level :: StackLike c => c -> l -> Level
 
 instance ToLevel Level where
-  level c lv@(Level l) = lv --assert (0 <= l && l < size c) lv
+  level c lv@(Level l) = assert (0 <= l && l < size c) lv
 
 instance ToLevel Int where
-  level c l = Level l -- assert (0 <= l && l < size c) (Level l)
+  level c l = assert (0 <= l && l < size c) (Level l)
 
 instance ToLevel Index where
   level c (Index idx) = level c ((size c - 1) - idx)

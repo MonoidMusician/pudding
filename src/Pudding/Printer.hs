@@ -96,7 +96,7 @@ printCore = \case
     , pure Doc.hardline
     , bound binder printCore body
     ]
-  app@(TApp _m _ _) ->
+  app@(TApp _m _ _ _) ->
     let (fun, args) = spine app in
     sexp $ printCore <$> fun : args
   TSigma _m p binder ty body -> sexp
