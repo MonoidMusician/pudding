@@ -12,7 +12,7 @@
   - and `(+)`, `(:+:)` will turn an operator into a name
     - `(if:then:else:)`, `(Control'if:then:else:)`, `Control'(if:then:else:)`
     - `(:if:else:)`, `(:Control'if:else:)`, `Control'(:if:else:)`
-    - `(:@[:])`, `(:+[:]+:)`, `($[:+:])`
+    - `(:@[:])`, `(:+[:]+:)`, `($[:+:])`?
   - but allow ${operator}_${name} or ${operator}·${name}, e.g. `+_comm` is a name, but `+-comm` is not, that would parse as `+- comm`
   - no distinction between constructors vs other names, though!
   - (especially because definitions should be able to be used in patterns)

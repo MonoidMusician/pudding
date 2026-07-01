@@ -83,6 +83,9 @@ instance ToIndex Index where
 instance ToIndex Int where
   index c i = assert (0 <= i && i < size c) (Index i)
 
+instance ToIndex Word where
+  index c = index c . fromIntegral @Word @Int
+
 instance ToIndex Level where
   index c (Level lvl) = index c ((size c - 1) - lvl)
 
@@ -100,6 +103,9 @@ instance ToLevel Level where
 
 instance ToLevel Int where
   level c l = assert (0 <= l && l < size c) (Level l)
+
+instance ToLevel Word where
+  level c = level c . fromIntegral @Word @Int
 
 instance ToLevel Index where
   level c (Index idx) = level c ((size c - 1) - idx)

@@ -510,6 +510,7 @@ makeCaseFnType typeName tyInfo@(GlobalTypeInfo { typeParams, typeIndices = _ }) 
     -- (They are relative to the arguments abstracted in the same way)
     -- FIXME: this is not true! the parameters are one off! ugh
     relevantMotive = Vector.ifoldl
+      -- FIXME: Plicit
       (\motiveFn i chosenIndex -> TApp mempty Explicit motiveFn (withMotive (i + Vector.length ctorArguments) chosenIndex))
       givenMotive ctorIndices
     appliedMotive = TApp mempty Explicit relevantMotive chosenValue

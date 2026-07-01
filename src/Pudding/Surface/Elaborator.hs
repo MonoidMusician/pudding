@@ -15,9 +15,9 @@ import GHC.StableName (StableName)
 import Pudding.Name (CanonicalName (..), Name (..), initTable, internalize, newTable, NameTable, canonicalName)
 import Pudding.Types.Base (Plicit (Explicit), type (@::))
 import Pudding.Types.Metadata
-import Pudding.Types.Stack
+import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), StackLike(size), pattern Nil, pattern (:>))
 import Control.Monad.State.Strict (State, StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift))
-import Pudding.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar), ScopedTerm (Scoped), Eval (ENeut, EUniv), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase))
+import Pudding.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused), ScopedTerm (Scoped), Eval (ENeut, EUniv), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl (..), CST (..), CBinder)
@@ -29,12 +29,13 @@ import Data.List.NonEmpty (NonEmpty(..))
 import Pudding.Eval (EvalTypeCtx)
 import qualified Pudding.Unify as U
 import qualified Pudding.Eval as E
-import Pudding.Surface.Lexer (VariableDB(PlainVar), NameForm (PlainName), Content)
+import Pudding.Surface.Lexer (VariableDB(..), NameForm (..), Content)
 import Data.Maybe (fromMaybe)
 import qualified Pudding.Printer as P
 import qualified Data.Text as T
 import Control.Arrow (Arrow(first))
 import qualified Data.List.NonEmpty as NE
+import Control.Monad.Trans.Cont (ContT(ContT, runContT))
 
 class Applicative m => TwoPhase m where
   twoPhases :: m (m r) -> m r
@@ -166,16 +167,22 @@ elab mexp = \case
 
   -- | CSentence !(NonEmpty (Either L.OpForm CST))
 
-  CVar (PlainName [] text) PlainVar -> do
+  CVar (Just (PlainName [] text)) PlainVar -> do
     name <- mintName names text
     asks (M.lookup name . locals) >>= \case
       Just (_ :> e) -> do
         qc <- asks (void . ctx)
         pure $ E.quote qc e
       _ -> error $ "Missing variable: " <> show name
+  CVar Nothing idxOrLvl -> case idxOrLvl of
+    PlainVar -> error "impossible: CVar Nothing PlainVar"
+    DBIndex i -> do
+      c <- asks ctx
+      pure $ TVar mempty $ index c i
+    DBLevel l -> do
+      c <- asks ctx
+      pure $ TVar mempty $ index c $ level c l
 
-  -- | CVar  !L.NameForm !VariableDB
-  -- | CName !L.NameForm
   -- | CMod  ![Text]
 
   -- | CNum !Text
@@ -220,8 +227,8 @@ elabBinders cons binders body = foldr addBinder (elab Nothing body) binders
     evalCtx <- asks ctx
     let tytyT = U.quickTermType evalCtx tyT
     let tyE = E.eval (snd <$> evalCtx) tyT
-    (binderB, chngCtx) <- elabMultiBinder tyE binder
-    multiCons plicit binderB tyT <$> local chngCtx inner
+    runContT (elabMultiBinderCont tyE binder) \binderB ->
+      multiCons plicit binderB tyT <$> inner
   multiCons plicit bounders tyT inner =
     foldr (\(i, b) -> cons plicit b (E.shift i tyT) . Scoped)
       inner
@@ -237,11 +244,27 @@ elabMultiBinder tyE (b0 :| (b1 : bs)) = do
 
 elabBinder1 :: ("ty" @:: Eval) -> CBinder -> Scoped (Binder, GLScope -> GLScope)
 elabBinder1 tyE = \case
-  CVar (PlainName [] text) PlainVar -> do
+  CVar (Just (PlainName [] text)) PlainVar -> do
     name <- mintName names text
     let binder = BVar (Meta (canonicalName name))
     pure $ (binder, ) $ \outer ->
       let neutral = Neutral (NVar mempty (Level (size (ctx outer)))) Nil
           addVar = name & M.alter do Just . (:> ENeut neutral) . fromMaybe Nil
       in outer { locals = addVar (locals outer), ctx = ctx outer :> (binder, (tyE, ENeut neutral)) }
+  CPlaceholder -> do
+    pure $ (BUnused,) $ \outer ->
+      let neutral = Neutral (NVar mempty (Level (size (ctx outer)))) Nil
+      in outer { ctx = ctx outer :> (BUnused, (tyE, ENeut neutral)) }
   _ -> error "Bad/unsupported binder"
+
+elabMultiBinderCont :: ("ty" @:: Eval) -> NonEmpty CBinder -> ContT c Scoped (NonEmpty Binder)
+elabMultiBinderCont tyE = traverse (elabBinder1Cont tyE)
+
+localize :: MonadReader r m => a -> (r -> r) -> ContT c m a
+localize c f = ContT \k -> local f (k c)
+
+elabBinder1Cont :: ("ty" @:: Eval) -> CBinder -> ContT c Scoped Binder
+elabBinder1Cont tyE b = do
+  (c, f) <- lift $ elabBinder1 tyE b
+  ContT \k -> do
+    local f $ k c

@@ -18,7 +18,7 @@ import Control.Monad.Identity (Identity (runIdentity))
 import Witherable (Filterable(catMaybes))
 import qualified Data.List as List
 import qualified Prettyprinter as Doc
-import Data.List.NonEmpty (NonEmpty(..))
+import Data.List.NonEmpty (NonEmpty(..), some1)
 import Data.Semigroup.Foldable (intercalateMap1)
 import Prettyprinter.Util (reflow)
 
@@ -373,13 +373,11 @@ instance Doc.Pretty VariableDB where
 -- | pursuit of an ASCII-amenable source code for a dependently typed language
 -- | with custom user operators. Ahem.
 data Content
-  -- | A name, for the purposes of the syntax
-  = QualifiedName !NameForm
-  -- | A variable name, including unqualified names and names with a de Bruijn
+  -- | A variable name, including (un)qualified names and names with a de Bruijn
   -- | index `x@^0` for index `0` of variable `x` (innermost/most recently bound,
   -- | i.e. always equal to `x`), and de Bruijn level `x@_0` for level `0` of
   -- | variable `x` (outermost/first bound)
-  | VariableName !NameForm !VariableDB
+  = VariableName !(Maybe NameForm) !VariableDB
   -- | A bare module name
   | ModuleName ![Text]
   -- | An operator, for the purposes of the syntax
@@ -409,8 +407,10 @@ data Content
   -- | A splice or quote, `$s[ ... ]` and `$q[ ... ]`
   | Splote ![Text] !Text ![Token]
   -- | Bracketed operator, like `Module'+[ ... ]+` for `Module'(+[:]+)`
-  -- | (bracket *is* included in the texts)
-  | Bracketed ![Text] !Text ![Token] !Text
+  -- | (the bracket *is not* included in the texts, but should be included
+  -- | in the Name later). Note that some operators like `,` may be parsed
+  -- | as user operators inside brackets
+  | Bracketed ![Text] !Text (NonEmpty ([Token], Text))
 
   | Parens ![Token]
   | Braces ![Token]
@@ -658,8 +658,11 @@ tokenize1 = liftA2 Token P.getPosition $ asum
     -- Splice/quote
     , Splote <$> (is "$" pOP *> qualifier) <*> pNAME <*>
         (pB "[" *> tokenize <* pB "]")
+    -- Bracketed operators
+    , Bracketed <$> qualifier <*> (pOP <|> pure mempty) <*>
+        some1 (liftA2 (,) (pB "[" *> tokenize <* pB "]") (pOP <|> pure mempty))
     -- A variable, including a bare name and `x@^0`/`x@_0` index/level notation
-    , VariableName
+    , VariableName . Just
         <$> anyNameForm []
         <*> asum
           [ DBIndex . read . T.unpack <$> (pB "@^" *> pNUM)
@@ -667,8 +670,12 @@ tokenize1 = liftA2 Token P.getPosition $ asum
           , pure PlainVar
           ]
     -- A strictly qualified name, `Module'Path'To'identifier`
-    , QualifiedName <$> do
-        qualifier >>= anyNameForm
+    , VariableName . Just <$> (qualifier >>= anyNameForm) <*> pure PlainVar
+    -- An anonymous variable index or level
+    , VariableName Nothing <$> asum
+        [ DBIndex . read . T.unpack <$> (pB "@^" *> pNUM)
+        , DBLevel . read . T.unpack <$> (pB "@_" *> pNUM)
+        ]
     -- Plain operators and distfix operators
     , QualifiedOp <$> longestOf
         [ PlainOp <$> qualifier <*> pOP
@@ -789,11 +796,7 @@ syntax = token \case
   Syntax s -> pure s
   _ -> empty
 
-pQualifiedName :: Parser NameForm
-pQualifiedName = token \case
-  Content (QualifiedName a) -> pure a
-  _ -> empty
-pVariableName :: Parser (NameForm, VariableDB)
+pVariableName :: Parser (Maybe NameForm, VariableDB)
 pVariableName = token \case
   Content (VariableName a b) -> pure (a, b)
   _ -> empty

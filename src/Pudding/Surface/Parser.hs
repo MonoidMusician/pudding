@@ -46,7 +46,7 @@ data Decl
 
 data PartOfSpeech t
   = SOp L.OpForm
-  | SImplicits ![(Maybe (L.NameForm, L.VariableDB), t)]
+  | SImplicits ![(Maybe (Maybe L.NameForm, L.VariableDB), t)]
   | Subexpr t
   deriving (Eq, Ord, Show, Generic, NFData, Functor, Foldable, Traversable)
 
@@ -59,14 +59,16 @@ data CST
 
   | CSentence !(NonEmpty (PartOfSpeech CST))
 
-  | CVar  !L.NameForm !VariableDB
-  | CName !L.NameForm
+  | CVar  !(Maybe L.NameForm) !VariableDB
   | CMod  ![Text]
 
   | CUniv
   | CNum !Text
   | CStr ![Either Text CST]
   | CHole !(Maybe Text)
+
+  | CRecordTy ![(L.NameForm, CST)]
+  | CRecordTm ![(L.NameForm, CST)]
 
   | CLift !CST
   | CQuote !CST
@@ -76,6 +78,8 @@ data CST
   | CField  !CST !Text
   | CAscribe !CST !CST
   | CAssign !CST !CST -- for patterns and do notation
+  | CPlaceholder
+  | CArray ![CST]
   deriving (Eq, Ord, Show, Generic, NFData)
 
 -- | Construct a sentence, handling easy cases that do not rely on precedence
@@ -90,13 +94,16 @@ cSentence sentence | Just appForm <- for sentence x =
     _ -> Nothing
 -- Single infix op
 cSentence (Subexpr l :| [SOp (L.PlainOp qual op), Subexpr r]) =
-  apps (CName (L.OperatorName qual Nothing [op] Nothing) :| [l, r])
+  apps (CVar (Just $ L.OperatorName qual Nothing [op] Nothing) L.PlainVar :| [l, r])
 -- Single prefix op
 cSentence (SOp (L.PlainOp qual op) :| [Subexpr arg]) =
-  apps (CName (L.OperatorName qual (Just op) [] Nothing) :| [arg])
+  apps (CVar (Just $ L.OperatorName qual (Just op) [] Nothing) L.PlainVar :| [arg])
 -- Single postfix op
 cSentence (Subexpr arg :| [SOp (L.PlainOp qual op)]) =
-  apps (CName (L.OperatorName qual Nothing [] (Just op)) :| [arg])
+  apps (CVar (Just $ L.OperatorName qual Nothing [] (Just op)) L.PlainVar :| [arg])
+-- Pair
+cSentence (SOp (L.PlainOp [] "[") :| [Subexpr l, SOp (L.PlainOp [] ","), Subexpr r, SOp (L.PlainOp [] "]")]) =
+  CArray [l, r]
 -- Needs disambiguation still
 cSentence sentence = CSentence sentence
 

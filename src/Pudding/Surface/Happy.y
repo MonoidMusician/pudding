@@ -1,4 +1,5 @@
 {
+-- cabal exec -- happy --ghc src/Pudding/Surface/Happy.y --info=src/Pudding/Surface/Happy.info
 module Pudding.Surface.Happy where
 
 import Prelude hiding (lex)
@@ -15,6 +16,7 @@ import Control.Monad (join)
 import Data.Foldable (fold, traverse_)
 import Data.Functor (void, (<&>))
 import Data.Function ((&))
+import Data.Maybe (fromMaybe)
 }
 
 %expect 0
@@ -25,6 +27,7 @@ import Data.Function ((&))
 
 %name parseExpr expr
 %name parseExprInParens exprInParens
+%name parseRecordInBraces recordInBraces
 %name parseBinderInner binderInner
 %name parseImplicits implicits
 
@@ -50,7 +53,6 @@ import Data.Function ((&))
 
   'Type' { Token _ (Content Univ) }
 
-  QNAME { Token _ (Content (QualifiedName _)) }
   VNAME { Token _ (Content (VariableName _ _)) }
   MNAME { Token _ (Content (ModuleName _)) }
   ONAME { Token _ (Content (QualifiedOp _)) }
@@ -63,9 +65,7 @@ import Data.Function ((&))
 
 %%
 
-QualifiedName :: { NameForm }
-  : QNAME { case $1 of Token _ (Content (QualifiedName n)) -> n }
-VariableName :: { (NameForm, VariableDB) }
+VariableName :: { (Maybe NameForm, VariableDB) }
   : VNAME { case $1 of Token _ (Content (VariableName n d)) -> (n, d) }
 ModuleName :: { [Text] }
   : MNAME { case $1 of Token _ (Content (ModuleName m)) -> m }
@@ -111,10 +111,10 @@ exprSentence :: { CST }
     | Implicits {% fmap SImplicits (parseImplicits $1) }
     | inner { Subexpr $1 }
 
-  implicits :: { [(Maybe (NameForm, VariableDB), CST)] }
+  implicits :: { [(Maybe (Maybe NameForm, VariableDB), CST)] }
     : commas(implicit) { $1 }
 
-  implicit :: { (Maybe (NameForm, VariableDB), CST) }
+  implicit :: { (Maybe (Maybe NameForm, VariableDB), CST) }
     : VariableName ':=' expr { (Just $1, $3) }
     | expr { (Nothing, $1) }
 
@@ -128,10 +128,10 @@ exprTrailing :: { CST }
 -- Atomic expressions with well-defined start and end
 exprAtom :: { CST }
   : Parens {% parseExprInParens $1 }
+  | Braces {% parseRecordInBraces $1 }
   | var { $1 }
   | num { $1 }
   | 'Type' { CUniv }
-  | QualifiedName { CName $1 }
   | ModuleName { CMod $1 }
 
 -- Parse an expression inside parens
@@ -140,9 +140,22 @@ exprInParens :: { CST }
   -- for patterns
   | expr ':=' expr { CAssign $1 $3 }
 
+-- Parse a record term or record type inside braces
+-- (assume term by default)
+recordInBraces :: { CST }
+  : commas1(recordTy) { CRecordTy (NE.toList $1) }
+  | commas (recordTm) { CRecordTm $1 }
+
+  recordTy :: { (NameForm, CST) }
+    : VariableName ':' expr { (fromMaybe (error "whoops") (fst $1), $3) }
+  recordTm :: { (NameForm, CST) }
+    : VariableName ':=' expr { (fromMaybe (error "whoops") (fst $1), $3) }
 
 var :: { CST }
   : VariableName { CVar (fst $1) (snd $1) }
+varOrNot :: { CST }
+  : var { $1 }
+  | '_' { CPlaceholder }
 
 num :: { CST }
   : Number { CNum $1 }
@@ -152,13 +165,13 @@ binders :: { NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST) }
   : some(binder) { $1 }
 
 binder :: { (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST) }
-  : var { (Explicit, pure $1, Nothing) }
+  : varOrNot { (Explicit, pure $1, Nothing) }
   | Parens {% parseBinderInner $1 <&> \(vs, t) -> (Explicit, vs, t) }
   | Braces {% parseBinderInner $1 <&> \(vs, t) -> (Implicit, vs, t) }
 
 binderInner :: { (NonEmpty CBinder, Maybe CST) }
-  : some(var) { ($1, Nothing) }
-  | some(var) ':' expr { ($1, Just $3) }
+  : some(varOrNot) { ($1, Nothing) }
+  | some(varOrNot) ':' expr { ($1, Just $3) }
 
 
 

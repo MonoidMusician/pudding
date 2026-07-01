@@ -15,10 +15,12 @@ import Data.Show.Reshow (reshow)
 import qualified Pudding.Surface.Elaborator as Elab
 import qualified Data.Map.Strict as Map
 import Pudding.Printer (Style (Ansi), formatCore)
-import GHC.IO (catch)
+import GHC.IO (catch, evaluate)
 import GHC.Exception (SomeException)
 import qualified Pudding.Unify as U
 import qualified Pudding.Eval as E
+import Control.DeepSeq (force)
+import qualified Pudding.Surface.Delaborator as D
 
 demo :: IO ()
 demo = do
@@ -41,9 +43,13 @@ demo = do
               Right cst -> do
                 TIO.putStrLn $ reshow cst
                 tbl <- initTable
-                hm <- Elab.runElabScoped tbl (Elab.elab Nothing cst)
-                TIO.putStrLn $ formatCore Ansi hm
-                TIO.putStrLn $ formatCore Ansi $ E.quote Nil $ U.validate Nil hm
+                tm <- Elab.runElabScoped tbl (Elab.elab Nothing cst)
+                TIO.putStrLn $ formatCore Ansi tm
+                tyE <- evaluate $ force $ U.validate Nil tm
+                let tyT = E.quote Nil tyE
+                TIO.putStrLn $ formatCore Ansi tyT
+                TIO.putStrLn $ D.format D.Ansi $ D.printCST (D.runDelab $ D.delab tm) (D.PS 0 0)
+                TIO.putStrLn $ D.format D.Ansi $ D.printCST (D.runDelab $ D.delab tyT) (D.PS 0 0)
     \(err :: SomeException) -> TIO.putStrLn $ T.pack $ show err
   demo
 

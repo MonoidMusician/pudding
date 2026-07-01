@@ -78,6 +78,7 @@ doPrj e prj = error $ mconcat
   ]
 
 doApp :: HasCallStack => "fun" @:: Eval -> "arg" @:: Eval -> Eval
+-- FIXME: Plicit
 doApp fun arg = doPrj fun (NApp mempty Explicit arg)
 
 doFst :: HasCallStack => Eval -> Eval
@@ -95,6 +96,7 @@ doPrjs focus (prjs :> prj) = doPrj (doPrjs focus prjs) prj
 doPrjs focus Nil = focus
 
 doApps :: HasCallStack => Eval -> Stack Eval -> Eval
+-- FIXME: Plicit
 doApps focus = doPrjs focus . fmap (NApp mempty Explicit)
 
 -- Eta expand the pair constructor, for sigma types
