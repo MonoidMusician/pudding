@@ -354,6 +354,7 @@ instance Show Tok where
   show (Syntax s) = show s
   show (Comment c) = show c
 
+type VariableName = (Maybe NameForm, VariableDB)
 data VariableDB
   = PlainVar
   | DBIndex !Word
@@ -703,6 +704,8 @@ tokenize1 = liftA2 Token P.getPosition $ asum
     , parens do
         nospace *> pB "."
         Symbol <$> pNAME <|> Dimension <$> pNUM
+    -- A command
+    , Command <$> (pB "@" *> qualifier) <*> pNAME
     ]
   , asum
     [ Syntax SPlaceholder <$ pB "_" -- FIXME: re-disallow +_+

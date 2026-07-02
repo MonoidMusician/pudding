@@ -12,7 +12,7 @@ import Pudding.Types.Base (Plicit (Explicit), type (@::))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), StackLike(size), pattern Nil, pattern (:>))
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift))
-import Pudding.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused), ScopedTerm (Scoped), Eval (ENeut, EUniv), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase))
+import Pudding.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused), ScopedTerm (Scoped), Eval (ENeut, EUniv), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase), globalsFrom, Ctx (ctxGlobals))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl (..), CST (..), CBinder)
@@ -34,8 +34,11 @@ import Control.Monad.Trans.Cont (ContT(ContT, runContT))
 class Applicative m => TwoPhase m where
   twoPhases :: m (m r) -> m r
 
+
+
 -- | Gather global names. Merely an applicative, not a monad.
-data GGather m r = GGather (Map Name (m GlobalInfo))
+data GGather m r = GGather
+  (Map Name (m GlobalInfo))
   (Map Name (m GlobalInfo) -> m r)
   deriving (Functor)
 
@@ -95,7 +98,6 @@ mintName getTable t = do
   tbl <- asks getTable
   internalize tbl t
 
-type Scoped = GInit (ReaderT GLScope IO)
 
 -- Global Local Monad
 -- Stage 1: Text -> Name
@@ -103,6 +105,12 @@ type Scoped = GInit (ReaderT GLScope IO)
 -- Stage 3: initialize global definitions
 -- Stage 4: evaluate expressions with globals, locals, and names
 type GLM = Compose (ReaderT (IORef NameTable) IO) (GGather Scoped)
+-- Scoped has GInit which tracks the state of initializing all global
+-- definitions, so they are all initialized once and circular dependencies
+-- are caught (TODO: define exactly what circular dependencies are).
+-- GLScope holds the global scope as it is *expected* to be defined, and
+-- also the local context that is pushed under binders and such.
+type Scoped = GInit (ReaderT GLScope IO)
 
 willInitGLM :: Text -> (Name -> Scoped GlobalInfo) -> GLM ()
 willInitGLM name creator = Compose $ mintName id name <&>
@@ -138,10 +146,29 @@ runElabScoped tbl stage2 = do
 elaborateModule :: [Decl] -> GLM ()
 elaborateModule = traverse_ elaborateDecl
 
+-- TODO: memoize
+currentCtx :: Scoped EvalTypeCtx
+currentCtx = do
+  -- Here we want to gather all the things that have actually been defined
+  initialized <- gets $ M.mapMaybe \case
+    Initialized r -> Just r
+    _ -> Nothing
+  let currentGlobals = U.bootGlobals $ globalsFrom initialized
+  localCtx <- asks ctx
+  pure $ localCtx { ctxGlobals = currentGlobals }
+
 elaborateDecl :: Decl -> GLM ()
 elaborateDecl = \case
-  DDefine text mty tm -> willInitGLM text \name -> DefnGlobal <$> do
-    GlobalDefn 0 <$> maybe undefined elaborateDefn mty <*> elaborateDefn tm
+  DDefine (Just (PlainName [] text), PlainVar) mty tm -> willInitGLM text \name -> DefnGlobal <$> do
+    case mty of
+      Nothing -> do
+        defn@(GlobalTerm t _) <- elaborateDefn tm
+        ctx <- currentCtx
+        let tyE = U.quickTermType ctx t
+        let tyD = GlobalTerm (E.quote (void ctx) tyE) tyE
+        pure $ GlobalDefn 0 tyD defn
+      Just ty -> do
+        GlobalDefn 0 <$> elaborateDefn ty <*> elaborateDefn tm
   _ -> error "Not supported"
 
 

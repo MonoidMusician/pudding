@@ -30,18 +30,36 @@ braces inner = do
   contents <- L.pBraces
   _parseInner contents inner
 
-
+-- | A binder currently is just the same CST type since it shares overlap
+-- | and parsing.
 type CBinder = CST
 
+-- | These are all bound with the *same* type: even if the expression contains
+-- | variables that are mentioned in the binders, they are not reinterpreted
+-- | each time. This is important, this is why `CBinderGroup` has a field of
+-- | `NonEmpty CBinder` instead of just `CBinder` and letting it spill out
+-- | into the larger multiple-binding structure.
+type CBinderGroup = (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST)
+
+-- | A top-level declaration: data types, definitions, nested modules, etc.
 data Decl
-  = DDataType !Text
+  -- A datatype declaration
+  -- ```
+  -- @data Vector (T : Type) : Π (len : Nat). Type
+  -- | Nil : Vector zero
+  -- | Cons (len : Nat) (hd : T) (tl : Vector len) : Vector (succ len)
+  -- ```
+  -- @data Vector (T : Type) : Π (len : Nat). Type | Nil : Vector zero | Cons (len : Nat) (hd : T) (tl : Vector len) : Vector (succ len)
+  = DDataType L.VariableName
     -- Parameters
-    ![(Plicit, CBinder, CST)]
-    -- Indices into Type
-    ![(Plicit, CBinder, CST)]
-    !(Maybe CST)
-    ![(Text, [(Plicit, CBinder, CST)], [CST])]
-  | DDefine !Text !(Maybe CST) !CST
+    ![CBinderGroup]
+    -- Indices into Type:
+    ![CBinderGroup] -- those that are written out?
+    !(Maybe CST) -- must evaluate to a Pi type resulting in Type
+    -- Constructors
+    ![(L.VariableName, "arguments" @:: [CBinderGroup], "indices" @:: [CST])]
+  | DDefine L.VariableName !(Maybe CST) !CST
+  | DModule ![Text] ![Decl]
   deriving (Eq, Ord, Show, Generic, NFData)
 
 data PartOfSpeech t
@@ -52,9 +70,9 @@ data PartOfSpeech t
 
 data CST
   = CApp !CST !CST
-  | CLambda !(NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST)) !CST
-  | CPi     !(NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST)) !CST
-  | CSigma  !(NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST)) !CST
+  | CLambda !(NonEmpty CBinderGroup) !CST
+  | CPi     !(NonEmpty CBinderGroup) !CST
+  | CSigma  !(NonEmpty CBinderGroup) !CST
   | CLet    ![(CBinder, "ty" @:: Maybe CST, "tm" @:: CST)]    !CST
 
   | CSentence !(NonEmpty (PartOfSpeech CST))

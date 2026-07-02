@@ -19,6 +19,7 @@ import Data.Function ((&))
 import Data.Maybe (fromMaybe)
 }
 
+-- Report all conflicts as errors
 %expect 0
 
 %tokentype { Token }
@@ -30,6 +31,8 @@ import Data.Maybe (fromMaybe)
 %name parseRecordInBraces recordInBraces
 %name parseBinderInner binderInner
 %name parseImplicits implicits
+%name parseDecl decl
+%name parseDecls decls
 
 
 %token
@@ -52,6 +55,11 @@ import Data.Maybe (fromMaybe)
   '%'   { Token _ (Content (QualifiedOp (PlainOp [] "%"))) }
 
   'Type' { Token _ (Content Univ) }
+
+  '@data' { Token _ (Content (Command _ "data")) }
+  '@module' { Token _ (Content (Command _ "module")) }
+  '@define' { Token _ (Content (Command _ "define")) }
+  '@example' { Token _ (Content (Command _ "example")) }
 
   VNAME { Token _ (Content (VariableName _ _)) }
   MNAME { Token _ (Content (ModuleName _)) }
@@ -96,7 +104,8 @@ exprAscribe :: { CST }
 -- A sentence is a sequence of operators and function applications
 exprSentence :: { CST }
   : exprTrailing { $1 }
-  | '%' exprTrailing { CLift $2 }
+  -- Syntax for lifting types between stages (it has low precedence)
+  | '%' exprSentence { CLift $2 }
   -- Handle things with operators (including function application)
   -- as a flat list of operators \/ expressions, which gets parsed into
   -- a tree after resolving namespaces. Being a list automatically takes care
@@ -161,10 +170,10 @@ num :: { CST }
   : Number { CNum $1 }
 
 -- A list of binders
-binders :: { NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST) }
+binders :: { NonEmpty CBinderGroup }
   : some(binder) { $1 }
 
-binder :: { (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST) }
+binder :: { CBinderGroup }
   : varOrNot { (Explicit, pure $1, Nothing) }
   | Parens {% parseBinderInner $1 <&> \(vs, t) -> (Explicit, vs, t) }
   | Braces {% parseBinderInner $1 <&> \(vs, t) -> (Implicit, vs, t) }
@@ -175,13 +184,37 @@ binderInner :: { (NonEmpty CBinder, Maybe CST) }
 
 
 
+------
+
+
+decl :: { Decl }
+  : '@module' ModuleName Braces {% fmap (DModule $2) $ parseDecls $3 }
+  | '@data' datatype { $2 }
+  | '@define' definition { $2 }
+  -- | definition { $1 }
+  -- | '@example'
+
+decls :: { [Decl] }
+  : many(decl) { $1 }
+
+datatype :: { Decl }
+  : VariableName many(binder) ':' expr many(datatypeCase)
+    { DDataType $1 $2 [] (Just $4) $5 }
+
+datatypeCase :: { (VariableName, "arguments" @:: [CBinderGroup], "indices" @:: [CST]) }
+  : '|' VariableName many(binder) ':' varOrNot many(exprAtom) -- TODO: revisit
+    { ($2, $3, $6) }
+
+definition :: { Decl }
+  : VariableName ':' expr ':=' expr { DDefine $1 (Just $3) $5 }
+  | VariableName ':=' expr { DDefine $1 Nothing $3 }
 
 ------
 
 
 many(a) :: { [a] }
   : {- empty -} { [] }
-  | many(a) { NE.toList $1 }
+  | some(a) { NE.toList $1 }
 
 some(a) :: { NE.NonEmpty a }
   : someAux(a) %shift { NE.reverse $1 }
