@@ -9,9 +9,9 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Text.Parsec as P
 
-import Pudding.Parser (SourceSpan(SourceSpan), runParser, term)
+import Pudding.Core.Parser (SourceSpan(SourceSpan), runParser, term)
 import Pudding.Core.Printer (formatCore, Style (Ansi))
-import Pudding.Types
+import Pudding.Core.Types
 import Testing
 
 parserTest :: TestSuite

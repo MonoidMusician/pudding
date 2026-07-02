@@ -1,6 +1,6 @@
 -- A solver for universe levels via semigroups, based on the technique I wrote
 -- about on my blog: https://blog.veritates.love/version_solver.html
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas -O2 #-}
 {-# HLINT ignore "Avoid lambda" #-}
 {-# HLINT ignore "Eta reduce" #-}
 module Pudding.Semantics.Universes where

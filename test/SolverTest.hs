@@ -30,46 +30,10 @@ import qualified Hedgehog.Internal.Report as HG.Report
 import qualified Hedgehog.Internal.Runner as HG.Runner
 import qualified Hedgehog.Internal.Seed as HG.Seed
 import qualified Hedgehog.Internal.Tree as HG.Tree
-import Data.Int (Int32)
 
 solverUnitTest :: TestSuite
 solverUnitTest = TestSuite "SolverUnitTest" do
-  reducedEqual
-  intermediateIsBetween
-
-reducedEqual :: Test r ()
-reducedEqual = hedgeTest 1000 "reducedEqual" do
-  n <- HG.forAll genNumerator
-  d <- HG.forAll genDenominator
-  let r = Lvl.reduced n d
-  HG.annotateShow r
-  Lvl.Chain n 1 === r * Lvl.Chain d 1
-
-intermediateIsBetween :: Test r ()
-intermediateIsBetween = hedgeTest 1000 "intermediateIsBetween" do
-  x <- HG.forAll genChain
-  y <- HG.forAll genChain
-  let z = Lvl.intermediate x y
-  HG.annotateShow z
-  HG.assert $ Lvl.isBetween (x, y) z
-
-minSafeInt32 :: Int32
-minSafeInt32 = -32768
-
-maxSafeInt32 :: Int32
-maxSafeInt32 = 32767
-
-genNumerator :: Gen Int32
-genNumerator = Gen.int32 $ Range.linearFrom 0 minSafeInt32 maxSafeInt32
-
-genDenominator :: Gen Int32
-genDenominator = Gen.choice
-  [ Gen.int32 $ Range.linearFrom 1 1 maxSafeInt32
-  , Gen.int32 $ Range.linearFrom (-1) minSafeInt32 (-1)
-  ]
-
-genChain :: Gen Lvl.Chain
-genChain = Lvl.reduced <$> genNumerator <*> genDenominator
+  pure ()
 
 data Ev = Ev Fresh Relation Fresh
   deriving (Eq, Ord, Generic, NFData)

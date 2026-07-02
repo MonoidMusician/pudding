@@ -5,7 +5,7 @@ import Control.Monad.IO.Class (liftIO, MonadIO)
 import qualified Data.Text as T
 
 import Pudding.Core.Unify ( validateQuoteNeutrals, conversionCheck )
-import Pudding.Parser ( runParserScope, globalTable )
+import Pudding.Core.Parser ( runParserScope, globalTable )
 import Pudding.Core.Types
 import Pudding.Types.Name (canonicalName)
 import Testing

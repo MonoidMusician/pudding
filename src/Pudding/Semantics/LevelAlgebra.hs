@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas -O2 #-}
 {-# HLINT ignore "Use const", "Redundant lambda", "Redundant bracket", "Eta reduce" #-}
 module Pudding.Semantics.LevelAlgebra where
 
@@ -20,9 +20,9 @@ import qualified Data.Map as Map
 import qualified Data.IntSet as IntSet
 import Safe.Foldable (maximumMay)
 import Data.Maybe (fromMaybe, mapMaybe, isJust)
-import Control.DeepSeq (NFData (rnf))
+import Control.DeepSeq (NFData)
 import GHC.Generics (Generic)
-import Data.Int (Int32, Int64)
+import Data.Int (Int32)
 import qualified Data.List as List
 
 -- v: number of variables
@@ -32,55 +32,24 @@ import qualified Data.List as List
 -- A: apartnesses (<= v^2)
 -- log: generic log, i.e. log v, but usually better
 
-data Chain = Chain
-  { numerator :: {-# UNPACK #-} !Int32
-  , denominator :: {-# UNPACK #-} !Int32
-  }
-  deriving (Show, Generic)
+-- | Position along a chain: a sequence of comparable elements in order.
+-- | The opposite is an antichain, which is a set of incomparable elements.
+-- |
+-- | Think of this not as "Oooh, approximate floating point numbers, scawwy ~"
+-- | but as "efficient, machine-optimized dyadic rationals": we always divide
+-- | by two, and it is not a problem to pick the nearest numerator to stay
+-- | within precision.
+newtype Chain = Chain Double
+  deriving (Eq, Ord, Show, Generic)
+  deriving newtype (Num, Fractional, NFData)
 
 reduced :: Int32 -> Int32 -> Chain
-reduced x y = Chain (signum y * x `quot` d) (abs y `quot` d)
-  where d = gcd x y
-
-pattern (:%) :: Int32 -> Int32 -> Chain
-pattern (:%) x y <- Chain x y where
-  (:%) x y = reduced x y
-
-{-# COMPLETE (:%) #-}
-
-instance Num Chain where
-  negate (Chain n d)  =  Chain (negate n) d
-  abs (Chain x y)     =  Chain (abs x) y
-  signum (x:%_)       =  Chain (signum x) 1
-  fromInteger x       =  Chain (fromInteger x) 1
-  (x:%y) + (x':%y')   =  reduced (x*y' + x'*y) (y*y')
-  (x:%y) - (x':%y')   =  reduced (x*y' - x'*y) (y*y')
-  (x:%y) * (x':%y')   =  reduced (x * x') (y * y')
-instance Fractional Chain where
-  fromRational = undefined
-  recip (Chain n d) = Chain (d * signum n) (abs n)
-deriving instance Eq Chain
-instance Ord Chain where
-  compare (Chain n1 d1) (Chain n2 d2) | d1 == d2 = compare n1 n2
-  compare (Chain n1 d1) (Chain n2 d2) = compare @Int64
-    (fromIntegral n1 * fromIntegral d2)
-    (fromIntegral n2 * fromIntegral d1)
-
-instance NFData Chain where
-  rnf (Chain _ _) = ()
+reduced n d = (fromIntegral n) / (fromIntegral d)
 
 minChain, maxChain :: Chain
-(minChain, maxChain) = (-1048576, 1048576) -- 2^20
+(minChain, maxChain) = (-1125899906842624, 1125899906842624) -- 2^50
 
 intermediate :: Chain -> Chain -> Chain
-intermediate r1 r2
-  | n1 <- numerator r1, d1 <- denominator r1
-  , n2 <- numerator r2, d2 <- denominator r2
-  , d1 == d2
-  , avg <- (n1 + n2) `div` 2
-  , rounder <- avg + (avg `mod` 2)
-  , n1 < rounder, rounder < n2
-  = Chain rounder d1
 intermediate x y = (x + y) / 2
 
 isBetween :: (Chain, Chain) -> (Chain -> Bool)
