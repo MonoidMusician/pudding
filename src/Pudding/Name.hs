@@ -11,7 +11,6 @@ import Data.Text (Text)
 import GHC.Generics (Generic)
 import GHC.StableName (StableName, hashStableName, makeStableName)
 import Prettyprinter (Pretty(pretty))
-import Control.Monad.ST.Unsafe (unsafeIOToST)
 
 data Name = Name { nameId :: !(StableName Text), nameText :: !Text }
 

@@ -2,34 +2,28 @@ module Pudding.Surface.Elaborator where
 
 import Prelude
 
-import Control.DeepSeq (NFData)
-import Control.Lens (from, view, Field1 (_1))
 import Data.Functor ((<&>), void)
 import Data.Function ((&))
 import Data.Map (Map)
 import Data.Map qualified as M
 import Data.Text (Text)
-import Data.Vector (Vector)
-import GHC.Generics (Generic)
-import GHC.StableName (StableName)
-import Pudding.Name (CanonicalName (..), Name (..), initTable, internalize, newTable, NameTable, canonicalName)
+import Pudding.Name (Name (..), internalize, NameTable, canonicalName)
 import Pudding.Types.Base (Plicit (Explicit), type (@::))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), StackLike(size), pattern Nil, pattern (:>))
-import Control.Monad.State.Strict (State, StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift))
+import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift))
 import Pudding.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused), ScopedTerm (Scoped), Eval (ENeut, EUniv), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl (..), CST (..), CBinder)
 import Data.Foldable (traverse_, Foldable (fold))
 import Data.Functor.Compose (Compose (Compose))
-import Data.Traversable (for)
 import Control.Monad.Reader.Class (MonadReader (local, ask), asks)
 import Data.List.NonEmpty (NonEmpty(..))
 import Pudding.Eval (EvalTypeCtx)
 import qualified Pudding.Unify as U
 import qualified Pudding.Eval as E
-import Pudding.Surface.Lexer (VariableDB(..), NameForm (..), Content)
+import Pudding.Surface.Lexer (VariableDB(..), NameForm (..))
 import Data.Maybe (fromMaybe)
 import qualified Pudding.Printer as P
 import qualified Data.Text as T

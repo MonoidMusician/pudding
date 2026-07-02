@@ -7,46 +7,34 @@ import Prettyprinter qualified as Doc
 import Prettyprinter.Render.Text (renderStrict)
 import qualified Prettyprinter.Render.Terminal as Ansi
 import Control.DeepSeq (NFData)
-import Control.Lens (from, view, Field1 (_1))
 import Data.Foldable (toList)
-import Data.Functor ((<&>), void)
+import Data.Functor ((<&>))
 import Data.Function ((&))
 import Data.Map (Map)
 import Data.Map qualified as M
 import Data.Text (Text)
-import Data.Vector (Vector)
 import GHC.Generics (Generic)
-import GHC.StableName (StableName)
-import Pudding.Name (CanonicalName (..), Name (..), initTable, internalize, newTable, NameTable, canonicalName)
+import Pudding.Name (CanonicalName (..), Name (..))
 import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::), Fresh (Fresh))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack
-import Control.Monad.State.Strict (State, StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift), MonadState (state), runState)
-import Pudding.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder(..), ScopedTerm (Scoped), Eval(..), Neutral(..), NeutFocus(..), NeutPrj(..), ULevel (UBase, UMeta, UVar), Globals, Ctx)
-import Control.Monad.Trans.Reader (ReaderT (runReaderT), Reader)
-import Data.IORef (IORef)
-import Pudding.Surface.Parser (Decl (..), CST (..), CBinder, PartOfSpeech(..))
-import Data.Foldable (traverse_, Foldable (fold))
+import Control.Monad.State.Strict (State, gets, modify', MonadState (state), runState)
+import Pudding.Types (Term (..), Binder(..), ScopedTerm (Scoped), Eval(..), Neutral(..), NeutFocus(..), NeutPrj(..), Ctx)
+import Pudding.Surface.Parser (CST (..), CBinder, PartOfSpeech(..))
 import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.Traversable (for)
 import Control.Monad.Reader.Class (MonadReader (local, ask), asks)
 import Data.List.NonEmpty (NonEmpty(..))
-import Pudding.Eval (EvalTypeCtx)
-import qualified Pudding.Unify as U
 import qualified Pudding.Eval as E
-import Pudding.Surface.Lexer (VariableDB(..), NameForm (..), Content)
+import Pudding.Surface.Lexer (VariableDB(..), NameForm (..))
 import Data.Maybe (fromMaybe)
 import qualified Pudding.Printer as P
 import qualified Data.Text as T
-import Data.Monoid (Ap(Ap, getAp), Any)
+import Data.Monoid (Ap(Ap, getAp))
 import Data.Semigroup.Foldable (intercalateMap1)
-import qualified Pudding.Surface.Lexer as L
-import Control.Monad.RWS.Strict (RWS, censor, MonadWriter (listen, tell), runRWS, evalRWS)
-import Data.Map.Monoidal.Strict (MonoidalMap)
-import Control.Monad.Trans.Cont (ContT (ContT))
+import Control.Monad.RWS.Strict (RWS, censor, MonadWriter (listen, tell), evalRWS)
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Void (Void)
 import Control.Applicative ((<|>))
 import Control.Applicative.Backwards (Backwards (forwards, Backwards))
 import Data.Monoid.Generic (GenericMonoid(..), GenericSemigroup(..))

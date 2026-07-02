@@ -13,7 +13,6 @@ import qualified Data.Text.IO.Utf8 as TIO
 import Control.Monad.Identity (Identity (runIdentity))
 import Data.Show.Reshow (reshow)
 import qualified Pudding.Surface.Elaborator as Elab
-import qualified Data.Map.Strict as Map
 import Pudding.Printer (Style (Ansi), formatCore)
 import GHC.IO (catch, evaluate)
 import GHC.Exception (SomeException)
