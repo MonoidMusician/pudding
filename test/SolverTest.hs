@@ -8,8 +8,8 @@ import Testing
 import Data.Foldable (for_)
 import Control.DeepSeq (force, NFData)
 import Pudding.Core.Types (Fresh(..))
-import Pudding.Semantics.Universes
-import qualified Pudding.Semantics.LevelAlgebra as Lvl
+import Pudding.Semantics.Universes.Evidence
+import qualified Pudding.Semantics.Universes.Consistency as UCon
 import GHC.IO (evaluate)
 import Data.Maybe (isNothing, fromMaybe)
 import GHC.Generics (Generic)
@@ -217,7 +217,7 @@ levelAlgebra = do
         (Constraints Nothing _, solution) -> do
           HG.annotateShow case solution of
             Left (rel@(v1, _, v2, _), history, solv) -> Just
-              (rel, Lvl.compareIn (v1, v2) solv, Lvl.solverState <$> history)
+              (rel, UCon.compareIn (v1, v2) solv, UCon.solverState <$> history)
             Right _ -> Nothing
           isRight solution === True
           wasSolvable True
@@ -266,16 +266,16 @@ levelAlgebraHasSolution = do
   verify rels =
     case quickSolve rels of
       Right (_history, solution) -> do
-        HG.annotateShow $ Lvl.solverState <$> solution : _history
-        let assigned = flip IntMap.lookup $ Lvl.demonstrate solution
-        HG.annotateShow $ IntMap.toAscList $ Lvl.demonstrate solution
+        HG.annotateShow $ UCon.solverState <$> solution : _history
+        let assigned = flip IntMap.lookup $ UCon.demonstrate solution
+        HG.annotateShow $ IntMap.toAscList $ UCon.demonstrate solution
         for_ rels \(Fresh lower, rel, Fresh upper, _) -> do
           let
-            cmpL :: Lvl.Lattice -> Lvl.Lattice -> HG.PropertyT IO ()
+            cmpL :: UCon.Lattice -> UCon.Lattice -> HG.PropertyT IO ()
             cmpL = case rel of
               Equal -> (===)
-              LessThan -> \x y -> Lvl.lattice x y === Lvl.PosetLE
-              LessThanEqual -> \x y -> x Lvl.<=? y === True
+              LessThan -> \x y -> UCon.lattice x y === UCon.PosetLE
+              LessThanEqual -> \x y -> x UCon.<=? y === True
             cmp :: Int -> Int -> HG.PropertyT IO ()
             cmp = case rel of
               Equal -> (===)
@@ -285,8 +285,8 @@ levelAlgebraHasSolution = do
           let
             x = fromMaybe 0 $ assigned lower
             y = fromMaybe 0 $ assigned upper
-            p = fromMaybe IntMap.empty $ Lvl.lookup (Fresh lower) solution
-            q = fromMaybe IntMap.empty $ Lvl.lookup (Fresh upper) solution
+            p = fromMaybe IntMap.empty $ UCon.lookup (Fresh lower) solution
+            q = fromMaybe IntMap.empty $ UCon.lookup (Fresh upper) solution
           cmpL p q *> cmp x y
       Left (_failedRel, _goodRels, _failedSolver) -> do
         error "Was deemed inconsistent!"
@@ -299,12 +299,12 @@ solve :: NFData meta => [Relationship meta] -> Test r (Constraints meta)
 solve rels = do
   liftIO . evaluate . force $ foldMap constraint rels
 
-quickSolve :: [Relationship meta] -> Either (Relationship meta, [Lvl.Solver], Lvl.Solver) ([Lvl.Solver], Lvl.Solver)
-quickSolve [] = Right ([], Lvl.base)
+quickSolve :: [Relationship meta] -> Either (Relationship meta, [UCon.Solver], UCon.Solver) ([UCon.Solver], UCon.Solver)
+quickSolve [] = Right ([], UCon.base)
 quickSolve (rel@(v1, r, v2, _) : more) =
   case quickSolve more of
     Left err -> Left err
-    Right (history, solv) -> case Lvl.relate (v1, r, v2) solv of
+    Right (history, solv) -> case UCon.relate (v1, r, v2) solv of
       Nothing -> Left (rel, solv : history, solv)
       Just res -> Right (solv : history, res)
 

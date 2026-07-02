@@ -1,7 +1,16 @@
+-- | This module implements a quick, incremental, persistent poset solver.
+-- |
+-- | Each point in the poset gets represented as a sparse vector of floats,
+-- | so that checking for a relationship is always direct, and additions and
+-- | insertions into the lattice are generally fast. There are some cases
+-- | where the whole structure has to be retraversed, to add another dimension,
+-- | to a whole chain, but this should be rare.
+-- |
+-- | This carries no evidence of why the variables are related as they are.
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas -O2 #-}
 {-# HLINT ignore "Use const", "Redundant lambda", "Redundant bracket", "Eta reduce" #-}
-module Pudding.Semantics.LevelAlgebra where
+module Pudding.Semantics.Universes.Consistency where
 
 import Prelude hiding (lookup)
 
@@ -12,7 +21,7 @@ import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as IntMap
 import Pudding.Core.Types (Fresh (Fresh))
 import Pudding.Types.Base (type (@::))
-import Pudding.Semantics.Universes (Relation (..))
+import Pudding.Semantics.Universes.Evidence (Relation (..))
 import qualified Data.IntMap.Merge.Strict as IntMapMerge
 import qualified Data.IntMap.Internal as IMI
 import qualified Data.Set as Set

@@ -1,12 +1,18 @@
+-- | This bundles the two solvers together in one interface, so we can enjoy
+-- | the really quick solving combined with preserving evidence, hopefully.
+-- |
+-- | This is also necessary because the quick solver does not have a monoid
+-- | instance itself: instead we have to maintain the relations to dump into
+-- | the other solver when they merge.
 module Pudding.Semantics.Universes.Fused where
 
 import Prelude
 
-import Pudding.Semantics.Universes
-import Pudding.Semantics.LevelAlgebra
 import Pudding.Core.Types (Fresh)
-import qualified Pudding.Semantics.LevelAlgebra as Lvl
-import qualified Pudding.Semantics.Universes as Uni
+import Pudding.Semantics.Universes.Consistency (Solver)
+import Pudding.Semantics.Universes.Evidence (InconsistentRelationship, Relation, ConstraintMap)
+import qualified Pudding.Semantics.Universes.Consistency as UCon
+import qualified Pudding.Semantics.Universes.Evidence as UEvi
 import qualified Data.IntMap.Strict as IntMap
 import Data.IntMap.Monoidal.Strict (MonoidalIntMap)
 import Data.IntSet (IntSet)
@@ -23,15 +29,15 @@ data Fused meta = Fused
 -- | Deciding Left or Right is O(1), but obtaining evidence takes longer.
 check :: forall meta. Fused meta -> Either (InconsistentRelationship meta) (IntMap.IntMap Int)
 check (Fused Nothing _ constraints _) = Left $
-  case searchForInconsistency $ Uni.saturate constraints of
+  case UEvi.searchForInconsistency $ UEvi.saturate constraints of
     Nothing -> error "Could not find evidence of inconsistency after all"
     Just example -> example
-check (Fused (Just solver) _ _ _) = Right $ Lvl.demonstrate solver
+check (Fused (Just solver) _ _ _) = Right $ UCon.demonstrate solver
 
 addAll :: QuickStored -> [(Fresh, Relation, Fresh)] -> Solver -> Maybe (QuickStored, Solver)
 addAll acc [] !solver = Just (acc, solver)
 addAll (!sz, acc) (rel@(v1, _, v2) : rels) !solver = do
-  (added, !solver') <- Lvl.checkAndRelate rel solver
+  (added, !solver') <- UCon.checkAndRelate rel solver
   let
     acc' = case added of
       Nothing -> (sz, acc)
@@ -39,7 +45,7 @@ addAll (!sz, acc) (rel@(v1, _, v2) : rels) !solver = do
   addAll acc' rels solver'
 
 instance Monoid (Fused meta) where
-  mempty = Fused (Just Lvl.base) (0, []) mempty mempty
+  mempty = Fused (Just UCon.base) (0, []) mempty mempty
 instance Semigroup (Fused meta) where
   (Fused (Just s1) (sz1, r1) slow1 poly1) <> (Fused (Just s2) (sz2, r2) slow2 poly2) =
     case sz1 `compare` sz2 of

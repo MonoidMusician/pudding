@@ -1,9 +1,14 @@
--- A solver for universe levels via semigroups, based on the technique I wrote
--- about on my blog: https://blog.veritates.love/version_solver.html
+-- | A solver for universe levels via semigroups, based on the technique I wrote
+-- | about on my blog: https://blog.veritates.love/version_solver.html
+-- |
+-- | Unlike `Pudding.Semantices.Universes.Consistency`, this is a very slow
+-- | solver that prioritizes maintaining evidence of why variables are related.
+-- | It operates by completing the graph of relationships between variables
+-- | including evidence of the shortest-path relation between them.
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas -O2 #-}
 {-# HLINT ignore "Avoid lambda" #-}
 {-# HLINT ignore "Eta reduce" #-}
-module Pudding.Semantics.Universes where
+module Pudding.Semantics.Universes.Evidence where
 
 import Data.Function ((&))
 import Data.Functor ((<&>), void)
