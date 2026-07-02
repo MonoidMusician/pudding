@@ -10,7 +10,7 @@ import qualified Data.Text.IO as TIO
 import qualified Text.Parsec as P
 
 import Pudding.Parser (SourceSpan(SourceSpan), runParser, term)
-import Pudding.Printer (formatCore, Style (Ansi))
+import Pudding.Core.Printer (formatCore, Style (Ansi))
 import Pudding.Types
 import Testing
 

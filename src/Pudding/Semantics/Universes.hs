@@ -9,7 +9,7 @@ import Data.Function ((&))
 import Data.Functor ((<&>), void)
 import Data.IntMap.Monoidal.Strict (MonoidalIntMap)
 import Data.List.NonEmpty (NonEmpty)
-import Pudding.Types (Fresh (Fresh))
+import Pudding.Core.Types (Fresh (Fresh))
 import qualified Data.IntMap.Monoidal.Strict as Map
 import qualified Data.List.NonEmpty as NEL
 import GHC.Generics (Generic)

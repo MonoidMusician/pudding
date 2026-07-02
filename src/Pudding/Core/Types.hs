@@ -1,9 +1,9 @@
-module Pudding.Types
-  ( module Pudding.Types, -- Export the default exports of this module
+module Pudding.Core.Types
+  ( module Pudding.Core.Types, -- Export the default exports of this module
     module Pudding.Types.Base,
     module Pudding.Types.Metadata,
     module Pudding.Types.Stack,
-    module Pudding.Name, -- Export more
+    module Pudding.Types.Name, -- Export more
   )
 where
 
@@ -17,7 +17,7 @@ import Data.Text (Text)
 import Data.Vector (Vector)
 import GHC.Generics (Generic)
 import GHC.StableName (StableName)
-import Pudding.Name (CanonicalName (..), Name (..), initTable, internalize, newTable)
+import Pudding.Types.Name (CanonicalName (..), Name (..), initTable, internalize, newTable)
 import Pudding.Types.Base
 import Pudding.Types.Metadata
 import Pudding.Types.Stack

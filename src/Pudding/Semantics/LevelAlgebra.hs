@@ -10,7 +10,7 @@ import Data.Function ((&))
 import Data.Functor ((<&>))
 import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as IntMap
-import Pudding.Types (Fresh (Fresh))
+import Pudding.Core.Types (Fresh (Fresh))
 import Pudding.Types.Base (type (@::))
 import Pudding.Semantics.Universes (Relation (..))
 import qualified Data.IntMap.Merge.Strict as IntMapMerge

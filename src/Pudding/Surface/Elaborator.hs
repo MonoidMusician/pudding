@@ -1,3 +1,16 @@
+-- | The elaborator is the most important piece for user experience: it handles
+-- | converting the surface syntax into terms in the core language. Thanks to
+-- | the nature of dependent types, it is heavily interleaved with evaluation
+-- | in addition to typechecking. It does need to tame this to stay logically
+-- | sound and to be predictable for the user.
+-- |
+-- | There are three main areas of responsibility, in order:
+-- | 1. Handling namespacing ((sub)modules, imports, renames, resolving names).
+-- | 2. User operators: disambiguation, grouping, precedence, associativity.
+-- | 3. Synthesizing expressions into core `Term`s based on an expected type.
+-- |
+-- | The third is the most important and complicated, involving unification and
+-- | and evaluation.
 module Pudding.Surface.Elaborator where
 
 import Prelude
@@ -7,12 +20,12 @@ import Data.Function ((&))
 import Data.Map (Map)
 import Data.Map qualified as M
 import Data.Text (Text)
-import Pudding.Name (Name (..), internalize, NameTable, canonicalName)
+import Pudding.Types.Name (Name (..), internalize, NameTable, canonicalName)
 import Pudding.Types.Base (Plicit (Explicit), type (@::))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), StackLike(size), pattern Nil, pattern (:>))
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift))
-import Pudding.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused), ScopedTerm (Scoped), Eval (ENeut, EUniv), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase), globalsFrom, Ctx (ctxGlobals))
+import Pudding.Core.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused), ScopedTerm (Scoped), Eval (ENeut, EUniv), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase), globalsFrom, Ctx (ctxGlobals))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl (..), CST (..), CBinder)
@@ -20,12 +33,12 @@ import Data.Foldable (traverse_, Foldable (fold))
 import Data.Functor.Compose (Compose (Compose))
 import Control.Monad.Reader.Class (MonadReader (local, ask), asks)
 import Data.List.NonEmpty (NonEmpty(..))
-import Pudding.Eval (EvalTypeCtx)
-import qualified Pudding.Unify as U
-import qualified Pudding.Eval as E
+import Pudding.Core.Eval (EvalTypeCtx)
+import qualified Pudding.Core.Unify as U
+import qualified Pudding.Core.Eval as E
 import Pudding.Surface.Lexer (VariableDB(..), NameForm (..))
 import Data.Maybe (fromMaybe)
-import qualified Pudding.Printer as P
+import qualified Pudding.Core.Printer as P
 import qualified Data.Text as T
 import Control.Arrow (Arrow(first))
 import qualified Data.List.NonEmpty as NE

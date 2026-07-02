@@ -4,20 +4,20 @@ module EvalTest where
 import Control.Monad.IO.Class (liftIO, MonadIO)
 import qualified Data.Text as T
 
-import Pudding.Unify ( validateQuoteNeutrals, conversionCheck )
+import Pudding.Core.Unify ( validateQuoteNeutrals, conversionCheck )
 import Pudding.Parser ( runParserScope, globalTable )
-import Pudding.Types
-import Pudding.Name (canonicalName)
+import Pudding.Core.Types
+import Pudding.Types.Name (canonicalName)
 import Testing
 import Pudding (parseAndBootGlobals)
 import Data.Text (Text)
 import Data.Foldable (fold)
-import Pudding.Printer (PrinterState(..), formatCore, Style (Ansi), format, printCore)
+import Pudding.Core.Printer (PrinterState(..), formatCore, Style (Ansi), format, printCore)
 import Control.Monad.Reader.Class (MonadReader (reader, ask), asks, local)
 import Control.Lens (review)
-import qualified Pudding.Eval as Eval
+import qualified Pudding.Core.Eval as Eval
 import Data.Functor (void)
-import qualified Pudding.Parser as Parse
+import qualified Pudding.Core.Parser as Parse
 import qualified Data.Map as Map
 
 -- NamedDefaults requires GHC 9.12.1

@@ -1,3 +1,22 @@
+-- | This is the lexer/tokenizer for the surface syntax of Pudding. It is a bit
+-- | unique, operating in two phases to gradually parse more structure, but
+-- | this gives some predictability to the complicated lexical syntax, and
+-- | makes the parser afterwards relatively straightforward.
+-- |
+-- | The first stage, which I call prelexing, takes care of basic lexical forms:
+-- | whitespace and comments, name-likes and operator-likes and builtins,
+-- | basically taking care of what you would use regular expressions for.
+-- |
+-- | The next stage, which I call tokenizing, assembles these lexemes into bits
+-- | that the parser cares about. No longer what looks like a name, but what
+-- | actually acts like a name for the surface language, and so on.
+-- | Rather uniquely, this step also handles parenthesization/bracketing.
+-- | This is important for operators that include bracketing, and is just
+-- | generally convenient/aesthetic to avoid e.g. tokens for `(` and `@(` but
+-- | only one for `)`. The other nice thing is that whitespace disappears
+-- | after this stage.
+-- |
+-- | Eventually it will be indentation-sensitive, but that needs more research.
 module Pudding.Surface.Lexer where
 
 import Prelude hiding (lex)
@@ -7,7 +26,7 @@ import Data.Functor (void, (<&>))
 import Data.Function ((&))
 import qualified Data.Text as T
 import Data.Text (Text)
-import Pudding.Types ()
+import Pudding.Core.Types ()
 import qualified Text.Parsec as P
 import qualified Data.Set as Set
 import GHC.Unicode (isAlpha, isAlphaNum, generalCategory, GeneralCategory (..))
@@ -797,122 +816,4 @@ content = token \case
 syntax :: forall u m. Monad m => P.ParsecT [Token] u m Syntax
 syntax = token \case
   Syntax s -> pure s
-  _ -> empty
-
-pVariableName :: Parser (Maybe NameForm, VariableDB)
-pVariableName = token \case
-  Content (VariableName a b) -> pure (a, b)
-  _ -> empty
-pModuleName :: Parser [Text]
-pModuleName = token \case
-  Content (ModuleName a) -> pure a
-  _ -> empty
-pQualifiedOp :: Parser OpForm
-pQualifiedOp = token \case
-  Content (QualifiedOp a) -> pure a
-  _ -> empty
-pCommand :: Parser ([Text], Text)
-pCommand = token \case
-  Content (Command a b) -> pure (a, b)
-  _ -> empty
-pNumber :: Parser Text
-pNumber = token \case
-  Content (Number a) -> pure a
-  _ -> empty
-pString :: Parser [Either Text [Token]]
-pString = token \case
-  Content (String a) -> pure a
-  _ -> empty
-pField :: Parser Text
-pField = token \case
-  Content (Field a) -> pure a
-  _ -> empty
-pIndex :: Parser Text
-pIndex = token \case
-  Content (Index a) -> pure a
-  _ -> empty
-pSymbol :: Parser Text
-pSymbol = token \case
-  Content (Symbol a) -> pure a
-  _ -> empty
-pDimension :: Parser Text
-pDimension = token \case
-  Content (Dimension a) -> pure a
-  _ -> empty
-pAttribute :: Parser ([Text], Text, [Token])
-pAttribute = token \case
-  Content (Attribute a b c) -> pure (a, b, c)
-  _ -> empty
-pImplicits :: Parser [Token]
-pImplicits = token \case
-  Content (Implicits a) -> pure a
-  _ -> empty
-pSection :: Parser [Token]
-pSection = token \case
-  Content (Section a) -> pure a
-  _ -> empty
-pParens :: Parser [Token]
-pParens = token \case
-  Content (Parens a) -> pure a
-  _ -> empty
-pBraces :: Parser [Token]
-pBraces = token \case
-  Content (Braces a) -> pure a
-  _ -> empty
-
-pComma :: Parser ()
-pComma = token \case
-  Syntax SComma -> pure ()
-  _ -> empty
-pDisj :: Parser ()
-pDisj = token \case
-  Syntax SDisj -> pure ()
-  _ -> empty
-pConj :: Parser ()
-pConj = token \case
-  Syntax SConj -> pure ()
-  _ -> empty
-pAscribe :: Parser ()
-pAscribe = token \case
-  Syntax SAscribe -> pure ()
-  _ -> empty
-pAssignL :: Parser ()
-pAssignL = token \case
-  Syntax SAssignL -> pure ()
-  _ -> empty
-pAssignR :: Parser ()
-pAssignR = token \case
-  Syntax SAssignR -> pure ()
-  _ -> empty
-pInspect :: Parser ()
-pInspect = token \case
-  Syntax SInspect -> pure ()
-  _ -> empty
-pMatchL :: Parser ()
-pMatchL = token \case
-  Syntax SMatchL -> pure ()
-  _ -> empty
-pMatchR :: Parser ()
-pMatchR = token \case
-  Syntax SMatchR -> pure ()
-  _ -> empty
-pPeriod :: Parser ()
-pPeriod = token \case
-  Syntax SPeriod -> pure ()
-  _ -> empty
-pPlaceholder :: Parser ()
-pPlaceholder = token \case
-  Syntax SPlaceholder -> pure ()
-  _ -> empty
-pLambda :: Parser ()
-pLambda = token \case
-  Syntax SLambda -> pure ()
-  _ -> empty
-pPi :: Parser ()
-pPi = token \case
-  Syntax SPi -> pure ()
-  _ -> empty
-pSigma :: Parser ()
-pSigma = token \case
-  Syntax SSigma -> pure ()
   _ -> empty

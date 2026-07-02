@@ -1,4 +1,5 @@
-module Pudding.Name where
+-- | Internalized names, so equality can be a simple pointer comparison.
+module Pudding.Types.Name where
 
 import Control.DeepSeq (NFData(rnf))
 import Control.Monad.IO.Class (MonadIO(liftIO))
@@ -11,6 +12,7 @@ import Data.Text (Text)
 import GHC.Generics (Generic)
 import GHC.StableName (StableName, hashStableName, makeStableName)
 import Prettyprinter (Pretty(pretty))
+import GHC.IO (evaluate, unsafePerformIO)
 
 data Name = Name { nameId :: !(StableName Text), nameText :: !Text }
 
@@ -36,6 +38,10 @@ newtype NameTable = NameTable (Map.Map Text Name)
 initTable :: IO (IORef NameTable)
 initTable = newIORef newTable
 
+{-# NOINLINE globalTable #-}
+globalTable :: IORef NameTable
+globalTable = unsafePerformIO initTable
+
 newTable :: NameTable
 newTable = NameTable Map.empty
 
@@ -45,11 +51,15 @@ internalize ref search = liftIO do
   case Map.lookup search names of
     Just found -> pure found
     Nothing -> do
-      let copied = T.copy search
+      copied <- evaluate $ T.copy search
       named <- makeStableName copied
       let made = Name named copied
       modifyIORef' ref $ coerce $ Map.insert copied made
       pure made
+
+{-# NOINLINE internalizeG #-}
+internalizeG :: Text -> Name
+internalizeG search = unsafePerformIO (internalize globalTable search)
 
 -- A canonical name, that is merged during unification
 data CanonicalName = CanonicalName

@@ -2,7 +2,7 @@
 module Pudding.Types.Monads where
 
 import Pudding.Types.Base (Fresh, UnifyMode, type (@::))
-import Pudding.Types (Eval, Term, Name)
+import Pudding.Core.Types (Eval, Term, Name)
 import Control.Monad.Error.Class (MonadError)
 import Criterion.Types (Config)
 import GHC.Base (Symbol)

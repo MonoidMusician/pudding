@@ -1,11 +1,41 @@
-module Pudding.Eval where
+-- | This is the core normalization-by-evaluation (NbE) algorithm.
+-- |
+-- | The basic idea of normalization-by-evaluation is to operate similar to an
+-- | evaluation algorithm that you would write in any language, evaluating
+-- | closed terms to concrete values. It is then extended with a notion of
+-- | *closure*, saving an unevaluated term in the context it came from, and
+-- | of *neutrals*, to evaluate open terms: values that are stuck on a variable
+-- | whose value is not yet known. This allows normalizing under binders and
+-- | in arbitrary contexts, which is essential for dependent type theory.
+-- |
+-- | The notion of neutrals and stuck computation then needs to be refined to
+-- | handle global definitions (which are not stuck per se, but ideally not
+-- | always inlined) and unification metavariables (which may become unstuck
+-- | as information is gathered through unification).
+-- |
+-- | The core exports are:
+-- | - `eval`, which takes a term and returns its evaluated value, with closures
+-- |   where terms are stuck under binders
+-- | - `quote`, which finishes normalization under binders and transforms it
+-- |   back into a term
+-- | - `normalize`, which normalizes a term by quoting its evaluation
+-- |
+-- | `Term` uses de Bruijn indices (which is good for constructing terms,
+-- | and it means that closed terms can be evaluated in any context) while
+-- | `Eval` uses de Bruijn levels (which operates like normal variable
+-- | assignment: it does not have to be adjusted when going into and out of
+-- | contexts, as long as the variable is still in scope), which is key to the
+-- | efficiency of evaluation, avoiding ballooning complexity from repeatedly
+-- | shifting and substituting in `Term`s. Sometimes these properties are in
+-- | conflict with their usage, so `shift` is provided as an escape hatch.
+module Pudding.Core.Eval where
 
-import Pudding.Types
+import Pudding.Core.Types
 import qualified Data.Map as Map
 import Data.Functor (void)
 import qualified Data.List as List
 import Data.Maybe (fromMaybe)
-import Pudding.Printer (Style (Ansi), formatCoreWithSpan)
+import Pudding.Core.Printer (Style (Ansi), formatCoreWithSpan)
 import qualified Data.Text as T
 import GHC.Stack (HasCallStack)
 import qualified Pudding.Types.Stack as Stack

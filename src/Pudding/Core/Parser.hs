@@ -1,6 +1,6 @@
-module Pudding.Parser
-  ( module Pudding.Parser
-  , module Pudding.Parser.Base
+module Pudding.Core.Parser
+  ( module Pudding.Core.Parser
+  , module Pudding.Types.Parser
   ) where
 
 import Control.Applicative (many, (<|>))
@@ -18,9 +18,9 @@ import Data.Text (Text)
 import Data.Traversable (for)
 import qualified Data.Vector as Vector
 import GHC.IO (unsafePerformIO)
-import Pudding.Name (NameTable)
-import Pudding.Parser.Base
-import Pudding.Types
+import Pudding.Types.Name (NameTable)
+import Pudding.Types.Parser
+import Pudding.Core.Types
 import qualified Text.Parsec as P
 
 type Parser = P.ParsecT Text () (ReaderT ParseCtx IO)

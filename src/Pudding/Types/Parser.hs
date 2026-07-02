@@ -1,4 +1,4 @@
-module Pudding.Parser.Base where
+module Pudding.Types.Parser where
 
 import Control.DeepSeq (NFData(rnf))
 import GHC.Generics (Generic)

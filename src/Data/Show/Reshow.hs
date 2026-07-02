@@ -1,3 +1,4 @@
+-- | This module reformats `show` output for indentation and rainbow brackets.
 module Data.Show.Reshow where
 
 import Prelude hiding (lex, head, tail)
@@ -5,7 +6,6 @@ import Control.Applicative (many, (<|>), asum, optional)
 import Data.Foldable (fold)
 import Data.Functor ((<&>))
 import Data.Text (Text)
-import Pudding.Types ()
 import Data.Foldable1 (intercalate1)
 import Data.List.NonEmpty (NonEmpty((:|)))
 

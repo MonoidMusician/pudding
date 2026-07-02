@@ -4,7 +4,7 @@ import Prelude
 
 import Pudding.Semantics.Universes
 import Pudding.Semantics.LevelAlgebra
-import Pudding.Types (Fresh)
+import Pudding.Core.Types (Fresh)
 import qualified Pudding.Semantics.LevelAlgebra as Lvl
 import qualified Pudding.Semantics.Universes as Uni
 import qualified Data.IntMap.Strict as IntMap

@@ -6,18 +6,18 @@ import Pudding.Surface.Lexer hiding (demo)
 import qualified Pudding.Surface.Happy as Happy
 
 import qualified Data.Text as T
-import Pudding.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Globals (globalDefns), globalsFrom, Name (nameText))
+import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Globals (globalDefns), globalsFrom, Name (nameText))
 import Pudding.Types.Stack (pattern Nil)
 import qualified Text.Parsec as P
 import qualified Data.Text.IO.Utf8 as TIO
 import Control.Monad.Identity (Identity (runIdentity))
 import Data.Show.Reshow (reshow)
 import qualified Pudding.Surface.Elaborator as Elab
-import Pudding.Printer (Style (Ansi), formatCore)
+import Pudding.Core.Printer (Style (Ansi), formatCore)
 import GHC.IO (catch, evaluate)
 import GHC.Exception (SomeException)
-import qualified Pudding.Unify as U
-import qualified Pudding.Eval as E
+import qualified Pudding.Core.Unify as U
+import qualified Pudding.Core.Eval as E
 import Control.DeepSeq (force)
 import qualified Pudding.Surface.Delaborator as D
 import System.Environment (getArgs)

@@ -1,4 +1,3 @@
-/'
 @data Void : Type
 @data Unit : Type
 | unit : Unit
@@ -6,6 +5,9 @@
 @data Bool : Type
 | false : Bool
 | true  : Bool
-'/
+
+@data Vector (T : Type) : Π (len : Nat). Type
+| Nil : Vector zero
+| Cons (len : Nat) (hd : T) (tl : Vector len) : Vector (succ len)
 
 @define ex0 := \(X : Type) (x : X). x

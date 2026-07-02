@@ -1,3 +1,7 @@
+-- | This is metadata that is kept on core nodes. Currently not too useful
+-- | since it is literally copied between different types of nodes (e.g.
+-- | lambda to pi), but maybe in the future it can store free variable
+-- | sets or something.
 module Pudding.Types.Metadata where
 
 import Control.DeepSeq (NFData)
@@ -7,7 +11,7 @@ import Data.List.NonEmpty (NonEmpty(..))
 import Data.Set (Set)
 import qualified Data.Set as Set
 import GHC.Generics (Generic)
-import Pudding.Parser.Base (SourceSpan)
+import Pudding.Types.Parser (SourceSpan)
 import Data.IntMap.Monoidal.Strict (MonoidalIntMap)
 import Data.Semigroup (Min)
 

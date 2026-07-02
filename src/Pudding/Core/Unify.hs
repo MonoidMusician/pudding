@@ -1,7 +1,13 @@
-module Pudding.Unify where
+-- | This is the core module for typechecking and unification. Core terms
+-- | are already intrinsically typed, which can be validated with `validate`,
+-- | or just quickly assembled with `quickTermType`.
+-- |
+-- | Currently it does not have any features for unification: that needs
+-- | some monad design first.
+module Pudding.Core.Unify where
 
-import Pudding.Types
-import Pudding.Eval
+import Pudding.Core.Types
+import Pudding.Core.Eval
 import qualified Data.Map as Map
 import Data.Foldable (fold, foldl')
 import Data.Function ((&))
@@ -16,7 +22,7 @@ import Data.Semialign.Indexed (SemialignWithIndex (ialignWith))
 import qualified Pudding.Types.Stack as Stack
 import Debug.Trace (traceWith)
 import qualified Data.Text as T
-import qualified Pudding.Printer as P
+import qualified Pudding.Core.Printer as P
 import Data.Align (Semialign(alignWith))
 import Data.Monoid (Any)
 import GHC.Generics (Generic)

@@ -1,3 +1,12 @@
+-- | This module is a kind of inverse for elaboration: turning core terms back
+-- | into (hopefully readable) surface syntax. It uses stored binders, names,
+-- | and other metadata to synthesize syntax like what the user wrote.
+-- |
+-- | The two steps are delaborating the core `Term` to a surface `CST` and
+-- | rendering that `CST` to a prettyprinter.
+-- |
+-- | Delaborating binders has a bit of tricky monad business to bracket the
+-- | work for each binder in a composable way.
 {-# LANGUAGE ApplicativeDo #-}
 module Pudding.Surface.Delaborator where
 
@@ -14,21 +23,21 @@ import Data.Map (Map)
 import Data.Map qualified as M
 import Data.Text (Text)
 import GHC.Generics (Generic)
-import Pudding.Name (CanonicalName (..), Name (..))
+import Pudding.Types.Name (CanonicalName (..), Name (..))
 import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::), Fresh (Fresh))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack
 import Control.Monad.State.Strict (State, gets, modify', MonadState (state), runState)
-import Pudding.Types (Term (..), Binder(..), ScopedTerm (Scoped), Eval(..), Neutral(..), NeutFocus(..), NeutPrj(..), Ctx)
+import Pudding.Core.Types (Term (..), Binder(..), ScopedTerm (Scoped), Eval(..), Neutral(..), NeutFocus(..), NeutPrj(..), Ctx)
 import Pudding.Surface.Parser (CST (..), CBinder, PartOfSpeech(..))
 import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.Traversable (for)
 import Control.Monad.Reader.Class (MonadReader (local, ask), asks)
 import Data.List.NonEmpty (NonEmpty(..))
-import qualified Pudding.Eval as E
+import qualified Pudding.Core.Eval as E
 import Pudding.Surface.Lexer (VariableDB(..), NameForm (..))
 import Data.Maybe (fromMaybe)
-import qualified Pudding.Printer as P
+import qualified Pudding.Core.Printer as P
 import qualified Data.Text as T
 import Data.Monoid (Ap(Ap, getAp))
 import Data.Semigroup.Foldable (intercalateMap1)

@@ -1,34 +1,17 @@
+-- | Datatypes and helper functions for the actual surface syntax parser,
+-- | which is located in Happy.y and compiled by Happy to Happy.hs.
 module Pudding.Surface.Parser where
 
 import Prelude hiding (lex)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Text (Text)
-import qualified Text.Parsec as P
 import GHC.Generics (Generic)
 import Control.DeepSeq (NFData)
-import Control.Monad.Identity (Identity)
 
 import qualified Pudding.Surface.Lexer as L
 import Pudding.Types.Base (type (@::), Plicit (..))
 import Pudding.Surface.Lexer (VariableDB)
 import Data.Traversable (for)
-
-type Parser = P.ParsecT [L.Token] () Identity
-
-_parseInner :: [L.Token] -> Parser t -> Parser t
-_parseInner contents inner =
-  P.getInput >>= \was ->
-    P.setInput contents *> inner <* P.setInput was
-
-parens :: Parser t -> Parser t
-parens inner = do
-  contents <- L.pParens
-  _parseInner contents inner
-
-braces :: Parser t -> Parser t
-braces inner = do
-  contents <- L.pBraces
-  _parseInner contents inner
 
 -- | A binder currently is just the same CST type since it shares overlap
 -- | and parsing.
@@ -49,7 +32,6 @@ data Decl
   -- | Nil : Vector zero
   -- | Cons (len : Nat) (hd : T) (tl : Vector len) : Vector (succ len)
   -- ```
-  -- @data Vector (T : Type) : Π (len : Nat). Type | Nil : Vector zero | Cons (len : Nat) (hd : T) (tl : Vector len) : Vector (succ len)
   = DDataType L.VariableName
     -- Parameters
     ![CBinderGroup]

@@ -6,16 +6,16 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Text.Parsec as P
 
-import Pudding.Parser
-import Pudding.Types
+import Pudding.Core.Parser
+import Pudding.Core.Types
 import Testing
 import EvalTest
-import Pudding.Unify (bootGlobals)
+import Pudding.Core.Unify (bootGlobals)
 import Control.Monad.Trans.Class (MonadTrans(lift))
 import Control.Monad.Trans.Cont (ContT (ContT))
 import qualified Data.Text.IO.Utf8 as Text
 import Control.Monad.Reader.Class (MonadReader(local))
-import Pudding.Name (canonicalName)
+import Pudding.Types.Name (canonicalName)
 
 plumTest :: TestSuite
 plumTest = TestSuite "PlumTests" do

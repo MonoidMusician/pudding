@@ -1,3 +1,10 @@
+-- | This is an API and datatype for snoc stacks. Contexts of local variables
+-- | in dependent type theory are specifically left associative, and converting
+-- | between de Bruijn indices and de Bruijn levels requires knowing the size
+-- | of the context, so it makes sense to have a dedicated type.
+-- |
+-- | There is also a `Ctx` type that includes binders on each variable in
+-- | context and includes global definitions (in the core types module).
 {-# LANGUAGE QuantifiedConstraints #-}
 module Pudding.Types.Stack where
 

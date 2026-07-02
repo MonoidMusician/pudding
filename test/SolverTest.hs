@@ -7,7 +7,7 @@ import Control.Monad.IO.Class (liftIO)
 import Testing
 import Data.Foldable (for_)
 import Control.DeepSeq (force, NFData)
-import Pudding.Types (Fresh(..))
+import Pudding.Core.Types (Fresh(..))
 import Pudding.Semantics.Universes
 import qualified Pudding.Semantics.LevelAlgebra as Lvl
 import GHC.IO (evaluate)

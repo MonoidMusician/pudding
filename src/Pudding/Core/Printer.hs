@@ -1,8 +1,8 @@
-module Pudding.Printer where
+module Pudding.Core.Printer where
 
 import Prettyprinter qualified as Doc
 
-import Pudding.Types
+import Pudding.Core.Types
 import Prettyprinter.Render.Text (renderStrict)
 import qualified Prettyprinter.Render.Terminal as Ansi
 import Data.Foldable (fold)
@@ -13,7 +13,7 @@ import Control.Monad (join)
 import qualified Data.Map as Map
 import Control.Lens (view)
 import Text.Parsec.Pos (sourceLine, sourceColumn)
-import Pudding.Parser (SourceSpan(SourceSpan))
+import Pudding.Types.Parser (SourceSpan(SourceSpan))
 import qualified Data.Set as Set
 import Data.List (intercalate)
 
