@@ -27,6 +27,7 @@ import Data.Align (Semialign(alignWith))
 import Data.Monoid (Any)
 import GHC.Generics (Generic)
 import Control.DeepSeq (NFData)
+import GHC.Base (reallyUnsafePtrEquality)
 
 -- Validate the type of a term, as an evaluated type
 validate :: EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
@@ -110,6 +111,7 @@ bootGlobalTypes globals =
 -- Note: we care that the happy path is fast, more than failing fast for
 -- mismatches.
 conversionCheck :: HasCallStack => Ctx () -> Eval -> Eval -> Bool
+conversionCheck _ !evalL !evalR | 1# <- reallyUnsafePtrEquality evalL evalR = True
 conversionCheck ctx evalL evalR = case (evalL, evalR) of
   -- We unravel `EDeferred` slowly, to check if any names match up, before
   -- continuing with the main cases.

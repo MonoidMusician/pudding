@@ -14,6 +14,9 @@ type (@::) (s :: Symbol) t = t
 newtype Fresh = Fresh Int
   deriving newtype (Eq, Ord, Show, Pretty, NFData)
 
+nextFresh :: Fresh -> Fresh
+nextFresh (Fresh i) = Fresh (i + 1)
+
 -- decl: Π (T : Type). T -> T
 -- surface syntax usage: f Nat 42
 -- decl: Π {T : Type}. T -> T

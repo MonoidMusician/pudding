@@ -2,9 +2,9 @@
 module Pudding.Types.Monads where
 
 import Pudding.Types.Base (Fresh, UnifyMode, type (@::))
+import Pudding.Types.Config (Config)
 import Pudding.Core.Types (Eval, Term, Name)
 import Control.Monad.Error.Class (MonadError)
-import Criterion.Types (Config)
 import GHC.Base (Symbol)
 import Data.Text (Text)
 
@@ -58,16 +58,21 @@ class WithConfig m where
 
 
 -- Writer-like
-class Constraints c m | m -> c where
-  constrain :: c -> m ()
-  constraintsFrom :: m a -> m (c, a)
+class Constraining m where
+  type Constraints m
+  constrain :: Constraints m -> m ()
+  constraintsFrom :: m a -> m (Constraints m, a)
 
 -- State/IO-like
-class Constraints c m => Unification c m | m -> c where
-  solve :: Fresh -> Eval -> m Eval
+class Constraining m => Unification m where
+  fullSolve :: Fresh -> Eval -> m Eval
   currentSolution :: Fresh -> m Eval
 
--- saveCheckpoint :: m (m ()) -- or something more scoped?
+class Checkpointing m where
+  type Checkpoint m
+  checkpoint :: m (Checkpoint m)
+  rewind :: Checkpoint m -> m ()
+
 -- logging...
 
 -- MonadMask

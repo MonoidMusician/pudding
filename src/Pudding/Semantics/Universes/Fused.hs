@@ -26,6 +26,17 @@ data Fused meta = Fused
   , polyConstraints :: !(MonoidalIntMap IntSet)
   }
 
+-- | Make a single constraint.
+constraint :: UEvi.Relationship meta -> Fused meta
+constraint rel@(v1, r, v2, _) = Fused
+  { quickSolver = UCon.relate (v1, r, v2) UCon.base
+  , quickRels = (1, [(v1, r, v2)])
+  , slowSolver = case UEvi.constraint rel of
+      UEvi.Constraints _ cs -> cs
+  , polyConstraints = mempty
+  }
+
+
 -- | Deciding Left or Right is O(1), but obtaining evidence takes longer.
 check :: forall meta. Fused meta -> Either (InconsistentRelationship meta) (IntMap.IntMap Int)
 check (Fused Nothing _ constraints _) = Left $
