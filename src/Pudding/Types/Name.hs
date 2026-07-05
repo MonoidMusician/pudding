@@ -13,8 +13,18 @@ import GHC.Generics (Generic)
 import GHC.StableName (StableName, hashStableName, makeStableName)
 import Prettyprinter (Pretty(pretty))
 import GHC.IO (evaluate, unsafePerformIO)
+import qualified Data.Aeson as AE
+import Data.Functor.Contravariant (Contravariant(contramap))
 
 data Name = Name { nameId :: !(StableName Text), nameText :: !Text }
+
+instance AE.ToJSON Name where toJSON = AE.toJSON . nameText
+instance AE.FromJSON Name where
+  parseJSON = fmap internalizeG . AE.parseJSON
+instance AE.ToJSONKey Name where
+  toJSONKey = contramap nameText (AE.toJSONKey @Text)
+instance AE.FromJSONKey Name where
+  fromJSONKey = AE.FromJSONKeyText internalizeG
 
 instance Eq Name where
   Name n1 _ == Name n2 _ = n1 == n2
@@ -66,7 +76,7 @@ data CanonicalName = CanonicalName
   { chosenName :: Name
   , allNames :: Set Name -- concatenated during unification
   }
-  deriving (Generic, NFData)
+  deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 canonicalName :: Name -> CanonicalName
 canonicalName = CanonicalName <*> singleton

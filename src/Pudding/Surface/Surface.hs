@@ -1,19 +1,19 @@
 module Pudding.Surface.Surface where
 
-import Prelude
+import Prelude hiding (lex)
 
 import Pudding.Surface.Lexer hiding (demo)
 import qualified Pudding.Surface.Happy as Happy
 
 import qualified Data.Text as T
-import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Globals (globalDefns), globalsFrom, Name (nameText))
+import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Globals (globalDefns), globalsFrom, Name (nameText), Term)
 import Pudding.Types.Stack (pattern Nil)
 import qualified Text.Parsec as P
 import qualified Data.Text.IO.Utf8 as TIO
 import Control.Monad.Identity (Identity (runIdentity))
 import Data.Show.Reshow (reshow)
 import qualified Pudding.Surface.Elaborator as Elab
-import Pudding.Core.Printer (Style (Ansi), formatCore)
+import Pudding.Core.Printer (Style (..), formatCore)
 import GHC.IO (catch, evaluate)
 import GHC.Exception (SomeException)
 import qualified Pudding.Core.Unify as U
@@ -23,6 +23,29 @@ import qualified Pudding.Surface.Delaborator as D
 import System.Environment (getArgs)
 import qualified Data.Map.Strict as Map
 import Data.Foldable (for_)
+
+surfaceToCore :: String -> T.Text -> IO (Either T.Text T.Text)
+surfaceToCore filename contents = do
+  let prelexed = runIdentity (P.runPT (prelex <* P.eof) WHITESPACE filename contents)
+  catch
+    case prelexed of
+      Left err -> pure $ Left $ T.pack $ show err
+      Right r -> do
+        -- TIO.putStrLn $ reshow r
+        let tokenized = runIdentity (P.runPT (tokenize <* P.eof) Nothing filename r)
+        case tokenized of
+          Left err -> pure $ Left $ T.pack $ show err
+          Right ts -> do
+            -- TIO.putStrLn $ reshow ts
+            let parsed = Happy.parseExprInParens ts
+            case parsed of
+              Left err -> do
+                pure $ Left $ T.pack $ "Error at " <> err
+              Right expr -> do
+                tbl <- initTable
+                term <- Elab.runElabScoped tbl (Elab.elab Nothing expr)
+                pure $ Right $ formatCore Plain term
+    \(err :: SomeException) -> pure $ Left $ T.pack $ show err
 
 demo :: IO ()
 demo = do

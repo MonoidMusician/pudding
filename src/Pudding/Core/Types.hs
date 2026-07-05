@@ -21,6 +21,7 @@ import Pudding.Types.Name (CanonicalName (..), Name (..), initTable, internalize
 import Pudding.Types.Base
 import Pudding.Types.Metadata
 import Pudding.Types.Stack
+import qualified Data.Aeson as AE
 
 --------------------------------------------------------------------------------
 -- Main semantic types!                                                       --
@@ -32,7 +33,7 @@ data Binder
   | BPair !Binder !Binder -- Bind to fst and snd projections
   | BFresh -- Assign a name to it during pretty printing
   | BUnused
-  deriving (Generic, NFData)
+  deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 data GlobalTerm = GlobalTerm !Term Eval
   deriving (Generic, NFData)
@@ -197,10 +198,10 @@ data Term
   | TLift Metadata Term
   | TQuote Metadata Term
   | TSplice Metadata Term
-  deriving (Generic, NFData)
+  deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 newtype ScopedTerm = Scoped Term
-  deriving newtype (NFData)
+  deriving newtype (NFData, AE.ToJSON, AE.FromJSON)
 
 -- Result of the `eval` half of Normalization by Evaluation (NbE), called
 -- "the semantic domain".
@@ -414,7 +415,7 @@ data ULevel
   | UMeta !Int
   | UVar !Fresh !Int -- unsolved level, plus offset
   -- sigh, scoping...
-  deriving (Eq, Ord, Generic, Show, NFData)
+  deriving (Eq, Ord, Generic, Show, NFData, AE.ToJSON, AE.FromJSON)
 
 --------------------
 -- Metadata class --

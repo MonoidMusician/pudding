@@ -40,6 +40,9 @@ import qualified Prettyprinter as Doc
 import Data.List.NonEmpty (NonEmpty(..), some1)
 import Data.Semigroup.Foldable (intercalateMap1)
 import Prettyprinter.Util (reflow)
+import qualified Data.Aeson as AE
+import Pudding.Types.Parser (SourceSpan (SourceSpan, spanEnd))
+import Control.Monad (join)
 
 instance NFData P.SourcePos where
   rnf a = seq a ()
@@ -87,6 +90,7 @@ reserved :: Set.Set Char
 reserved = Set.fromList
   [ ',' -- comma is used to separate lots of syntax
   , '\'', '"', '`' -- important for strings, comments, modules
+  , '§' -- dedicated to modules
   , '·', ':' -- these are really really special separators
   , '(', ')' -- parens and braces are always reserved
   , '{', '}' -- (not brackets ... i think those will technically be resolved as user operators)
@@ -113,8 +117,8 @@ builtins = List.nub $
   ] <> (syntaxTable <&> \(_, b, _) -> T.unpack b)
 
 -- | A lexeme from prelexing, with its source position and lexeme data.
-data LEXED = LEXED !P.SourcePos !LEX
-  deriving (Eq, Ord, Generic, NFData)
+data LEXED = LEXED !SourceSpan !LEX
+  deriving (Eq, Ord, Generic, NFData, AE.ToJSON, AE.FromJSON)
 instance Show LEXED where
   show (LEXED _ l) = show l
 
@@ -123,11 +127,11 @@ data Comment
   = LineC !Text
   | AreaC !Text
   | CodeC ![LEXED]
-  deriving (Eq, Ord, Show, Generic, NFData)
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 -- | A piece of syntax with comments, before and after if applicable.
 data Commented t = Commented ![Comment] !t ![Comment]
-  deriving (Eq, Ord, Generic, NFData, Functor, Foldable, Traversable)
+  deriving (Eq, Ord, Generic, NFData, Functor, Foldable, Traversable, AE.ToJSON, AE.FromJSON)
 
 -- TODO
 -- I really think there should be some kind of hashconsed Name structure that
@@ -145,7 +149,7 @@ data LEX
   | NUM !Text -- Number
   | STR !Text -- String (raw contents, not processed)
   | UNKNOWN !Char
-  deriving (Eq, Ord, Show, Generic, NFData)
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 
 --------------------------------------------------------------------------------
@@ -286,13 +290,21 @@ numFormats =
 -- | Turn a text stream into a stream of prelexed tokens.
 prelex :: Prelexer [LEXED]
 prelex = do
-  before <- (`LEXED` WHITESPACE) <$> P.getPosition
+  before <- (`LEXED` WHITESPACE) . join SourceSpan <$> P.getPosition
   inner <- many prelex1
-  after <- (`LEXED` WHITESPACE) <$> P.getPosition
+  after <- (`LEXED` WHITESPACE) . join SourceSpan <$> P.getPosition
   pure $ [before] <> inner <> [after]
 
+prelexWrapper :: Prelexer LEX -> Prelexer LEXED
+prelexWrapper inner = do
+  p1 <- P.getPosition
+  t <- inner
+  P.setState t
+  p2 <- P.getPosition
+  pure $ LEXED (SourceSpan p1 p2) t
+
 prelex1 :: Prelexer LEXED
-prelex1 = liftA2 LEXED P.getPosition $ (>>= \t -> t <$ P.setState t) $ asum
+prelex1 = prelexWrapper $ asum
   -- These options take priority
   [ asum
     [ WHITESPACE <$ some P.space
@@ -352,8 +364,8 @@ type Relexer = P.ParsecT [LEXED] (Maybe [Comment]) Identity
 
 -- | A lexed token, with its position and token data.
 -- TODO: source spans and indentation
-data Token = Token !P.SourcePos !Tok
-  deriving (Eq, Ord, Generic, NFData)
+data Token = Token !SourceSpan !Tok
+  deriving (Eq, Ord, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 instance Show Token where show (Token _ t) = show t
 
@@ -366,7 +378,7 @@ data Tok
   | Syntax !Syntax
   -- Comments
   | Comment !Comment
-  deriving (Eq, Ord, Generic, NFData)
+  deriving (Eq, Ord, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 instance Show Tok where
   show (Content c) = show c
@@ -378,7 +390,7 @@ data VariableDB
   = PlainVar
   | DBIndex !Word
   | DBLevel !Word
-  deriving (Eq, Ord, Show, Generic, NFData)
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 instance Doc.Pretty VariableDB where
   pretty = \case
@@ -434,7 +446,7 @@ data Content
 
   | Parens ![Token]
   | Braces ![Token]
-  deriving (Eq, Ord, Show, Generic, NFData)
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 -- | Functional syntax, like separators, parentheses, assignment, and so on.
 data Syntax
   = SComma -- ,
@@ -452,7 +464,7 @@ data Syntax
   | SLambda
   | SPi
   | SSigma
-  deriving (Eq, Ord, Show, Generic, NFData)
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 -- | Forms of names.
 data NameForm
   -- | Just a plain name: `Quali'fied'name`, `thingy`
@@ -477,7 +489,7 @@ data NameForm
   | OperatorName  ![Text] !(Maybe Text) ![Text] !(Maybe Text)
   -- | `(Control'if:then:else:)`, `Control'(:if:else:)`,
   | DistfixPhrase ![Text] !(Maybe Text) ![Text] !(Maybe Text)
-  deriving (Eq, Ord, Show, Generic, NFData)
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 -- | Forms of operators.
 data OpForm
   -- | Just a plain operator, `+` or `<>`
@@ -489,7 +501,7 @@ data OpForm
   | DistInfix ![Text] !Text
   -- | Distfix postfix: `:else`, `:Control'else`
   | DistPostfix ![Text] !Text
-  deriving (Eq, Ord, Show, Generic, NFData)
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 
 prettyMod :: [Text] -> Doc.Doc ann
@@ -527,7 +539,7 @@ instance Doc.Pretty OpForm where
 
 -- | Match a lexeme and reset the cached whitespace/comment state.
 lexeme :: forall r. (LEX -> Maybe r) -> Relexer r
-lexeme f = P.setState Nothing *> P.tokenPrim show (\_ (LEXED pos _) _ -> pos)
+lexeme f = P.setState Nothing *> P.tokenPrim show (\_ (LEXED pos _) _ -> spanEnd pos)
   \(LEXED _ lexed) -> f lexed
 
 -- | Match a specific value from a parser.
@@ -663,9 +675,16 @@ syntaxTable =
 tokenize :: Relexer [Token]
 tokenize = spaces *> many (tokenize1 <* spaces)
 
+tokenizeWrapper :: Relexer Tok -> Relexer Token
+tokenizeWrapper inner = do
+  p1 <- P.getPosition
+  t <- inner
+  p2 <- P.getPosition
+  pure $ Token (SourceSpan p1 p2) t
+
 -- And that is where it is at, currently!
 tokenize1 :: Relexer Token
-tokenize1 = liftA2 Token P.getPosition $ asum
+tokenize1 = tokenizeWrapper $ asum
   -- All the bits and bobs of syntax that stand on their own
   [ Syntax <$> asum do
       -- e.g. `SAssignL` recognizes `BUILTIN ":="`
@@ -742,9 +761,9 @@ anyNameForm qual = longestOf
   , CompoundName qual <$> compoundName
   , parens $ asum
     -- Mixfix operator names
-    [ P.try $ phrase (pB ":") pOP True $ OperatorName qual
+    [ P.try $ phrase (pB ":" <|> pB "·") pOP True $ OperatorName qual
     -- Distfix phrases
-    , P.try $ phrase (pB ":") pNAME False $ DistfixPhrase qual
+    , P.try $ phrase (pB ":" <|> pB "·") pNAME False $ DistfixPhrase qual
     ]
   ]
   where
@@ -805,7 +824,7 @@ compoundName = do
 type Parser r = forall u m. Monad m => P.ParsecT [Token] u m r
 
 token :: forall u m r. Monad m => (Tok -> Maybe r) -> P.ParsecT [Token] u m r
-token f = P.tokenPrim show (\_ (Token pos _) _ -> pos)
+token f = P.tokenPrim show (\_ (Token pos _) _ -> spanEnd pos)
   \(Token _ tok) -> f tok
 
 content :: forall u m. Monad m => P.ParsecT [Token] u m Content

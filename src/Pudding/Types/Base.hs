@@ -4,6 +4,7 @@ import GHC.Base (Symbol)
 import Prettyprinter (Pretty)
 import Control.DeepSeq (NFData)
 import GHC.Generics (Generic)
+import qualified Data.Aeson as AE
 
 -- Annotate a data field with a name
 infixr 9 @::
@@ -12,7 +13,7 @@ type (@::) (s :: Symbol) t = t
 -- Fresh integers.
 -- E.g. for numbering typed holes
 newtype Fresh = Fresh Int
-  deriving newtype (Eq, Ord, Show, Pretty, NFData)
+  deriving newtype (Eq, Ord, Show, Pretty, NFData, AE.ToJSON, AE.FromJSON)
 
 nextFresh :: Fresh -> Fresh
 nextFresh (Fresh i) = Fresh (i + 1)
@@ -22,7 +23,7 @@ nextFresh (Fresh i) = Fresh (i + 1)
 -- decl: Π {T : Type}. T -> T
 -- surface syntax usage: f 42 = f @{T := Nat} 42
 data Plicit = Explicit | Implicit
-  deriving (Eq, Ord, Show, Generic, NFData)
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 -- | When we go into the unification/conversion checking algorithm, we need to
 -- ask it how to relate its arguments. A "more general" type subsumes a
@@ -37,6 +38,7 @@ data UnifyMode
   = RSubsumesL RequestSubsumption -- e.g. (t : l) : r
   | LSubsumesR RequestSubsumption -- e.g. id {l} (t : r)
   | Invariant RequestSubsumption -- e.g. l = r
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 -- | Each unification mode can generate a subsumption (an actual term to mediate
 -- between different representations), or it can force it to be the identity
@@ -47,6 +49,7 @@ data UnifyMode
 --
 -- Additionally there might need to be a mode for elaboration? Deferred elab?
 data RequestSubsumption = GenerateSubsumption | IdentitySubsumption
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 shouldSubsume :: UnifyMode -> RequestSubsumption
 shouldSubsume = \case

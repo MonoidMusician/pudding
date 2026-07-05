@@ -14,12 +14,14 @@ import GHC.Generics (Generic)
 import Pudding.Types.Parser (SourceSpan)
 import Data.IntMap.Monoidal.Strict (MonoidalIntMap)
 import Data.Semigroup (Min)
+import qualified Data.Aeson as AE
+import Prettyprinter (Pretty)
 
 -- Tag for metadata: not relevant to normalization/unification, just display or
 -- implementation efficiency or so on.
 -- Should implement `Semigroup`, so it can be unified!
 newtype Meta t = Meta t
-  deriving newtype (Eq, Ord, Semigroup, NFData)
+  deriving newtype (Eq, Ord, Semigroup, Show, Pretty, NFData, AE.ToJSON, AE.FromJSON)
 
 
 -- `Exact` values only unify with themself: otherwise it throws an error.
@@ -39,7 +41,7 @@ data Metadata = Metadata
   , metaVars :: MonoidalIntMap (Min Int)
     -- ^ current generation of each meta var, for substitution
   }
-  deriving (Eq, Ord, Generic, NFData)
+  deriving (Eq, Ord, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 parseMetadata :: SourceSpan -> Metadata
 parseMetadata pos = Metadata

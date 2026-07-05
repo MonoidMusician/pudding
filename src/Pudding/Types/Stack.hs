@@ -19,6 +19,7 @@ import Data.Monoid (Dual(Dual, getDual))
 import Control.Applicative.Backwards (Backwards(Backwards, forwards))
 import Data.Foldable (foldl')
 import qualified Data.Vector as Vector
+import qualified Data.Aeson as AE
 
 -- | Finite mapping of indices `i` to elements `Elem`
 class StackLike c where
@@ -79,7 +80,8 @@ instance StackFunctor Vector.Vector where
 -- for syntax manipulation: closed terms have well-defined semantics with
 -- `Index`.
 newtype Index = Index Int
-  deriving newtype (Eq, Ord, Show, Pretty, NFData)
+  deriving (Eq, Ord, Show, Generic)
+  deriving newtype (Pretty, NFData, AE.ToJSON, AE.FromJSON)
 
 class ToIndex i where
   index :: StackLike c => c -> i -> Index
@@ -100,7 +102,8 @@ instance ToIndex Level where
 -- evaluation because they behave like variable names (they do not change once
 -- introduced, unlike indices which would require shifting).
 newtype Level = Level Int
-  deriving newtype (Eq, Ord, Show, Pretty, NFData)
+  deriving (Eq, Ord, Show, Generic)
+  deriving newtype (Pretty, NFData, AE.ToJSON, AE.FromJSON)
 
 class ToLevel l where
   level :: StackLike c => c -> l -> Level

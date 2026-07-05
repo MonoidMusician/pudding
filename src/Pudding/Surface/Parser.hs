@@ -12,6 +12,7 @@ import qualified Pudding.Surface.Lexer as L
 import Pudding.Types.Base (type (@::), Plicit (..))
 import Pudding.Surface.Lexer (VariableDB)
 import Data.Traversable (for)
+import qualified Data.Aeson as AE
 
 -- | A binder currently is just the same CST type since it shares overlap
 -- | and parsing.
@@ -42,13 +43,13 @@ data Decl
     ![(L.VariableName, "arguments" @:: [CBinderGroup], "indices" @:: [CST])]
   | DDefine L.VariableName !(Maybe CST) !CST
   | DModule ![Text] ![Decl]
-  deriving (Eq, Ord, Show, Generic, NFData)
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 data PartOfSpeech t
   = SOp L.OpForm
   | SImplicits ![(Maybe (Maybe L.NameForm, L.VariableDB), t)]
   | Subexpr t
-  deriving (Eq, Ord, Show, Generic, NFData, Functor, Foldable, Traversable)
+  deriving (Eq, Ord, Show, Generic, NFData, Functor, Foldable, Traversable, AE.ToJSON, AE.FromJSON)
 
 data CST
   = CApp !CST !CST
@@ -80,7 +81,7 @@ data CST
   | CAssign !CST !CST -- for patterns and do notation
   | CPlaceholder
   | CArray ![CST]
-  deriving (Eq, Ord, Show, Generic, NFData)
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 -- | Construct a sentence, handling easy cases that do not rely on precedence
 -- | info (and thus name and import resolution).
