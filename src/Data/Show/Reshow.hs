@@ -129,13 +129,19 @@ many1SepEndBy s p = do
 parseAll :: Parser Printer
 parseAll = layers parseShown <|> pure mempty
 
-reformat :: Text -> Text
-reformat i = case P.runP (parseAll <* P.eof) () "<shown>" i of
+reformatAs :: Style -> Text -> Text
+reformatAs s i = case P.runP (parseAll <* P.eof) () "<shown>" i of
   Left _err -> i
-  Right p -> format Ansi (p $ PS 0)
+  Right p -> format s (p $ PS 0)
 
 reshow :: forall s. Show s => s -> Text
-reshow = reformat . T.pack . show
+reshow = reformatAs Plain . T.pack . show
 
 reshowS :: forall s. Show s => s -> String
-reshowS = T.unpack . reformat . T.pack . show
+reshowS = T.unpack . reformatAs Plain . T.pack . show
+
+reshowAs :: forall s. Show s => Style -> s -> Text
+reshowAs s = reformatAs s . T.pack . show
+
+reshowSAs :: forall s. Show s => Style -> s -> String
+reshowSAs s = T.unpack . reformatAs s . T.pack . show

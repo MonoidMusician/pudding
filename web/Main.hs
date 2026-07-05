@@ -13,7 +13,7 @@ import qualified Network.HTTP.Types as HTTP
 import qualified Data.Aeson as AE
 import GHC.Generics (Generic)
 import Pudding.Surface.Surface (surfaceToCore)
-import Pudding.Surface.Web (fullSurfaceProcess)
+import Pudding.Surface.Web (fullSurfaceProcessExpr, fullSurfaceProcessDecl)
 
 getOpts :: Int -> Scotty.Options
 getOpts port = Scotty.defaultOptions
@@ -40,9 +40,14 @@ main = do
   Scotty.scottyOpts (getOpts port) do
 
     -- API requests
-    Scotty.post "/api/parse/surface" do
+    Scotty.post "/api/parse/surface/expr" do
       Content { content, filename } :: Content <- Scotty.jsonData
-      stages <- liftIO $ fullSurfaceProcess (maybe "<input>" T.unpack filename) content
+      stages <- liftIO $ fullSurfaceProcessExpr (maybe "<input>" T.unpack filename) content
+      Scotty.json stages
+      pure ()
+    Scotty.post "/api/parse/surface/decl" do
+      Content { content, filename } :: Content <- Scotty.jsonData
+      stages <- liftIO $ fullSurfaceProcessDecl (maybe "<input>" T.unpack filename) content
       Scotty.json stages
       pure ()
 

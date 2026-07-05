@@ -17,7 +17,7 @@ body {
 }
 
 * {
-  transition: opacity 0.3s, color 0.3s, border-color 0.5s;
+  transition: opacity 0.2s, color 0.2s, border-color 0.4s;
 }
 
 [class^="iconoir-"]::before, [class*=" iconoir-"]::before {
@@ -113,6 +113,11 @@ details > pre {
 
 
 
+#input_output {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 #input_output textarea#input {
   width: 100%;
   height: 30vh;
@@ -121,7 +126,21 @@ details > pre {
   width: 100%;
   height: 30vh;
   overflow: auto;
+  margin: 0;
+}
+#input_output pre#output.error {
+  border-color: var(--red);
 }
 #compose_chars > button {
   padding: 6px;
+}
+.tabs {
+  display: flex;
+}
+.tabs > * {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.tabs button.selected {
+  text-decoration: none;
 }

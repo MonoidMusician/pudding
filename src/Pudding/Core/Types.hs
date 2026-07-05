@@ -38,18 +38,24 @@ data Binder
 data GlobalTerm = GlobalTerm !Term Eval
   deriving (Generic, NFData)
 
+instance AE.ToJSON GlobalTerm where
+  toJSON (GlobalTerm t _) = AE.toJSON t
+instance AE.FromJSON GlobalTerm where
+  parseJSON = fmap (\t -> GlobalTerm t (error "FromJSON GlobalTerm"))
+    . AE.parseJSON
+
 data GlobalDefn
   = -- A function or global constant or whatever.
     -- These also get generated for the names introduced by inductive types:
     -- the type name becomes a definition and so does each constructor.
     GlobalDefn !("arity" @:: Int) ("type" @:: GlobalTerm) ("term" @:: GlobalTerm)
-  deriving (Generic, NFData)
+  deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 data Globals = Globals
   { globalDefns :: Map Name GlobalDefn
   , globalTypes :: Map Name GlobalTypeInfo
   }
-  deriving (Generic, NFData)
+  deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 freshGlobals :: Globals
 freshGlobals = Globals M.empty M.empty
@@ -71,6 +77,7 @@ addGlobal g name (DefnGlobal df) = g { globalDefns = M.insert name df (globalDef
 data GlobalInfo
   = TypeGlobal GlobalTypeInfo
   | DefnGlobal GlobalDefn
+  deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 -- An inductive type declaration.
 data GlobalTypeInfo = GlobalTypeInfo
@@ -78,13 +85,13 @@ data GlobalTypeInfo = GlobalTypeInfo
   , typeIndices :: !(Vector (Plicit, Binder, Term))
   , typeConstrs :: !(Map Name ConstructorInfo)
   }
-  deriving (Generic, NFData)
+  deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 data ConstructorInfo = ConstructorInfo
   { ctorArguments :: !(Vector (Plicit, Binder, Term))
   , ctorIndices :: !(Vector Term)
   }
-  deriving (Generic, NFData)
+  deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 ----------------------------------------
 -- An overview of important functions --

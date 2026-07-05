@@ -6,12 +6,12 @@ import Pudding.Surface.Lexer hiding (demo)
 import qualified Pudding.Surface.Happy as Happy
 
 import qualified Data.Text as T
-import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Globals (globalDefns), globalsFrom, Name (nameText), Term)
+import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Globals (globalDefns), globalsFrom, Name (nameText), Term, GlobalInfo (DefnGlobal))
 import Pudding.Types.Stack (pattern Nil)
 import qualified Text.Parsec as P
 import qualified Data.Text.IO.Utf8 as TIO
 import Control.Monad.Identity (Identity (runIdentity))
-import Data.Show.Reshow (reshow)
+import Data.Show.Reshow (reshow, reshowAs)
 import qualified Pudding.Surface.Elaborator as Elab
 import Pudding.Core.Printer (Style (..), formatCore)
 import GHC.IO (catch, evaluate)
@@ -28,7 +28,10 @@ import qualified Data.Aeson as AE
 import GHC.Generics (Generic)
 import qualified Text.Parsec as Parsec
 import Data.Maybe (fromMaybe)
-import Pudding.Surface.Parser (CST)
+import Pudding.Surface.Parser (CST, Decl)
+import Data.Function ((&))
+import Data.Functor ((<&>))
+import qualified Data.Show.Reshow as RS
 
 data Formats = Formats
   { text :: Text
@@ -73,6 +76,10 @@ plain t = Formats
   , json = AE.Null
   }
 
+reshown :: forall s. Show s => s -> Formats
+reshown s = (plain (reshowAs RS.Plain s))
+  { ansi = reshowAs RS.Ansi s }
+
 catching :: Text -> IO [(Text, Stage)] -> IO [(Text, Stage)]
 catching stageName inner = do
   catch inner
@@ -90,7 +97,7 @@ stage1Fail err = ("prelex", StageFail
 stage1Success :: [LEXED] -> (Text, Stage)
 stage1Success lexemes = ("prelex", StageSuccess
   { stageContent =
-    (plain (T.pack (show lexemes)))
+    (reshown lexemes)
     { json = AE.toJSON lexemes }
   , stageExtra = Nothing
   })
@@ -103,7 +110,7 @@ stage2Fail err = ("tokenize", StageFail
 stage2Success :: [Token] -> (Text, Stage)
 stage2Success tokens = ("tokenize", StageSuccess
   { stageContent =
-    (plain (T.pack (show tokens)))
+    (reshown tokens)
     { json = AE.toJSON tokens }
   , stageExtra = Nothing
   })
@@ -113,10 +120,17 @@ stage3Fail err = ("parse", StageFail
   { stageError = plain (T.pack err)
   , stageDetails = Nothing
   })
-stage3Success :: CST -> (Text, Stage)
-stage3Success tree = ("parse", StageSuccess
+stage3ESuccess :: CST -> (Text, Stage)
+stage3ESuccess tree = ("parse", StageSuccess
   { stageContent =
-    (plain (T.pack (show tree)))
+    (reshown tree)
+    { json = AE.toJSON tree }
+  , stageExtra = Nothing
+  })
+stage3DSuccess :: [Decl] -> (Text, Stage)
+stage3DSuccess tree = ("parse", StageSuccess
+  { stageContent =
+    (reshown tree)
     { json = AE.toJSON tree }
   , stageExtra = Nothing
   })
@@ -126,9 +140,14 @@ stage4Fail err = ("elab", StageFail
   { stageError = plain (T.pack err)
   , stageDetails = Nothing
   })
-stage4Success :: Term -> (Text, Stage)
-stage4Success term = ("elab", StageSuccess
+stage4ESuccess :: Term -> (Text, Stage)
+stage4ESuccess term = ("elab", StageSuccess
   { stageContent = formatsTerm term
+  , stageExtra = Nothing
+  })
+stage4DSuccess :: Map.Map Name GlobalInfo -> (Text, Stage)
+stage4DSuccess modul = ("elab", StageSuccess
+  { stageContent = formatsModule modul
   , stageExtra = Nothing
   })
 
@@ -142,8 +161,25 @@ formatsTerm term = Formats
   where
   text = formatCore Plain term
 
-fullSurfaceProcess :: String -> T.Text -> IO [(Text, Stage)]
-fullSurfaceProcess filename contents = do
+formatsModule :: Map.Map Name GlobalInfo -> Formats
+formatsModule modul = Formats
+  { text = text
+  , html = xmlEscape text
+  , ansi = fmt Ansi
+  , json = AE.toJSON modul
+  }
+  where
+  text = fmt Plain
+  fmt f = Map.toList modul & foldMap \(name, info) ->
+    case info of
+      DefnGlobal (GlobalDefn _ (GlobalTerm ty _) (GlobalTerm tm _)) ->
+        nameText name <> " : " <> formatCore f ty <> "\n" <>
+        nameText name <> " := " <> formatCore f tm <> "\n"
+      _ -> mempty
+
+
+fullSurfaceProcessExpr :: String -> T.Text -> IO [(Text, Stage)]
+fullSurfaceProcessExpr filename contents = do
   let prelexed = runIdentity (P.runPT (prelex <* P.eof) WHITESPACE filename contents)
   catching "prelex" case prelexed of
     Left err -> pure [stage1Fail err]
@@ -156,8 +192,28 @@ fullSurfaceProcess filename contents = do
           catching "parse" case parsed of
             Left err -> do
               pure [stage3Fail err]
-            Right expr -> (stage3Success expr :) <$> do
+            Right expr -> (stage3ESuccess expr :) <$> do
               tbl <- initTable
               catching "elab" do
                 term <- Elab.runElabScoped tbl (Elab.elab Nothing expr)
-                pure [stage4Success term]
+                pure [stage4ESuccess term]
+
+fullSurfaceProcessDecl :: String -> T.Text -> IO [(Text, Stage)]
+fullSurfaceProcessDecl filename contents = do
+  let prelexed = runIdentity (P.runPT (prelex <* P.eof) WHITESPACE filename contents)
+  catching "prelex" case prelexed of
+    Left err -> pure [stage1Fail err]
+    Right r -> (stage1Success r :) <$> do
+      let tokenized = runIdentity (P.runPT (tokenize <* P.eof) Nothing filename r)
+      catching "tokenize" case tokenized of
+        Left err -> pure [stage2Fail err]
+        Right ts -> (stage2Success ts :) <$> do
+          let parsed = Happy.parseDecls ts
+          catching "parse" case parsed of
+            Left err -> do
+              pure [stage3Fail err]
+            Right decls -> (stage3DSuccess decls :) <$> do
+              tbl <- initTable
+              catching "elab" do
+                (modul, ()) <- Elab.runElabFull tbl (Elab.elaborateModule decls)
+                pure [stage4DSuccess modul]

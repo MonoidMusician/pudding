@@ -1,22 +1,50 @@
+import { Stream } from "./js/Riverdragon.js";
 
 const { _, ById, HTML } = Verity;
 
+const tab = Stream.createStore("elab");
+const input = Stream.createStore({ input: "", filename: "" });
+const output = Stream.createStore([]);
+const outputTab = Stream.combineStreams(
+    [_=>true, _=>true],
+    (output, tab) => ({ output, tab }),
+    output.stream, tab.stream,
+);
+const tabOutput = Stream.createStore({ className: "", html: "" });
+
+const tab_container = ById.output_side.querySelector(".tabs");
+
+
 const update = async () => {
-    const r = await Ve.POST("/api/parse/surface", {
+    const r = await Ve.POST("/api/parse/surface/decl", {
         content: ById.input.value,
         filename: ById.filename.value || undefined,
     });
     console.log(r);
-    for (const [name, stage] of r) {
-        if (stage.stageError) {
-            ById.output.innerHTML = stage.stageError.html;
-        } else {
-            ById.output.innerHTML = stage.stageContent.html;
-        }
-    }
+    output.send(r);
 };
 
+
+outputTab.subscribe(v => {
+    for (const [name, stage] of v.output) {
+        if (name === v.tab || stage.stageError) {
+            if (stage.stageError) {
+                const prefix = {
+                    parse: "Parse error at ",
+                }[name] ?? "";
+                tabOutput.send({ html: prefix + stage.stageError.html, className: "error" })
+            } else {
+                tabOutput.send({ html: stage.stageContent.html, className: "" });
+            }
+            if (name === v.tab)
+                break;
+        }
+    }
+});
+
 Verity.ContentLoad(() => {
+    input.send(ById.input.value);
+
     for (const char of ById.compose_chars.querySelectorAll("button")) {
         Ve.on.click(char, () => {
             const c = char.textContent;
@@ -38,4 +66,23 @@ Verity.ContentLoad(() => {
     }
 
     Ve.on.input(ById.input, update);
+
+    Ve.on.click(tab_container, (e) => {
+        if (e.target instanceof HTMLButtonElement) {
+            const selected = e.target.textContent;
+            tab.send(selected);
+            for (const tab of tab_container.querySelectorAll("button")) {
+                if (tab.textContent === selected) {
+                    tab.classList.add("selected");
+                } else {
+                    tab.classList.remove("selected");
+                }
+            }
+        }
+    });
+
+    tabOutput.stream.subscribe(o => {
+        ById.output.innerHTML = o.html;
+        ById.output.className = o.className;
+    });
 });

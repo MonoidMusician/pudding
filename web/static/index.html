@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 	<link rel="stylesheet" type="text/css" href="/index.css">
 	<script src="/js/verity.js"></script>
-	<script src="/index.js"></script>
+	<script src="/index.js" type="module"></script>
 </head>
 
 <body>
@@ -19,11 +19,21 @@
         <input id="filename" value="" placeholder="filename" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
     </div>
 
-    <div id="compose_chars">
-        <button>λ</button><button>Π</button><button>Σ</button><button>§</button><button>·</button>
-    </div>
     <div id="input_output">
-        <textarea id="input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
-        <pre id="output"></pre>
+        <div id="input_side">
+            <div id="compose_chars">
+                <button>λ</button><button>Π</button><button>Σ</button><button>§</button><button>·</button>
+            </div>
+            <textarea id="input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+        </div>
+        <div id="output_side">
+            <div class="tabs">
+                <button>prelex</button>
+                <button>tokenize</button>
+                <button>parse</button>
+                <button>elab</button>
+            </div>
+            <pre id="output"></pre>
+        </div>
     </div>
 </body>
