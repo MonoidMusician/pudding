@@ -1,3 +1,4 @@
+{- HLINT ignore "Use <=<" -}
 module Pudding.Surface.Web where
 
 import Prelude hiding (lex, error)

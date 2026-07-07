@@ -54,7 +54,7 @@
   - maybe annotations can be `@(name ...)` and commands are just `@name`
   - qualified `@Module'name` too
 - implicits
-  - bind with `identity {I} : I -> I`, apply with `identity @{Int}`, possibly named `identity @{I := Int}`
+  - bind with `identity @{I} : I -> I`, apply with `identity @{Int}`, possibly named `identity @{I := Int}`
 - comments?? idk
   - `'' ` with a space? and `#!`
     - wanna leave `///` for a user operator
@@ -106,9 +106,9 @@ Fun I O := Π (i : I). O
 @(infix 50 .r)
 (->) : Type -> Type -> Type := Fun
 
-identity : Π {T : Type}. Fun T T := λ x. x
+identity : Π @{T : Type}. Fun T T := λ x. x
 
-compose : Π {X Y Z : Type}. Fun Y Z -> Fun X Y -> Fun X Z
+compose : Π @{X & Y & Z : Type}. Fun Y Z -> Fun X Y -> Fun X Z
 compose f g x := f (g x)
 
 '' The standard right-associative list type
@@ -119,13 +119,13 @@ compose f g x := f (g x)
 @derive Functor List
   '' Generates something like this:
   /'
-  List'map {I O} (f : I -> O) : List I -> List O
+  List'map @{I, O} (f : I -> O) : List I -> List O
   | nil := nil
   | cons (t : I) (ts : List I) :=
     cons (f t : O) (List'map f ts : List O)
   '/
 
-List'append {T} : List T -> List T -> List T
+List'append @{T} : List T -> List T -> List T
 | nil, tail := tail
 | cons t ts, tail := cons t (List'append ts tail)
 
@@ -148,11 +148,11 @@ Nat'add : Nat -> Nat -> Nat
 (+) := Nat'add
 
 @module List
-  length {T} : List T -> Nat
+  length @{T} : List T -> Nat
   | nil := zero
   | cons _ ts := succ (length ts)
 
-  length_homo {T} : Π (l1 l2 : List T). length (append l1 l2) = length l1 + length l2
+  length_homo @{T} : Π (l1 l2 : List T). length (append l1 l2) = length l1 + length l2
   | nil, l2 := refl
   | cons _ l1, l2 :=
   prove:
@@ -170,7 +170,7 @@ Nat'add : Nat -> Nat -> Nat
     :by: cong succ (length_homo l1 l2)
   '/
 
-  while_just {I O} :
+  while_just @{I, O} :
     (I -> Maybe O) ->
     List I ->
     { justs : List O, tail : List I }
@@ -185,7 +185,7 @@ Nat'add : Nat -> Nat -> Nat
   '' we revert the `& f i ??` now, by just matching two items
   | f, tail := { justs := nil, tail }
  
-  while_right {I L R} :
+  while_right @{I, L, R} :
     (I -> Either (I -> L) R) ->
     List I ->
     { rights : List R, leftover : List L }
@@ -264,3 +264,9 @@ match: thingy1, thingy2
 - handle identation and language syntax i guess
 - into declarations and expressions
 - finally expressions are interpreted according to operator precedence
+
+
+```
+Π @{I & J; f & g : I -> J} (p : f = g) (i : I). f i = g i
+λ @{I; J; f; g} (refl @{x} : f = g). refl (f i)
+```

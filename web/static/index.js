@@ -13,7 +13,9 @@ const outputTab = Stream.combineStreams(
 const tabOutput = Stream.createStore({ className: "", html: "" });
 
 const tab_container = ById.output_side.querySelector(".tabs");
-
+const tab_by_name = Object.fromEntries([
+    ...tab_container.querySelectorAll("button")
+].map(b => [b.textContent, b]));
 
 const update = async () => {
     const r = await Ve.POST("/api/parse/surface/decl", {
@@ -26,6 +28,14 @@ const update = async () => {
 
 
 outputTab.subscribe(v => {
+    for (const [name, stage] of v.output) {
+        const tab = tab_by_name[name];
+        if (stage.stageError) {
+            tab.classList.add("error");
+        } else {
+            tab.classList.remove("error");
+        }
+    }
     for (const [name, stage] of v.output) {
         if (name === v.tab || stage.stageError) {
             if (stage.stageError) {
@@ -71,12 +81,15 @@ Verity.ContentLoad(() => {
         if (e.target instanceof HTMLButtonElement) {
             const selected = e.target.textContent;
             tab.send(selected);
-            for (const tab of tab_container.querySelectorAll("button")) {
-                if (tab.textContent === selected) {
-                    tab.classList.add("selected");
-                } else {
-                    tab.classList.remove("selected");
-                }
+        }
+    });
+
+    tab.stream.subscribe(selected => {
+        for (const tab of tab_container.querySelectorAll("button")) {
+            if (tab.textContent === selected) {
+                tab.classList.add("selected");
+            } else {
+                tab.classList.remove("selected");
             }
         }
     });

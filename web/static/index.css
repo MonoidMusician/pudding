@@ -2,6 +2,7 @@ body {
   --red: #ff6565;
   --green: #85ff85;
   --greenish: #64bb64;
+  --pink: #f1b9cf;
 }
 
 html, body {
@@ -143,4 +144,7 @@ details > pre {
 }
 .tabs button.selected {
   text-decoration: none;
+}
+.tabs button.error {
+  color: var(--pink);
 }

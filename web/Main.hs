@@ -44,12 +44,10 @@ main = do
       Content { content, filename } :: Content <- Scotty.jsonData
       stages <- liftIO $ fullSurfaceProcessExpr (maybe "<input>" T.unpack filename) content
       Scotty.json stages
-      pure ()
     Scotty.post "/api/parse/surface/decl" do
       Content { content, filename } :: Content <- Scotty.jsonData
       stages <- liftIO $ fullSurfaceProcessDecl (maybe "<input>" T.unpack filename) content
       Scotty.json stages
-      pure ()
 
     -- Everything else: static files
     Scotty.get (Scotty.regex "^/(.*?(\\..*?))$") do
