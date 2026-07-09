@@ -39,6 +39,7 @@ import Pudding.Core.Printer (Style (Ansi), formatCoreWithSpan)
 import qualified Data.Text as T
 import GHC.Stack (HasCallStack)
 import qualified Pudding.Types.Stack as Stack
+import Data.Conserve (Conserve (Altered), conserve')
 
 eval :: EvalCtx -> Term -> Eval
 eval = flip evaling
@@ -166,12 +167,13 @@ forceGlobal _ _ = Nothing
 
 -- Capture a closure during evaluation
 captureClosure :: Binder -> ScopedTerm -> EvalCtx -> Closure
-captureClosure = flip . Closure
+captureClosure binder body ctx = Closure ctx binder body
 
 -- Instantiate a closure
 instantiateClosure :: Closure -> Eval -> Eval
-instantiateClosure (Closure binder savedCtx (Scoped savedBody)) providedArg =
+instantiateClosure (Closure savedCtx binder (Scoped savedBody)) providedArg =
   evaling savedBody $ savedCtx :> (binder, providedArg)
+instantiateClosure (ConstClosure ret) _ = ret
 
 
 --------------------------------------------------------------------------------
@@ -364,12 +366,14 @@ eval2termWith forceGlobals handleClosure = \case
 --
 -- Note: this calls directly into `quoting`.
 quotingClosure :: Closure -> Eval -> QuoteCtx -> ScopedTerm
-quotingClosure (Closure bdr savedCtx (Scoped savedBody)) _argTy ctx =
+quotingClosure (Closure savedCtx bdr (Scoped savedBody)) _argTy ctx =
   let
     (lvl, ctx') = push (bdr, ()) ctx
     -- This is the (only-ish) place that we create neutrals: when quoting.
     evalingArg = ENeut (Neutral (NVar mempty lvl) Nil)
   in Scoped $ quoting ((evaling savedBody $ savedCtx :> (bdr, evalingArg)) :: Eval) ctx'
+quotingClosure (ConstClosure ret) _ ctx =
+  Scoped $ quoting ret (ctx :> (BUnused, ()))
 
 -- If we don't want to fully normalize, we can turn `Eval` back into a `Term`
 -- in the simplest way: copying the `Term` out of the `Closure` without any
@@ -424,3 +428,34 @@ shiftFrom base delta = \case
   where
   go = shiftFrom base delta
   into = shiftFrom (base+1) delta
+
+
+shiftFrom' :: Int -> Int -> Term -> Conserve Term
+shiftFrom' _ 0 t = pure t
+shiftFrom' base delta t = conserve' t \case
+  TVar meta (Index idx) | idx >= base ->
+    Altered $ TVar meta (Index (idx + delta))
+  TVar _ _ -> pure t
+  TGlobal _ _ -> pure t
+  THole   _ _ -> pure t
+  TUniv   _ _ -> pure t
+  TLambda meta p b ty body -> TLambda meta p b <$> go ty <*> into body
+  TPi     meta p b ty body -> TPi     meta p b <$> go ty <*> into body
+  TSigma  meta p b ty body -> TSigma  meta p b <$> go ty <*> into body
+  TPair meta ty left right -> TPair meta <$> go ty <*> go left <*> go right
+  TFst meta tm -> TFst meta <$> go tm
+  TSnd meta tm -> TSnd meta <$> go tm
+  TApp meta plicit fun arg -> TApp meta plicit <$> go fun <*> go arg
+  TTyCtor meta name params indices -> TTyCtor meta name <$> traverse go params <*> traverse go indices
+  TTmCtor meta name params args -> TTmCtor meta name <$> traverse go params <*> traverse go args
+  TCase meta motive cases scrutinee -> TCase meta <$> go motive <*> go cases <*> go scrutinee
+  TRecordTy meta fields -> TRecordTy meta <$> traverse go fields
+  TRecordTm meta fields -> TRecordTm meta <$> traverse go fields
+  TField meta focus field -> TField meta <$> go focus <*> pure field
+  TLift   meta ty -> TLift   meta <$> go ty
+  TQuote  meta tm -> TQuote  meta <$> go tm
+  TSplice meta tm -> TSplice meta <$> go tm
+  where
+  go = shiftFrom' base delta
+  into (Scoped body) = Scoped <$>
+    shiftFrom' (base+1) delta body

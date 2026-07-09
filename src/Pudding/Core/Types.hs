@@ -320,9 +320,10 @@ neutSide (NField _ _) = After
 -- `(\x -> x) (\y -> y)` leaves `(\y -> y)` for quoting
 data Closure
   = Closure
-      Binder
       ("saved external context" @:: EvalCtx)
+      Binder
       ("body" @:: ScopedTerm)
+  | ConstClosure Eval
   deriving (Generic, NFData)
 
 data Telescope = Telescope Eval Closure
@@ -575,8 +576,9 @@ instance HasMetadata NeutPrj where
 
 instance HasMetadata Closure where
   traverseMetadata1Depth d f (Closure bdr ctx term) =
-    Closure bdr ctx
-      <$> traverseMetadata1Depth d f term
+    Closure bdr ctx <$> traverseMetadata1Depth d f term
+  traverseMetadata1Depth d f (ConstClosure ret) =
+    ConstClosure <$> traverseMetadata1Depth d f ret
 
 data Visit m
   -- Skip evaluating the children
@@ -591,6 +593,12 @@ data Summarize m = Summarize
   , onNeutPrj :: NeutPrj -> Visit m
   , onNeutFocus :: NeutFocus -> m
   , onTerm :: Term -> Visit m
+  }
+
+data Shift t r m = Shift
+  { intoBinder :: Plicit -> Binder -> (t, m) -> r -> r
+  , asType :: r -> r
+  , closure :: Stack EvalCtx -> Binder -> r -> r
   }
 
 summarize :: forall m. Semigroup m => Summarize m -> Either Eval Term -> m
@@ -610,6 +618,7 @@ summarize (Summarize { onEval, onNeutPrj, onNeutFocus, onTerm }) =
   summEval = Just . summarizeEval
   summScoped (Scoped term) = summTerm term
   summClosure (Closure _ _ term) = summScoped term
+  summClosure (ConstClosure eval) = summEval eval
 
   termChildren :: Term -> Maybe m
   termChildren = \case
@@ -668,3 +677,19 @@ summarize (Summarize { onEval, onNeutPrj, onNeutFocus, onTerm }) =
     ERecordTm _ fields -> foldMap summEval fields
     ELift _ t -> summEval t
     EQuote _ t -> summEval t
+
+-- summarizeCtx :: forall r m. Semigroup m =>
+--   Shift (Either Term Eval) r m ->
+--   Summarize (r -> m) ->
+--   r -> Either Eval Term -> m
+-- summarizeCtx shifter summ = flip $ summarize $ Summarize
+--   { onTerm = \x -> case (x, onTerm summ x) of
+--       (TLambda _ p b ty body, Append r) -> _
+--       (_, r) -> r
+--   , onEval = \x -> case x of
+--       _ -> onEval summ x
+--   , onNeutPrj = onNeutPrj summ
+--   , onNeutFocus = onNeutFocus summ
+--   }
+--   where
+

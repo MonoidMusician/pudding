@@ -278,7 +278,7 @@ validateOrNot seqOrConst ctx = \case
   TLambda meta p b ty body ->
     case validateScoped b ty body of
       (argTy, bodyTy) ->
-        EPi meta p b argTy $ Closure b evalCtxHere $
+        EPi meta p b argTy $ Closure evalCtxHere b $
           -- We have to quote it back into a `Term`, mostly for when the
           -- neutral variable we used for typechecking is actually instantiated
           -- at an application site

@@ -1,4 +1,4 @@
-module Main where
+module Host where
 
 import Prelude hiding (lex)
 
