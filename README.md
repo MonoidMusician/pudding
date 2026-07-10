@@ -205,7 +205,7 @@ They are record-like, having named positions.
 
 This defines a function whose implicits are named `I` and `O`: this is its public interface.
 Within the Pi type or lambda, they can be renamed: to `In` and `Out` or `Input` and `Output` and so on.
-The naming allows applying arguments out of order: only set `@{O := }`, for example.
+The naming allows applying arguments out of order: only set `@{O := String}`, for example.
 
 ### Lexical syntax
 

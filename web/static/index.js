@@ -18,7 +18,7 @@ const tab_by_name = Object.fromEntries([
 ].map(b => [b.textContent, b]));
 
 const update = async () => {
-    const r = await Ve.POST("/api/parse/surface/decl", {
+    const r = await Ve.POST("/api/surface/test", {
         content: ById.input.value,
         filename: ById.filename.value || undefined,
     });
@@ -53,6 +53,17 @@ outputTab.subscribe(v => {
 });
 
 Verity.ContentLoad(() => {
+    const actions = {
+        file_load() {
+            const filename = ById.filename.value;
+            if (!filename) return;
+            Ve.POST("/api/surface/load", filename).then(content => {
+                ById.input.value = content;
+                update();
+            });
+        },
+    };
+
     input.send(ById.input.value);
 
     for (const char of ById.compose_chars.querySelectorAll("button")) {
@@ -97,5 +108,36 @@ Verity.ContentLoad(() => {
     tabOutput.stream.subscribe(o => {
         ById.output.innerHTML = o.html;
         ById.output.className = o.className;
+    });
+
+    Ve.GET("/api/surface/list").then(items => {
+        console.log(items);
+        /** @type HTMLSelectElement */
+        const sel = ById.file_select;
+        for (const child of [...sel.children].slice(1)) {
+            child.removeSelf();
+        }
+        for (const item of items) {
+            sel.appendChild(Ve.HTML.option([item]));
+        }
+    });
+
+    Ve.on.input(ById.file_select, ({ target }) => {
+        if (target.options.selectedIndex > 0) {
+            ById.filename.value = target.value;
+            actions.file_load();
+        }
+    });
+
+    Ve.on.click(ById.file_load, actions.file_load);
+
+    Ve.on.click(ById.file_save, () => {
+        const filename = ById.filename.value;
+        if (!filename) return;
+        const selection = [];
+        Ve.forQuery("#output_side .tabs > .tab > .formats input[type=checkbox]", e => {
+            if (e.checked) selection.push(e.value);
+        });
+        Ve.POST("/api/surface/save", { filename, content: ById.input.value, extra: selection }).then();
     });
 });

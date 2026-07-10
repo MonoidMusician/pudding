@@ -10,13 +10,17 @@
 </head>
 
 <body>
-    <h1 style="margin-top: 2px; line-height: 1.05; margin-bottom: 10px">Pudding Test</h1>
+    <h1 style="margin-top: 2px; line-height: 1.05; margin-bottom: 10px">Pudding Golden Test UI</h1>
 
     <div>
+        <button id="file_refresh">Refresh:</button>
         <select id="file_select">
-            <option>New Test</option>
+            <option>[New]</option>
         </select>
         <input id="filename" value="" placeholder="filename" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+        <button id="file_load">Load</button>
+        <button id="file_save" class="save">Save</button>
+        <button id="file_delete" class="delete">Delete</button>
     </div>
 
     <div id="input_output">
@@ -28,10 +32,34 @@
         </div>
         <div id="output_side">
             <div class="tabs">
-                <button>prelex</button>
-                <button>tokenize</button>
-                <button>parse</button>
-                <button>elab</button>
+                <div class="tab">
+                    <button>prelex</button>
+                    <div class="formats">
+                        <label><input type="checkbox" value="prelex.txt"/> text</label>
+                        <label><input type="checkbox" value="prelex.json"/> json</label>
+                    </div>
+                </div>
+                <div class="tab">
+                    <button>tokenize</button>
+                    <div class="formats">
+                        <label><input type="checkbox" value="tokenize.txt"/> text</label>
+                        <label><input type="checkbox" value="tokenize.json"/> json</label>
+                    </div>
+                </div>
+                <div class="tab">
+                    <button>parse</button>
+                    <div class="formats">
+                        <label><input type="checkbox" value="parse.txt"/> text</label>
+                        <label><input type="checkbox" value="parse.json"/> json</label>
+                    </div>
+                </div>
+                <div class="tab">
+                    <button>elab</button>
+                    <div class="formats">
+                        <label><input type="checkbox" value="elab.txt"/> text</label>
+                        <label><input type="checkbox" value="elab.json"/> json</label>
+                    </div>
+                </div>
             </div>
             <pre id="output"></pre>
         </div>

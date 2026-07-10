@@ -12,28 +12,21 @@ data SourceSpan = SourceSpan
   deriving (Eq, Ord, Generic)
 
 instance AE.ToJSON SourceSpan where
-  toJSON s = AE.object
-    [ "spanBegin" AE..= enc (spanBegin s)
-    , "spanEnd" AE..= enc (spanEnd s)
-    ]
-    where
-    enc sp = AE.object
-      [ "name" AE..= sourceName sp
-      , "line" AE..= sourceLine sp
-      , "col" AE..= sourceColumn sp
+  toJSON s = AE.toJSON
+    [ AE.toJSON
+      [ sourceLine $ spanBegin s
+      , sourceColumn $ spanBegin s
+      , sourceLine $ spanEnd s
+      , sourceColumn $ spanEnd s
       ]
+    , AE.toJSON $ sourceName $ spanBegin s
+    ]
 instance AE.FromJSON SourceSpan where
-  parseJSON s = SourceSpan
-    <$> dec "spanBegin"
-    <*> dec "spanEnd"
-    where
-    dec field = do
-      o <- AE.parseJSON s
-      sp <- o AE..: field
-      newPos
-        <$> sp AE..: "name"
-        <*> sp AE..: "line"
-        <*> sp AE..: "col"
+  parseJSON s = do
+    vs <- AE.parseJSON s
+    case vs of
+      ((l1,c1,l2,c2),n) -> pure do
+        SourceSpan (newPos n l1 c1) (newPos n l2 c2)
 
 instance Semigroup SourceSpan where
   SourceSpan b1 e1 <> SourceSpan b2 e2 =
