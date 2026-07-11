@@ -1,0 +1,1990 @@
+[
+    [
+        [
+            [
+                1,
+                1,
+                1,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "x"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                2,
+                1,
+                2,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "xy"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                1,
+                3,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "_xyz"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                1,
+                4,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            [
+                                "x",
+                                "y"
+                            ]
+                        ],
+                        "tag": "CompoundName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                1,
+                5,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            [
+                                "_x",
+                                "y"
+                            ]
+                        ],
+                        "tag": "CompoundName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                1,
+                6,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            [
+                                "x",
+                                "_y"
+                            ]
+                        ],
+                        "tag": "CompoundName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                7,
+                1,
+                7,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            [
+                                "__x",
+                                "__y"
+                            ]
+                        ],
+                        "tag": "CompoundName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                9,
+                1,
+                9,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M"
+                            ],
+                            "x"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                10,
+                1,
+                10,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            "x"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                1,
+                11,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            "_xyz"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                1,
+                12,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            [
+                                "x",
+                                "y"
+                            ]
+                        ],
+                        "tag": "CompoundName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                1,
+                13,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            [
+                                "_x",
+                                "y"
+                            ]
+                        ],
+                        "tag": "CompoundName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                1,
+                14,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            [
+                                "x",
+                                "_y"
+                            ]
+                        ],
+                        "tag": "CompoundName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                1,
+                15,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            [
+                                "__x",
+                                "__y"
+                            ]
+                        ],
+                        "tag": "CompoundName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                17,
+                1,
+                17,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            null,
+                            [
+                                "+"
+                            ],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                18,
+                1,
+                18,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            null,
+                            [
+                                "+"
+                            ],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                19,
+                1,
+                19,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "+",
+                            [],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                20,
+                1,
+                20,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            null,
+                            [],
+                            "+"
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                21,
+                1,
+                21,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "+",
+                            [],
+                            "-"
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                22,
+                1,
+                22,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "+",
+                            [
+                                "-"
+                            ],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                23,
+                1,
+                23,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            null,
+                            [
+                                "+"
+                            ],
+                            "-"
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                24,
+                1,
+                24,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            null,
+                            [
+                                "+",
+                                "-"
+                            ],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                25,
+                1,
+                25,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "+",
+                            [
+                                "-"
+                            ],
+                            "*"
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                1,
+                26,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "+",
+                            [
+                                "-",
+                                "*"
+                            ],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                1,
+                27,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            null,
+                            [
+                                "+",
+                                "-"
+                            ],
+                            "*"
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                28,
+                1,
+                28,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            null,
+                            [
+                                "+",
+                                "-",
+                                "*"
+                            ],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                1,
+                29,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "+",
+                            [
+                                "-",
+                                "*"
+                            ],
+                            "/"
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                1,
+                30,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "+",
+                            [
+                                "-",
+                                "*",
+                                "/"
+                            ],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                31,
+                1,
+                31,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            null,
+                            [
+                                "+",
+                                "-",
+                                "*"
+                            ],
+                            "/"
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                32,
+                1,
+                32,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            null,
+                            [
+                                "+",
+                                "-",
+                                "*",
+                                "/"
+                            ],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                38,
+                1,
+                38,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            null,
+                            [
+                                "+"
+                            ],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                39,
+                1,
+                39,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            null,
+                            [
+                                "+"
+                            ],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                40,
+                1,
+                40,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            "+",
+                            [],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                41,
+                1,
+                41,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            null,
+                            [],
+                            "+"
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                42,
+                1,
+                42,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            "+",
+                            [],
+                            "-"
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                43,
+                1,
+                43,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            "+",
+                            [
+                                "-"
+                            ],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                44,
+                1,
+                44,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            null,
+                            [
+                                "+"
+                            ],
+                            "-"
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                45,
+                1,
+                45,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            null,
+                            [
+                                "+",
+                                "-"
+                            ],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                46,
+                1,
+                46,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            "+",
+                            [
+                                "-"
+                            ],
+                            "*"
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                47,
+                1,
+                47,
+                13
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            "+",
+                            [
+                                "-",
+                                "*"
+                            ],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                48,
+                1,
+                48,
+                13
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            null,
+                            [
+                                "+",
+                                "-"
+                            ],
+                            "*"
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                49,
+                1,
+                49,
+                14
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            null,
+                            [
+                                "+",
+                                "-",
+                                "*"
+                            ],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                50,
+                1,
+                50,
+                14
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            "+",
+                            [
+                                "-",
+                                "*"
+                            ],
+                            "/"
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                51,
+                1,
+                51,
+                15
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            "+",
+                            [
+                                "-",
+                                "*",
+                                "/"
+                            ],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                52,
+                1,
+                52,
+                15
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            null,
+                            [
+                                "+",
+                                "-",
+                                "*"
+                            ],
+                            "/"
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                53,
+                1,
+                53,
+                16
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            null,
+                            [
+                                "+",
+                                "-",
+                                "*",
+                                "/"
+                            ],
+                            null
+                        ],
+                        "tag": "OperatorName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                101,
+                1,
+                101,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            null,
+                            [
+                                "or"
+                            ],
+                            null
+                        ],
+                        "tag": "DistfixPhrase"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                102,
+                1,
+                102,
+                16
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "if",
+                            [
+                                "then",
+                                "else"
+                            ],
+                            null
+                        ],
+                        "tag": "DistfixPhrase"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                103,
+                1,
+                103,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            null,
+                            [
+                                "if",
+                                "else"
+                            ],
+                            null
+                        ],
+                        "tag": "DistfixPhrase"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                104,
+                1,
+                104,
+                19
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "if",
+                            [
+                                "then",
+                                "else"
+                            ],
+                            "end"
+                        ],
+                        "tag": "DistfixPhrase"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                105,
+                1,
+                105,
+                15
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            null,
+                            [
+                                "if",
+                                "else"
+                            ],
+                            "end"
+                        ],
+                        "tag": "DistfixPhrase"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                106,
+                1,
+                106,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            null,
+                            [
+                                "or"
+                            ],
+                            null
+                        ],
+                        "tag": "DistfixPhrase"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                107,
+                1,
+                107,
+                20
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            "if",
+                            [
+                                "then",
+                                "else"
+                            ],
+                            null
+                        ],
+                        "tag": "DistfixPhrase"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                108,
+                1,
+                108,
+                16
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            null,
+                            [
+                                "if",
+                                "else"
+                            ],
+                            null
+                        ],
+                        "tag": "DistfixPhrase"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                109,
+                1,
+                109,
+                23
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            "if",
+                            [
+                                "then",
+                                "else"
+                            ],
+                            "end"
+                        ],
+                        "tag": "DistfixPhrase"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                110,
+                1,
+                110,
+                19
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [
+                                "M",
+                                "N"
+                            ],
+                            null,
+                            [
+                                "if",
+                                "else"
+                            ],
+                            "end"
+                        ],
+                        "tag": "DistfixPhrase"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                123,
+                1,
+                123,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            null,
+                            [
+                                "_or"
+                            ],
+                            null
+                        ],
+                        "tag": "DistfixPhrase"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                124,
+                1,
+                124,
+                23
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "_if",
+                            [
+                                "_then",
+                                "_else"
+                            ],
+                            "_end"
+                        ],
+                        "tag": "DistfixPhrase"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ]
+]

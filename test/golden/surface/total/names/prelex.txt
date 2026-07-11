@@ -1,0 +1,542 @@
+[ WHITESPACE
+, NAME "x"
+, WHITESPACE
+, NAME "xy"
+, WHITESPACE
+, BUILTIN "_"
+, NAME "xyz"
+, WHITESPACE
+, NAME "x"
+, BUILTIN "_"
+, NAME "y"
+, WHITESPACE
+, BUILTIN "_"
+, NAME "x"
+, BUILTIN "_"
+, NAME "y"
+, WHITESPACE
+, NAME "x"
+, BUILTIN "_"
+, BUILTIN "_"
+, NAME "y"
+, WHITESPACE
+, BUILTIN "_"
+, BUILTIN "_"
+, NAME "x"
+, BUILTIN "_"
+, BUILTIN "_"
+, BUILTIN "_"
+, NAME "y"
+, WHITESPACE
+, MOD "M"
+, NAME "x"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, NAME "x"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "_"
+, NAME "xyz"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, NAME "x"
+, BUILTIN "_"
+, NAME "y"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "_"
+, NAME "x"
+, BUILTIN "_"
+, NAME "y"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, NAME "x"
+, BUILTIN "_"
+, BUILTIN "_"
+, NAME "y"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "_"
+, BUILTIN "_"
+, NAME "x"
+, BUILTIN "_"
+, BUILTIN "_"
+, BUILTIN "_"
+, NAME "y"
+, WHITESPACE
+, BUILTIN "("
+, OP "+"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, BUILTIN ":"
+, OP "+"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, OP "+"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, BUILTIN ":"
+, OP "+"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, BUILTIN ":"
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, BUILTIN ":"
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, OP "*"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, OP "*"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, BUILTIN ":"
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, OP "*"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, BUILTIN ":"
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, OP "*"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, OP "*"
+, BUILTIN ":"
+, OP "/"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, OP "*"
+, BUILTIN ":"
+, OP "/"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, BUILTIN ":"
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, OP "*"
+, BUILTIN ":"
+, OP "/"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, BUILTIN ":"
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, OP "*"
+, BUILTIN ":"
+, OP "/"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, COMMENT ( LineC "(+:-[:]*:/)" )
+, COMMENT ( LineC "(+:-[:]*:/:)" )
+, COMMENT ( LineC "(:+:-[:]*:/)" )
+, COMMENT ( LineC "(:+:-[:]*:/:)" )
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, OP "+"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, BUILTIN ":"
+, OP "+"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, OP "+"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, BUILTIN ":"
+, OP "+"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, BUILTIN ":"
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, BUILTIN ":"
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, OP "*"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, OP "*"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, BUILTIN ":"
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, OP "*"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, BUILTIN ":"
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, OP "*"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, OP "*"
+, BUILTIN ":"
+, OP "/"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, OP "*"
+, BUILTIN ":"
+, OP "/"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, BUILTIN ":"
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, OP "*"
+, BUILTIN ":"
+, OP "/"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, BUILTIN ":"
+, OP "+"
+, BUILTIN ":"
+, OP "-"
+, BUILTIN ":"
+, OP "*"
+, BUILTIN ":"
+, OP "/"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, COMMENT ( LineC "M'N'(+:-[:]*:/)" )
+, COMMENT ( LineC "M'N'(+:-[:]*:/:)" )
+, COMMENT ( LineC "M'N'(:+:-[:]*:/)" )
+, COMMENT ( LineC "M'N'(:+:-[:]*:/:)" )
+, WHITESPACE
+, COMMENT ( LineC "(O'P'+)" )
+, COMMENT ( LineC "(:O'P'+:)" )
+, COMMENT ( LineC "(O'P'+:)" )
+, COMMENT ( LineC "(:O'P'+)" )
+, COMMENT ( LineC "(O'P'+:-)" )
+, COMMENT ( LineC "(O'P'+:-:)" )
+, COMMENT ( LineC "(:O'P'+:-)" )
+, COMMENT ( LineC "(:O'P'+:-:)" )
+, COMMENT ( LineC "(O'P'+:-:*)" )
+, COMMENT ( LineC "(O'P'+:-:*:)" )
+, COMMENT ( LineC "(:O'P'+:-:*)" )
+, COMMENT ( LineC "(:O'P'+:-:*:)" )
+, COMMENT ( LineC "(O'P'+:-:*:/)" )
+, COMMENT ( LineC "(O'P'+:-:*:/:)" )
+, COMMENT ( LineC "(:O'P'+:-:*:/)" )
+, COMMENT ( LineC "(:O'P'+:-:*:/:)" )
+, COMMENT ( LineC "(O'P'+:-[:]*:/)" )
+, COMMENT ( LineC "(O'P'+:-[:]*:/:)" )
+, COMMENT ( LineC "(:O'P'+:-[:]*:/)" )
+, COMMENT ( LineC "(:O'P'+:-[:]*:/:)" )
+, WHITESPACE
+, COMMENT ( LineC "M'N'(O'P'+)" )
+, COMMENT ( LineC "M'N'(:O'P'+:)" )
+, COMMENT ( LineC "M'N'(O'P'+:)" )
+, COMMENT ( LineC "M'N'(:O'P'+)" )
+, COMMENT ( LineC "M'N'(O'P'+:-)" )
+, COMMENT ( LineC "M'N'(O'P'+:-:)" )
+, COMMENT ( LineC "M'N'(:O'P'+:-)" )
+, COMMENT ( LineC "M'N'(:O'P'+:-:)" )
+, COMMENT ( LineC "M'N'(O'P'+:-:*)" )
+, COMMENT ( LineC "M'N'(O'P'+:-:*:)" )
+, COMMENT ( LineC "M'N'(:O'P'+:-:*)" )
+, COMMENT ( LineC "M'N'(:O'P'+:-:*:)" )
+, COMMENT ( LineC "M'N'(O'P'+:-:*:/)" )
+, COMMENT ( LineC "M'N'(O'P'+:-:*:/:)" )
+, COMMENT ( LineC "M'N'(:O'P'+:-:*:/)" )
+, COMMENT ( LineC "M'N'(:O'P'+:-:*:/:)" )
+, COMMENT ( LineC "M'N'(O'P'+:-[:]*:/)" )
+, COMMENT ( LineC "M'N'(O'P'+:-[:]*:/:)" )
+, COMMENT ( LineC "M'N'(:O'P'+:-[:]*:/)" )
+, COMMENT ( LineC "M'N'(:O'P'+:-[:]*:/:)" )
+, WHITESPACE
+, BUILTIN "("
+, BUILTIN ":"
+, NAME "or"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, NAME "if"
+, BUILTIN ":"
+, NAME "then"
+, BUILTIN ":"
+, NAME "else"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, BUILTIN ":"
+, NAME "if"
+, BUILTIN ":"
+, NAME "else"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, NAME "if"
+, BUILTIN ":"
+, NAME "then"
+, BUILTIN ":"
+, NAME "else"
+, BUILTIN ":"
+, NAME "end"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, BUILTIN ":"
+, NAME "if"
+, BUILTIN ":"
+, NAME "else"
+, BUILTIN ":"
+, NAME "end"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, BUILTIN ":"
+, NAME "or"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, NAME "if"
+, BUILTIN ":"
+, NAME "then"
+, BUILTIN ":"
+, NAME "else"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, BUILTIN ":"
+, NAME "if"
+, BUILTIN ":"
+, NAME "else"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, NAME "if"
+, BUILTIN ":"
+, NAME "then"
+, BUILTIN ":"
+, NAME "else"
+, BUILTIN ":"
+, NAME "end"
+, BUILTIN ")"
+, WHITESPACE
+, MOD "M"
+, MOD "N"
+, BUILTIN "("
+, BUILTIN ":"
+, NAME "if"
+, BUILTIN ":"
+, NAME "else"
+, BUILTIN ":"
+, NAME "end"
+, BUILTIN ")"
+, WHITESPACE
+, COMMENT ( LineC "(:O'P'or:)" )
+, COMMENT ( LineC "(O'P'if:then:else:)" )
+, COMMENT ( LineC "(:O'P'if:else:)" )
+, COMMENT ( LineC "(O'P'if:then:else:end)" )
+, COMMENT ( LineC "(:O'P'if:else:end)" )
+, COMMENT ( LineC "M'N'(:O'P'or:)" )
+, COMMENT ( LineC "M'N'(O'P'if:then:else:)" )
+, COMMENT ( LineC "M'N'(:O'P'if:else:)" )
+, COMMENT ( LineC "M'N'(O'P'if:then:else:end)" )
+, COMMENT ( LineC "M'N'(:O'P'if:else:end)" )
+, WHITESPACE
+, BUILTIN "("
+, BUILTIN ":"
+, BUILTIN "_"
+, NAME "or"
+, BUILTIN ":"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, BUILTIN "_"
+, NAME "if"
+, BUILTIN ":"
+, BUILTIN "_"
+, NAME "then"
+, BUILTIN ":"
+, BUILTIN "_"
+, NAME "else"
+, BUILTIN ":"
+, BUILTIN "_"
+, NAME "end"
+, BUILTIN ")"
+, WHITESPACE
+, COMMENT ( LineC "M'N'(:O'P'_or:)" )
+, COMMENT ( LineC "M'N'(O'P'_if:_then:_else:_end)" )
+, WHITESPACE
+]

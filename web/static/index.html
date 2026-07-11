@@ -10,12 +10,27 @@
 </head>
 
 <body>
-    <h1 style="margin-top: 2px; line-height: 1.05; margin-bottom: 10px">Pudding Golden Test UI</h1>
+    <div style="width: fit-content; margin: auto">
+        <h1 style="margin-top: 2px; line-height: 1.05; margin-bottom: 10px; font-size: 24px">Pudding Golden Test UI</h1>
 
+        <div id="section_tabs" style="width: fit-content; margin: auto">
+            <h2 style="margin-top: 2px; line-height: 1.05; margin-bottom: 10px; font-size: 18px"><label><input type="radio" name="section_tab" style="display:none" value="dashboard"/>Dashboard</label></h2>
+            <h2 style="margin-top: 2px; line-height: 1.05; margin-bottom: 10px; font-size: 18px"><label><input type="radio" name="section_tab" style="display:none" value="compose" checked/>Compose</label></h2>
+        </div>
+    </div>
+
+    <section id="section_dashboard" style="display: none">
+    <div>
+        <button id="board_refresh">Refresh</button>
+        <table id="results"></table>
+    </div>
+    </section>
+
+    <section id="section_compose">
     <div>
         <button id="file_refresh">Refresh:</button>
         <select id="file_select">
-            <option>[New]</option>
+            <option value="">[New]</option>
         </select>
         <input id="filename" value="" placeholder="filename" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
         <button id="file_load">Load</button>
@@ -64,4 +79,5 @@
             <pre id="output"></pre>
         </div>
     </div>
+    </section>
 </body>

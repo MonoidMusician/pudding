@@ -113,6 +113,17 @@ details > pre {
 }
 
 
+#section_tabs {
+  display: flex;
+  gap: 2em;
+}
+#section_tabs > * {
+  opacity: 0.7;
+}
+#section_tabs > *:has(> label > input:checked) {
+  opacity: 1.0;
+}
+
 
 #input_output {
   display: flex;

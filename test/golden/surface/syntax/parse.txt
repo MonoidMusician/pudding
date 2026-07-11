@@ -1,0 +1,32 @@
+[ DDefine ( Just ( PlainName [] "T" ), PlainVar ) Nothing CUniv
+, DDefine
+  ( Just ( PlainName [] "Id" ), PlainVar )
+  Nothing
+  ( CLambda
+    ( ( Explicit
+      , CVar ( Just ( PlainName [] "X" ) ) PlainVar :| []
+      , Just CUniv
+      )
+      :|
+      []
+    )
+    ( CVar ( Just ( PlainName [] "X" ) ) PlainVar )
+  )
+, DDefine
+  ( Just ( PlainName [] "id" ), PlainVar )
+  Nothing
+  ( CLambda
+    ( ( Explicit
+      , CVar ( Just ( PlainName [] "X" ) ) PlainVar :| []
+      , Just CUniv
+      )
+      :|
+      [ ( Explicit
+        , CVar ( Just ( PlainName [] "x" ) ) PlainVar :| []
+        , Just ( CVar ( Just ( PlainName [] "X" ) ) PlainVar )
+        )
+      ]
+    )
+    ( CVar ( Just ( PlainName [] "x" ) ) PlainVar )
+  )
+]

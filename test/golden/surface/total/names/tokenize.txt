@@ -1,0 +1,150 @@
+[ VariableName ( Just ( PlainName [] "x" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "xy" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "_xyz" ) ) PlainVar
+, VariableName ( Just ( CompoundName [] ( "x" :| [ "y" ] ) ) ) PlainVar
+, VariableName ( Just ( CompoundName [] ( "_x" :| [ "y" ] ) ) ) PlainVar
+, VariableName ( Just ( CompoundName [] ( "x" :| [ "_y" ] ) ) ) PlainVar
+, VariableName ( Just ( CompoundName [] ( "__x" :| [ "__y" ] ) ) ) PlainVar
+, VariableName ( Just ( PlainName [ "M" ] "x" ) ) PlainVar
+, VariableName ( Just ( PlainName [ "M", "N" ] "x" ) ) PlainVar
+, VariableName ( Just ( PlainName [ "M", "N" ] "_xyz" ) ) PlainVar
+, VariableName
+  ( Just ( CompoundName [ "M", "N" ] ( "x" :| [ "y" ] ) ) )
+  PlainVar
+, VariableName
+  ( Just ( CompoundName [ "M", "N" ] ( "_x" :| [ "y" ] ) ) )
+  PlainVar
+, VariableName
+  ( Just ( CompoundName [ "M", "N" ] ( "x" :| [ "_y" ] ) ) )
+  PlainVar
+, VariableName
+  ( Just ( CompoundName [ "M", "N" ] ( "__x" :| [ "__y" ] ) ) )
+  PlainVar
+, VariableName ( Just ( OperatorName [] Nothing [ "+" ] Nothing ) ) PlainVar
+, VariableName ( Just ( OperatorName [] Nothing [ "+" ] Nothing ) ) PlainVar
+, VariableName ( Just ( OperatorName [] ( Just "+" ) [] Nothing ) ) PlainVar
+, VariableName ( Just ( OperatorName [] Nothing [] ( Just "+" ) ) ) PlainVar
+, VariableName
+  ( Just ( OperatorName [] ( Just "+" ) [] ( Just "-" ) ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [] ( Just "+" ) [ "-" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [] Nothing [ "+" ] ( Just "-" ) ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [] Nothing [ "+", "-" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [] ( Just "+" ) [ "-" ] ( Just "*" ) ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [] ( Just "+" ) [ "-", "*" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [] Nothing [ "+", "-" ] ( Just "*" ) ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [] Nothing [ "+", "-", "*" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [] ( Just "+" ) [ "-", "*" ] ( Just "/" ) ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [] ( Just "+" ) [ "-", "*", "/" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [] Nothing [ "+", "-", "*" ] ( Just "/" ) ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [] Nothing [ "+", "-", "*", "/" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [ "M", "N" ] Nothing [ "+" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [ "M", "N" ] Nothing [ "+" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [ "M", "N" ] ( Just "+" ) [] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [ "M", "N" ] Nothing [] ( Just "+" ) ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [ "M", "N" ] ( Just "+" ) [] ( Just "-" ) ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [ "M", "N" ] ( Just "+" ) [ "-" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [ "M", "N" ] Nothing [ "+" ] ( Just "-" ) ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [ "M", "N" ] Nothing [ "+", "-" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [ "M", "N" ] ( Just "+" ) [ "-" ] ( Just "*" ) ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [ "M", "N" ] ( Just "+" ) [ "-", "*" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [ "M", "N" ] Nothing [ "+", "-" ] ( Just "*" ) ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [ "M", "N" ] Nothing [ "+", "-", "*" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [ "M", "N" ] ( Just "+" ) [ "-", "*" ] ( Just "/" ) ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [ "M", "N" ] ( Just "+" ) [ "-", "*", "/" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [ "M", "N" ] Nothing [ "+", "-", "*" ] ( Just "/" ) ) )
+  PlainVar
+, VariableName
+  ( Just ( OperatorName [ "M", "N" ] Nothing [ "+", "-", "*", "/" ] Nothing ) )
+  PlainVar
+, VariableName ( Just ( DistfixPhrase [] Nothing [ "or" ] Nothing ) ) PlainVar
+, VariableName
+  ( Just ( DistfixPhrase [] ( Just "if" ) [ "then", "else" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( DistfixPhrase [] Nothing [ "if", "else" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( DistfixPhrase [] ( Just "if" ) [ "then", "else" ] ( Just "end" ) ) )
+  PlainVar
+, VariableName
+  ( Just ( DistfixPhrase [] Nothing [ "if", "else" ] ( Just "end" ) ) )
+  PlainVar
+, VariableName
+  ( Just ( DistfixPhrase [ "M", "N" ] Nothing [ "or" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just ( DistfixPhrase [ "M", "N" ] ( Just "if" ) [ "then", "else" ] Nothing )
+  )
+  PlainVar
+, VariableName
+  ( Just ( DistfixPhrase [ "M", "N" ] Nothing [ "if", "else" ] Nothing ) )
+  PlainVar
+, VariableName
+  ( Just
+    ( DistfixPhrase [ "M", "N" ] ( Just "if" ) [ "then", "else" ] ( Just "end" )
+    )
+  )
+  PlainVar
+, VariableName
+  ( Just ( DistfixPhrase [ "M", "N" ] Nothing [ "if", "else" ] ( Just "end" ) )
+  )
+  PlainVar
+, VariableName ( Just ( DistfixPhrase [] Nothing [ "_or" ] Nothing ) ) PlainVar
+, VariableName
+  ( Just
+    ( DistfixPhrase [] ( Just "_if" ) [ "_then", "_else" ] ( Just "_end" ) )
+  )
+  PlainVar
+]

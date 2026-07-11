@@ -1,0 +1,8232 @@
+[
+    [
+        [
+            [
+                1,
+                1,
+                1,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                1,
+                1,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "x",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                2,
+                2,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                2,
+                1,
+                2,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "xy",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                2,
+                3,
+                3,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                1,
+                3,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                2,
+                3,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "xyz",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                5,
+                4,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                1,
+                4,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "x",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                2,
+                4,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                3,
+                4,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "y",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                4,
+                5,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                1,
+                5,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                2,
+                5,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "x",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                3,
+                5,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                4,
+                5,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "y",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                5,
+                6,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                1,
+                6,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "x",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                2,
+                6,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                3,
+                6,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                4,
+                6,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "y",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                5,
+                7,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                7,
+                1,
+                7,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                7,
+                2,
+                7,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                7,
+                3,
+                7,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "x",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                7,
+                4,
+                7,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                7,
+                5,
+                7,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                7,
+                6,
+                7,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                7,
+                7,
+                7,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "y",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                7,
+                8,
+                9,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                9,
+                1,
+                9,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                9,
+                3,
+                9,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "x",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                9,
+                4,
+                10,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                10,
+                1,
+                10,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                10,
+                3,
+                10,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                10,
+                5,
+                10,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "x",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                10,
+                6,
+                11,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                1,
+                11,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                3,
+                11,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                5,
+                11,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                6,
+                11,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "xyz",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                9,
+                12,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                1,
+                12,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                3,
+                12,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                5,
+                12,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "x",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                6,
+                12,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                7,
+                12,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "y",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                8,
+                13,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                1,
+                13,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                3,
+                13,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                5,
+                13,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                6,
+                13,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "x",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                7,
+                13,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                8,
+                13,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "y",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                9,
+                14,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                1,
+                14,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                3,
+                14,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                5,
+                14,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "x",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                6,
+                14,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                7,
+                14,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                8,
+                14,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "y",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                9,
+                15,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                1,
+                15,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                3,
+                15,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                5,
+                15,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                6,
+                15,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                7,
+                15,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "x",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                8,
+                15,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                9,
+                15,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                10,
+                15,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                11,
+                15,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "y",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                12,
+                17,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                17,
+                1,
+                17,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                17,
+                2,
+                17,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                17,
+                3,
+                17,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                17,
+                4,
+                18,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                18,
+                1,
+                18,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                18,
+                2,
+                18,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                18,
+                3,
+                18,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                18,
+                4,
+                18,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                18,
+                5,
+                18,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                18,
+                6,
+                19,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                19,
+                1,
+                19,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                19,
+                2,
+                19,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                19,
+                3,
+                19,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                19,
+                4,
+                19,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                19,
+                5,
+                20,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                20,
+                1,
+                20,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                20,
+                2,
+                20,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                20,
+                3,
+                20,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                20,
+                4,
+                20,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                20,
+                5,
+                21,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                21,
+                1,
+                21,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                21,
+                2,
+                21,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                21,
+                3,
+                21,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                21,
+                4,
+                21,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                21,
+                5,
+                21,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                21,
+                6,
+                22,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                22,
+                1,
+                22,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                22,
+                2,
+                22,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                22,
+                3,
+                22,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                22,
+                4,
+                22,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                22,
+                5,
+                22,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                22,
+                6,
+                22,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                22,
+                7,
+                23,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                23,
+                1,
+                23,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                23,
+                2,
+                23,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                23,
+                3,
+                23,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                23,
+                4,
+                23,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                23,
+                5,
+                23,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                23,
+                6,
+                23,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                23,
+                7,
+                24,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                24,
+                1,
+                24,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                24,
+                2,
+                24,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                24,
+                3,
+                24,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                24,
+                4,
+                24,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                24,
+                5,
+                24,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                24,
+                6,
+                24,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                24,
+                7,
+                24,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                24,
+                8,
+                25,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                25,
+                1,
+                25,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                25,
+                2,
+                25,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                25,
+                3,
+                25,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                25,
+                4,
+                25,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                25,
+                5,
+                25,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                25,
+                6,
+                25,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "*",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                25,
+                7,
+                25,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                25,
+                8,
+                26,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                1,
+                26,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                2,
+                26,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                3,
+                26,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                4,
+                26,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                5,
+                26,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                6,
+                26,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "*",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                7,
+                26,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                8,
+                26,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                9,
+                27,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                1,
+                27,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                2,
+                27,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                3,
+                27,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                4,
+                27,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                5,
+                27,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                6,
+                27,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                7,
+                27,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "*",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                8,
+                27,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                9,
+                28,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                28,
+                1,
+                28,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                28,
+                2,
+                28,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                28,
+                3,
+                28,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                28,
+                4,
+                28,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                28,
+                5,
+                28,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                28,
+                6,
+                28,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                28,
+                7,
+                28,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "*",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                28,
+                8,
+                28,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                28,
+                9,
+                28,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                28,
+                10,
+                29,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                1,
+                29,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                2,
+                29,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                3,
+                29,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                4,
+                29,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                5,
+                29,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                6,
+                29,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "*",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                7,
+                29,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                8,
+                29,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "/",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                9,
+                29,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                10,
+                30,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                1,
+                30,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                2,
+                30,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                3,
+                30,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                4,
+                30,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                5,
+                30,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                6,
+                30,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "*",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                7,
+                30,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                8,
+                30,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "/",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                9,
+                30,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                10,
+                30,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                11,
+                31,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                31,
+                1,
+                31,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                31,
+                2,
+                31,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                31,
+                3,
+                31,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                31,
+                4,
+                31,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                31,
+                5,
+                31,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                31,
+                6,
+                31,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                31,
+                7,
+                31,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "*",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                31,
+                8,
+                31,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                31,
+                9,
+                31,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "/",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                31,
+                10,
+                31,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                31,
+                11,
+                32,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                32,
+                1,
+                32,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                32,
+                2,
+                32,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                32,
+                3,
+                32,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                32,
+                4,
+                32,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                32,
+                5,
+                32,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                32,
+                6,
+                32,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                32,
+                7,
+                32,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "*",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                32,
+                8,
+                32,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                32,
+                9,
+                32,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "/",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                32,
+                10,
+                32,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                32,
+                11,
+                32,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                32,
+                12,
+                33,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                33,
+                1,
+                34,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(+:-[:]*:/)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                34,
+                1,
+                35,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(+:-[:]*:/:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                35,
+                1,
+                36,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(:+:-[:]*:/)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                36,
+                1,
+                37,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(:+:-[:]*:/:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                37,
+                1,
+                38,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                38,
+                1,
+                38,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                38,
+                3,
+                38,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                38,
+                5,
+                38,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                38,
+                6,
+                38,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                38,
+                7,
+                38,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                38,
+                8,
+                39,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                39,
+                1,
+                39,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                39,
+                3,
+                39,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                39,
+                5,
+                39,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                39,
+                6,
+                39,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                39,
+                7,
+                39,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                39,
+                8,
+                39,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                39,
+                9,
+                39,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                39,
+                10,
+                40,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                40,
+                1,
+                40,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                40,
+                3,
+                40,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                40,
+                5,
+                40,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                40,
+                6,
+                40,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                40,
+                7,
+                40,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                40,
+                8,
+                40,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                40,
+                9,
+                41,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                41,
+                1,
+                41,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                41,
+                3,
+                41,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                41,
+                5,
+                41,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                41,
+                6,
+                41,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                41,
+                7,
+                41,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                41,
+                8,
+                41,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                41,
+                9,
+                42,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                42,
+                1,
+                42,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                42,
+                3,
+                42,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                42,
+                5,
+                42,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                42,
+                6,
+                42,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                42,
+                7,
+                42,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                42,
+                8,
+                42,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                42,
+                9,
+                42,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                42,
+                10,
+                43,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                43,
+                1,
+                43,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                43,
+                3,
+                43,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                43,
+                5,
+                43,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                43,
+                6,
+                43,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                43,
+                7,
+                43,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                43,
+                8,
+                43,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                43,
+                9,
+                43,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                43,
+                10,
+                43,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                43,
+                11,
+                44,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                44,
+                1,
+                44,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                44,
+                3,
+                44,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                44,
+                5,
+                44,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                44,
+                6,
+                44,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                44,
+                7,
+                44,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                44,
+                8,
+                44,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                44,
+                9,
+                44,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                44,
+                10,
+                44,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                44,
+                11,
+                45,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                45,
+                1,
+                45,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                45,
+                3,
+                45,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                45,
+                5,
+                45,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                45,
+                6,
+                45,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                45,
+                7,
+                45,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                45,
+                8,
+                45,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                45,
+                9,
+                45,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                45,
+                10,
+                45,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                45,
+                11,
+                45,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                45,
+                12,
+                46,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                46,
+                1,
+                46,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                46,
+                3,
+                46,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                46,
+                5,
+                46,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                46,
+                6,
+                46,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                46,
+                7,
+                46,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                46,
+                8,
+                46,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                46,
+                9,
+                46,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                46,
+                10,
+                46,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "*",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                46,
+                11,
+                46,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                46,
+                12,
+                47,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                47,
+                1,
+                47,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                47,
+                3,
+                47,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                47,
+                5,
+                47,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                47,
+                6,
+                47,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                47,
+                7,
+                47,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                47,
+                8,
+                47,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                47,
+                9,
+                47,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                47,
+                10,
+                47,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "*",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                47,
+                11,
+                47,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                47,
+                12,
+                47,
+                13
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                47,
+                13,
+                48,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                48,
+                1,
+                48,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                48,
+                3,
+                48,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                48,
+                5,
+                48,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                48,
+                6,
+                48,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                48,
+                7,
+                48,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                48,
+                8,
+                48,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                48,
+                9,
+                48,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                48,
+                10,
+                48,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                48,
+                11,
+                48,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "*",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                48,
+                12,
+                48,
+                13
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                48,
+                13,
+                49,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                49,
+                1,
+                49,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                49,
+                3,
+                49,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                49,
+                5,
+                49,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                49,
+                6,
+                49,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                49,
+                7,
+                49,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                49,
+                8,
+                49,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                49,
+                9,
+                49,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                49,
+                10,
+                49,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                49,
+                11,
+                49,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "*",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                49,
+                12,
+                49,
+                13
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                49,
+                13,
+                49,
+                14
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                49,
+                14,
+                50,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                50,
+                1,
+                50,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                50,
+                3,
+                50,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                50,
+                5,
+                50,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                50,
+                6,
+                50,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                50,
+                7,
+                50,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                50,
+                8,
+                50,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                50,
+                9,
+                50,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                50,
+                10,
+                50,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "*",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                50,
+                11,
+                50,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                50,
+                12,
+                50,
+                13
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "/",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                50,
+                13,
+                50,
+                14
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                50,
+                14,
+                51,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                51,
+                1,
+                51,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                51,
+                3,
+                51,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                51,
+                5,
+                51,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                51,
+                6,
+                51,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                51,
+                7,
+                51,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                51,
+                8,
+                51,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                51,
+                9,
+                51,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                51,
+                10,
+                51,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "*",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                51,
+                11,
+                51,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                51,
+                12,
+                51,
+                13
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "/",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                51,
+                13,
+                51,
+                14
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                51,
+                14,
+                51,
+                15
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                51,
+                15,
+                52,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                52,
+                1,
+                52,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                52,
+                3,
+                52,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                52,
+                5,
+                52,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                52,
+                6,
+                52,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                52,
+                7,
+                52,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                52,
+                8,
+                52,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                52,
+                9,
+                52,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                52,
+                10,
+                52,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                52,
+                11,
+                52,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "*",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                52,
+                12,
+                52,
+                13
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                52,
+                13,
+                52,
+                14
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "/",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                52,
+                14,
+                52,
+                15
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                52,
+                15,
+                53,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                53,
+                1,
+                53,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                53,
+                3,
+                53,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                53,
+                5,
+                53,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                53,
+                6,
+                53,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                53,
+                7,
+                53,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "+",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                53,
+                8,
+                53,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                53,
+                9,
+                53,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "-",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                53,
+                10,
+                53,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                53,
+                11,
+                53,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "*",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                53,
+                12,
+                53,
+                13
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                53,
+                13,
+                53,
+                14
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "/",
+            "tag": "OP"
+        }
+    ],
+    [
+        [
+            [
+                53,
+                14,
+                53,
+                15
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                53,
+                15,
+                53,
+                16
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                53,
+                16,
+                54,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                54,
+                1,
+                55,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(+:-[:]*:/)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                55,
+                1,
+                56,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(+:-[:]*:/:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                56,
+                1,
+                57,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(:+:-[:]*:/)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                57,
+                1,
+                58,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(:+:-[:]*:/:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                58,
+                1,
+                59,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                59,
+                1,
+                60,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(O'P'+)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                60,
+                1,
+                61,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(:O'P'+:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                61,
+                1,
+                62,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(O'P'+:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                62,
+                1,
+                63,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(:O'P'+)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                63,
+                1,
+                64,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(O'P'+:-)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                64,
+                1,
+                65,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(O'P'+:-:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                65,
+                1,
+                66,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(:O'P'+:-)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                66,
+                1,
+                67,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(:O'P'+:-:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                67,
+                1,
+                68,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(O'P'+:-:*)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                68,
+                1,
+                69,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(O'P'+:-:*:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                69,
+                1,
+                70,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(:O'P'+:-:*)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                70,
+                1,
+                71,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(:O'P'+:-:*:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                71,
+                1,
+                72,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(O'P'+:-:*:/)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                72,
+                1,
+                73,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(O'P'+:-:*:/:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                73,
+                1,
+                74,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(:O'P'+:-:*:/)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                74,
+                1,
+                75,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(:O'P'+:-:*:/:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                75,
+                1,
+                76,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(O'P'+:-[:]*:/)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                76,
+                1,
+                77,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(O'P'+:-[:]*:/:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                77,
+                1,
+                78,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(:O'P'+:-[:]*:/)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                78,
+                1,
+                79,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(:O'P'+:-[:]*:/:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                79,
+                1,
+                80,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                80,
+                1,
+                81,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(O'P'+)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                81,
+                1,
+                82,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(:O'P'+:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                82,
+                1,
+                83,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(O'P'+:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                83,
+                1,
+                84,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(:O'P'+)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                84,
+                1,
+                85,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(O'P'+:-)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                85,
+                1,
+                86,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(O'P'+:-:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                86,
+                1,
+                87,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(:O'P'+:-)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                87,
+                1,
+                88,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(:O'P'+:-:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                88,
+                1,
+                89,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(O'P'+:-:*)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                89,
+                1,
+                90,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(O'P'+:-:*:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                90,
+                1,
+                91,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(:O'P'+:-:*)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                91,
+                1,
+                92,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(:O'P'+:-:*:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                92,
+                1,
+                93,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(O'P'+:-:*:/)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                93,
+                1,
+                94,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(O'P'+:-:*:/:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                94,
+                1,
+                95,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(:O'P'+:-:*:/)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                95,
+                1,
+                96,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(:O'P'+:-:*:/:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                96,
+                1,
+                97,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(O'P'+:-[:]*:/)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                97,
+                1,
+                98,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(O'P'+:-[:]*:/:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                98,
+                1,
+                99,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(:O'P'+:-[:]*:/)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                99,
+                1,
+                100,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(:O'P'+:-[:]*:/:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                100,
+                1,
+                101,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                101,
+                1,
+                101,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                101,
+                2,
+                101,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                101,
+                3,
+                101,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "or",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                101,
+                5,
+                101,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                101,
+                6,
+                101,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                101,
+                7,
+                102,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                102,
+                1,
+                102,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                102,
+                2,
+                102,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "if",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                102,
+                4,
+                102,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                102,
+                5,
+                102,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "then",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                102,
+                9,
+                102,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                102,
+                10,
+                102,
+                14
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "else",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                102,
+                14,
+                102,
+                15
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                102,
+                15,
+                102,
+                16
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                102,
+                16,
+                103,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                103,
+                1,
+                103,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                103,
+                2,
+                103,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                103,
+                3,
+                103,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "if",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                103,
+                5,
+                103,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                103,
+                6,
+                103,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "else",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                103,
+                10,
+                103,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                103,
+                11,
+                103,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                103,
+                12,
+                104,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                104,
+                1,
+                104,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                104,
+                2,
+                104,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "if",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                104,
+                4,
+                104,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                104,
+                5,
+                104,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "then",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                104,
+                9,
+                104,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                104,
+                10,
+                104,
+                14
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "else",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                104,
+                14,
+                104,
+                15
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                104,
+                15,
+                104,
+                18
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "end",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                104,
+                18,
+                104,
+                19
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                104,
+                19,
+                105,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                105,
+                1,
+                105,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                105,
+                2,
+                105,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                105,
+                3,
+                105,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "if",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                105,
+                5,
+                105,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                105,
+                6,
+                105,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "else",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                105,
+                10,
+                105,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                105,
+                11,
+                105,
+                14
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "end",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                105,
+                14,
+                105,
+                15
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                105,
+                15,
+                106,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                106,
+                1,
+                106,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                106,
+                3,
+                106,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                106,
+                5,
+                106,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                106,
+                6,
+                106,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                106,
+                7,
+                106,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "or",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                106,
+                9,
+                106,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                106,
+                10,
+                106,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                106,
+                11,
+                107,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                107,
+                1,
+                107,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                107,
+                3,
+                107,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                107,
+                5,
+                107,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                107,
+                6,
+                107,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "if",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                107,
+                8,
+                107,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                107,
+                9,
+                107,
+                13
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "then",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                107,
+                13,
+                107,
+                14
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                107,
+                14,
+                107,
+                18
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "else",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                107,
+                18,
+                107,
+                19
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                107,
+                19,
+                107,
+                20
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                107,
+                20,
+                108,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                108,
+                1,
+                108,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                108,
+                3,
+                108,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                108,
+                5,
+                108,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                108,
+                6,
+                108,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                108,
+                7,
+                108,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "if",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                108,
+                9,
+                108,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                108,
+                10,
+                108,
+                14
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "else",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                108,
+                14,
+                108,
+                15
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                108,
+                15,
+                108,
+                16
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                108,
+                16,
+                109,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                109,
+                1,
+                109,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                109,
+                3,
+                109,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                109,
+                5,
+                109,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                109,
+                6,
+                109,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "if",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                109,
+                8,
+                109,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                109,
+                9,
+                109,
+                13
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "then",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                109,
+                13,
+                109,
+                14
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                109,
+                14,
+                109,
+                18
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "else",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                109,
+                18,
+                109,
+                19
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                109,
+                19,
+                109,
+                22
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "end",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                109,
+                22,
+                109,
+                23
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                109,
+                23,
+                110,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                110,
+                1,
+                110,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "M",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                110,
+                3,
+                110,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "N",
+            "tag": "MOD"
+        }
+    ],
+    [
+        [
+            [
+                110,
+                5,
+                110,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                110,
+                6,
+                110,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                110,
+                7,
+                110,
+                9
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "if",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                110,
+                9,
+                110,
+                10
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                110,
+                10,
+                110,
+                14
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "else",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                110,
+                14,
+                110,
+                15
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                110,
+                15,
+                110,
+                18
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "end",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                110,
+                18,
+                110,
+                19
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                110,
+                19,
+                111,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                111,
+                1,
+                112,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(:O'P'or:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                112,
+                1,
+                113,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(O'P'if:then:else:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                113,
+                1,
+                114,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(:O'P'if:else:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                114,
+                1,
+                115,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(O'P'if:then:else:end)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                115,
+                1,
+                116,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "(:O'P'if:else:end)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                116,
+                1,
+                117,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(:O'P'or:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                117,
+                1,
+                118,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(O'P'if:then:else:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                118,
+                1,
+                119,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(:O'P'if:else:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                119,
+                1,
+                120,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(O'P'if:then:else:end)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                120,
+                1,
+                121,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(:O'P'if:else:end)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                121,
+                1,
+                123,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                123,
+                1,
+                123,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                123,
+                2,
+                123,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                123,
+                3,
+                123,
+                4
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                123,
+                4,
+                123,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "or",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                123,
+                6,
+                123,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                123,
+                7,
+                123,
+                8
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                123,
+                8,
+                124,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                124,
+                1,
+                124,
+                2
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                124,
+                2,
+                124,
+                3
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                124,
+                3,
+                124,
+                5
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "if",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                124,
+                5,
+                124,
+                6
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                124,
+                6,
+                124,
+                7
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                124,
+                7,
+                124,
+                11
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "then",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                124,
+                11,
+                124,
+                12
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                124,
+                12,
+                124,
+                13
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                124,
+                13,
+                124,
+                17
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "else",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                124,
+                17,
+                124,
+                18
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                124,
+                18,
+                124,
+                19
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                124,
+                19,
+                124,
+                22
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": "end",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                124,
+                22,
+                124,
+                23
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                124,
+                23,
+                125,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                125,
+                1,
+                126,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(:O'P'_or:)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                126,
+                1,
+                127,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "contents": {
+                "contents": "M'N'(O'P'_if:_then:_else:_end)",
+                "tag": "LineC"
+            },
+            "tag": "COMMENT"
+        }
+    ],
+    [
+        [
+            [
+                127,
+                1,
+                127,
+                1
+            ],
+            "./test/golden/surface/total/names"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ]
+]

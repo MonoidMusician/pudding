@@ -17,7 +17,7 @@ import Pudding.Core.Printer (Style (..), formatCore)
 import GHC.IO (catch, evaluate, catchAny)
 import GHC.Exception (SomeException)
 import qualified Data.Map.Strict as Map
-import Data.Foldable (Foldable (fold))
+import Data.Foldable (Foldable (fold), for_)
 import Data.Text (Text)
 import qualified Data.Aeson as AE
 import GHC.Generics (Generic)
@@ -36,13 +36,15 @@ import GHC.Base (error)
 import qualified Data.Set as Set
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.Aeson.Encode.Pretty as AEP
+import Control.Monad.Error.Class (tryError)
+import Control.DeepSeq (NFData)
 
 data Formats = Formats
   { text :: Text
   , html :: Text
   , ansi :: Text
   , json :: AE.Value
-  } deriving (Show, Generic, AE.ToJSON, AE.FromJSON)
+  } deriving (Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 type Stages = [(Text, Stage)]
 data Stage
@@ -59,7 +61,7 @@ data Stage
     { stageContent :: Formats
     , stageExtra :: Maybe AE.Value
     }
-  deriving (Show, Generic, AE.ToJSON, AE.FromJSON)
+  deriving (Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 xmlEscape :: Text -> Text
 xmlEscape = T.pack . (esc =<<) . T.unpack
@@ -247,11 +249,21 @@ saveTestIn iodir contents selection = do
   join $ commit selection
   pure stages
 
-runTestIn :: FilePath -> IO (All, Stages, Set.Set FilePath -> IO (IO ()))
+deleteTest :: FilePath -> IO ()
+deleteTest iodir = do
+  _ <- tryError $ Dir.removeFile (iodir </> "input.pudding")
+  for_ ["prelex", "tokenize", "parse", "elab"] \stage -> do
+    for_ ["txt", "json"] \ext -> do
+      tryError $ Dir.removeFile (iodir </> stage <> "." <> ext)
+  _ <- tryError $ Dir.removeDirectory iodir
+  pure ()
+
+runTestIn :: FilePath -> IO (Text, All, Stages, Set.Set FilePath -> IO (IO ()))
 runTestIn iodir = do
   let input = iodir </> "input.pudding"
   contents <- TIO.readFile input
-  runTestText iodir contents
+  (success, stages, commit) <- runTestText iodir contents
+  pure (contents, success, stages, commit)
 
 runTestText :: FilePath -> Text -> IO (All, Stages, Set.Set FilePath -> IO (IO ()))
 runTestText iodir contents = do

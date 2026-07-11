@@ -11,20 +11,12 @@ const outputTab = Stream.combineStreams(
     output.stream, tab.stream,
 );
 const tabOutput = Stream.createStore({ className: "", html: "" });
+const section = Stream.createStore("compose");
 
 const tab_container = ById.output_side.querySelector(".tabs");
 const tab_by_name = Object.fromEntries([
     ...tab_container.querySelectorAll("button")
 ].map(b => [b.textContent, b]));
-
-const update = async () => {
-    const r = await Ve.POST("/api/surface/test", {
-        content: ById.input.value,
-        filename: ById.filename.value || undefined,
-    });
-    console.log(r);
-    output.send(r);
-};
 
 
 outputTab.subscribe(v => {
@@ -52,18 +44,88 @@ outputTab.subscribe(v => {
     }
 });
 
-Verity.ContentLoad(() => {
-    const actions = {
-        file_load() {
-            const filename = ById.filename.value;
-            if (!filename) return;
-            Ve.POST("/api/surface/load", filename).then(content => {
-                ById.input.value = content;
-                update();
-            });
-        },
-    };
+const actions = {
+    file_load() {
+        const filename = ById.filename.value;
+        if (!filename) return;
+        Ve.POST("/api/surface/load", filename).then(content => {
+            ById.input.value = content;
+            actions.update();
+        });
+    },
+    async update() {
+        const r = await Ve.POST("/api/surface/test", {
+            content: ById.input.value,
+            filename: ById.filename.value || undefined,
+        });
+        console.log(r);
+        output.send(r);
+    },
+    async refresh_files() {
+        Ve.GET("/api/surface/list").then(items => {
+            console.log(items);
+            /** @type HTMLSelectElement */
+            const sel = ById.file_select;
+            let val = sel.value;
+            for (const child of [...sel.children].slice(1)) {
+                child.removeSelf();
+            }
+            for (const item of items) {
+                sel.appendChild(HTML.option([item]));
+                if (item === ById.filename.value)
+                    val = ById.filename.value;
+            }
+            sel.value = val;
+            sel.value = sel.value; // default it to ""
+        });
+    },
+    async section_compose() {
+        await actions.refresh_files();
+    },
+    async board_refresh() {
+        /** @type HTMLDivElement */
+        const dash = ById.results;
+        dash.replaceChildren();
+        const results = await Ve.GET("/api/surface/report");
+        for (const [name, [content, success, stages]] of results) {
+            dash.appendChild(HTML.tr({
+                class: success ? 'succeeded' : 'failed',
+            }, [
+                HTML.th(name),
+                HTML.td(success ? "succeeded" : "failed"),
+            ]));
+        }
+    },
+    async section_dashboard() {
+        await actions.board_refresh();
+    },
+};
 
+Verity.ContentLoad(() => {
+    section.send(document.querySelector("input[name=section_tab]:checked")?.value ?? section.current());
+    Ve.forQuery("input[name=section_tab]", which => {
+        Ve.on.change(which, () => {
+            console.log(which);
+            if (which.checked)
+                section.send(which.value);
+        });
+    });
+    section.stream.subscribe(current => {
+        const section_current = `section_${current}`;
+        Ve.forQuery("section", section => {
+            const selected = section.id === section_current;
+            console.log(selected, section);
+            section.style.display = selected ? null : "none";
+        });
+        actions[section_current]?.();
+    });
+
+    Ve.on.click(ById.board_refresh, () => {
+        actions.section_dashboard();
+    });
+});
+
+Verity.ContentLoad(() => {
     input.send(ById.input.value);
 
     for (const char of ById.compose_chars.querySelectorAll("button")) {
@@ -82,11 +144,21 @@ Verity.ContentLoad(() => {
             // And refocus for more keyboard input
             t.focus();
             // And update
-            update();
+            actions.update();
         });
     }
 
-    Ve.on.input(ById.input, update);
+    Ve.on.input(ById.input, actions.update);
+    Ve.on.input(ById.filename, () => {
+        const val = ById.filename.value;
+        for (const child of [...ById.file_select].slice(1)) {
+            if (child.value === val) {
+                ById.file_select.value = val;
+                return;
+            }
+        }
+        ById.file_select.value = ById.file_select.firstElementChild.value;
+    });
 
     Ve.on.click(tab_container, (e) => {
         if (e.target instanceof HTMLButtonElement) {
@@ -110,17 +182,8 @@ Verity.ContentLoad(() => {
         ById.output.className = o.className;
     });
 
-    Ve.GET("/api/surface/list").then(items => {
-        console.log(items);
-        /** @type HTMLSelectElement */
-        const sel = ById.file_select;
-        for (const child of [...sel.children].slice(1)) {
-            child.removeSelf();
-        }
-        for (const item of items) {
-            sel.appendChild(Ve.HTML.option([item]));
-        }
-    });
+    actions.refresh_files();
+    Ve.on.click(ById.file_refresh, actions.refresh_files);
 
     Ve.on.input(ById.file_select, ({ target }) => {
         if (target.options.selectedIndex > 0) {
@@ -138,6 +201,12 @@ Verity.ContentLoad(() => {
         Ve.forQuery("#output_side .tabs > .tab > .formats input[type=checkbox]", e => {
             if (e.checked) selection.push(e.value);
         });
-        Ve.POST("/api/surface/save", { filename, content: ById.input.value, extra: selection }).then();
+        Ve.POST("/api/surface/save", { filename, content: ById.input.value, extra: selection }).then(actions.refresh_files);
+    });
+
+    Ve.on.click(ById.file_delete, () => {
+        const filename = ById.filename.value;
+        if (!filename) return;
+        Ve.POST("/api/surface/save", { filename, content: "" }).then(actions.refresh_files);
     });
 });
