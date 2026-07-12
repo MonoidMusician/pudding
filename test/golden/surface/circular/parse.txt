@@ -1,0 +1,36 @@
+[ DDefine
+  ( Just ( PlainName [] "X" ), PlainVar )
+  Nothing
+  ( CPi
+    ( ( Explicit
+      , CVar ( Just ( PlainName [] "Z" ) ) PlainVar :| []
+      , Just CUniv
+      )
+      :|
+      []
+    )
+    ( CPi
+      ( ( Explicit
+        , CVar ( Just ( PlainName [] "y" ) ) PlainVar :| []
+        , Just ( CVar ( Just ( PlainName [] "Y" ) ) PlainVar )
+        )
+        :|
+        []
+      )
+      ( CVar ( Just ( PlainName [] "Z" ) ) PlainVar )
+    )
+  )
+, DDefine
+  ( Just ( PlainName [] "Y" ), PlainVar )
+  Nothing
+  ( CPi
+    ( ( Explicit
+      , CVar ( Just ( PlainName [] "x" ) ) PlainVar :| []
+      , Just ( CVar ( Just ( PlainName [] "X" ) ) PlainVar )
+      )
+      :|
+      []
+    )
+    ( CVar ( Just ( PlainName [] "X" ) ) PlainVar )
+  )
+]

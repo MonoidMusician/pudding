@@ -30,25 +30,25 @@ import Control.DeepSeq (NFData)
 import GHC.Base (reallyUnsafePtrEquality)
 
 -- Validate the type of a term, as an evaluated type
-validate :: EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
+validate :: HasCallStack => EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
 validate = validateOrNot seq
 -- Validate and quote back to a term
-validateQuote :: EvalTypeCtx -> "term" @:: Term -> "type" @:: Term
+validateQuote :: HasCallStack => EvalTypeCtx -> "term" @:: Term -> "type" @:: Term
 validateQuote ctx = quote (void ctx) . validate ctx
 -- Validate in a context of neutrals
-validateQuoteNeutrals :: Globals -> ["type" @:: Term] -> "term" @:: Term -> "type" @:: Term
+validateQuoteNeutrals :: HasCallStack => Globals -> ["type" @:: Term] -> "term" @:: Term -> "type" @:: Term
 validateQuoteNeutrals globals localTypes = validateQuote $
   mapCtx (\_ lvl ty -> (ty, neutralVar lvl)) $ evalCtx $
     ctxOfList globals $ (BFresh,) <$> localTypes
 -- Do not validate, but just assemble the type
-quickTermType :: EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
+quickTermType :: HasCallStack => EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
 quickTermType = validateOrNot (const id)
 
 
 -- Typecheck and share partial evaluation of globals
 --
 -- TODO: make sure definitions are acyclic!
-bootGlobals, bootGlobalDefns, bootGlobalTypes :: Globals -> Globals
+bootGlobals, bootGlobalDefns, bootGlobalTypes :: HasCallStack => Globals -> Globals
 bootGlobals = bootGlobalDefns . bootGlobalTypes
 
 bootGlobalDefns globals = newGlobals

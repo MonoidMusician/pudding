@@ -1,5 +1,5 @@
 @define T := Type
 
-@define Id := λ(X : Type). X
+@define Id := λ (X : Type). X
 
-@define id := λ(X : Type) (x : X). x
+@define id := λ (X : Type) (x : X). x

@@ -1,0 +1,6 @@
+@define T := Type
+
+@example λ (T : T). T
+@example λ (x : T). x
+@example λ (x : T). T
+@example λ (_ : T). T

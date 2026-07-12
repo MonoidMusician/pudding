@@ -37,7 +37,8 @@ import qualified Data.Set as Set
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.Aeson.Encode.Pretty as AEP
 import Control.Monad.Error.Class (tryError)
-import Control.DeepSeq (NFData)
+import Control.DeepSeq (NFData, force)
+import qualified Data.Vector as Vector
 
 data Formats = Formats
   { text :: Text
@@ -89,7 +90,7 @@ reshown s = (plain (reshowAs RS.Plain s))
 
 catching :: Text -> IO Stages -> IO Stages
 catching stageName inner = do
-  catch inner
+  catch (evaluate . force =<< inner)
     \(err :: SomeException) -> pure [(stageName, StageFail
       { stageError = plain (T.pack (show err))
       , stageDetails = Nothing
@@ -152,7 +153,7 @@ stage4ESuccess term = ("elab", StageSuccess
   { stageContent = formatsTerm term
   , stageExtra = Nothing
   })
-stage4DSuccess :: Map.Map Name GlobalInfo -> (Text, Stage)
+stage4DSuccess :: Vector.Vector (Maybe Name, GlobalInfo) -> (Text, Stage)
 stage4DSuccess modul = ("elab", StageSuccess
   { stageContent = formatsModule modul
   , stageExtra = Nothing
@@ -168,7 +169,7 @@ formatsTerm term = Formats
   where
   text = formatCore Plain term
 
-formatsModule :: Map.Map Name GlobalInfo -> Formats
+formatsModule :: Vector.Vector (Maybe Name, GlobalInfo) -> Formats
 formatsModule modul = Formats
   { text = text
   , html = xmlEscape text
@@ -177,11 +178,11 @@ formatsModule modul = Formats
   }
   where
   text = fmt Plain
-  fmt f = Map.toList modul & foldMap \(name, info) ->
+  fmt f = modul & foldMap \(name, info) ->
     case info of
       DefnGlobal (GlobalDefn _ (GlobalTerm ty _) (GlobalTerm tm _)) ->
-        nameText name <> " : " <> formatCore f ty <> "\n" <>
-        nameText name <> " := " <> formatCore f tm <> "\n"
+        maybe "_" nameText name <> " : " <> formatCore f ty <> "\n" <>
+        maybe "_" nameText name <> " := " <> formatCore f tm <> "\n\n"
       _ -> mempty
 
 
@@ -222,7 +223,7 @@ finishDecls decls =
   (stage3DSuccess decls :) <$> do
     tbl <- initTable
     catching "elab" do
-      (modul, ()) <- Elab.runElabFull tbl (Elab.elaborateModule decls)
+      (_, modul) <- Elab.runElabFull tbl (Elab.elaborateModule decls)
       pure [stage4DSuccess modul]
 
 

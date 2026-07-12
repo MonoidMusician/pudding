@@ -55,6 +55,11 @@ pattern Nil <- (pop -> Nothing) where
 
 {-# COMPLETE (:>), Nil #-}
 
+infixr 8 @@?
+(@@?) :: StackLike c => ToIndex i => c -> i -> Maybe (Elem c)
+s @@? (index s -> Index i) =
+  if 0 <= i && i < size s then Just (s @@ Index i) else Nothing
+
 -- Slightly silly instance for when we only care about the term depth
 instance StackLike Int where
   type Elem Int = ()

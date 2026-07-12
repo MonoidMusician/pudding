@@ -6,7 +6,7 @@ import Pudding.Surface.Lexer hiding (demo)
 import qualified Pudding.Surface.Happy as Happy
 
 import qualified Data.Text as T
-import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Globals (globalDefns), globalsFrom, Name (nameText), Term)
+import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Globals (globalDefns), globalsFrom, Name (nameText), Term, GlobalInfo (DefnGlobal))
 import Pudding.Types.Stack (pattern Nil)
 import qualified Text.Parsec as P
 import qualified Data.Text.IO.Utf8 as TIO
@@ -76,16 +76,17 @@ demoFile filename = do
               Right decls -> do
                 TIO.putStrLn $ reshow decls
                 tbl <- initTable
-                (modul, ()) <- Elab.runElabFull tbl (Elab.elaborateModule decls)
-                TIO.putStrLn $ reshow $ Map.keys modul
-                for_ (Map.toList (globalDefns (globalsFrom modul))) \(name, thingy) -> case thingy of
-                  GlobalDefn _ (GlobalTerm ty _) (GlobalTerm tm _) -> do
+                (_, modul) <- Elab.runElabFull tbl (Elab.elaborateModule decls)
+                TIO.putStrLn $ reshow $ fst <$> modul
+                for_ modul \(mname, thingy) -> case (mname, thingy) of
+                  (Just name, DefnGlobal (GlobalDefn _ (GlobalTerm ty _) (GlobalTerm tm _))) -> do
                     -- TIO.putStrLn $ nameText name <> " : " <> formatCore Ansi ty
                     -- TIO.putStrLn $ nameText name <> " := " <> formatCore Ansi tm
                     TIO.putStrLn $ nameText name <> " : " <> do
                       D.format D.Ansi $ D.printCST (D.runDelab $ D.delab tm) (D.PS 0 0)
                     TIO.putStrLn $ nameText name <> " := " <> do
                       D.format D.Ansi $ D.printCST (D.runDelab $ D.delab ty) (D.PS 0 0)
+                  _ -> pure ()
     \(err :: SomeException) -> TIO.putStrLn $ T.pack $ show err
 
 demoREPL :: IO ()

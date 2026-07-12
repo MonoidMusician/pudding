@@ -192,7 +192,7 @@ decl :: { Decl }
   | '@data' datatype { $2 }
   | '@define' definition { $2 }
   -- | definition { $1 }
-  -- | '@example'
+  | '@example' expr { DDefine (Nothing, PlainVar) Nothing $2 }
 
 decls :: { [Decl] }
   : many(decl) { $1 }
@@ -208,6 +208,8 @@ datatypeCase :: { (VariableName, "arguments" @:: [CBinderGroup], "indices" @:: [
 definition :: { Decl }
   : VariableName ':' expr ':=' expr { DDefine $1 (Just $3) $5 }
   | VariableName ':=' expr { DDefine $1 Nothing $3 }
+  | '_' ':' expr ':=' expr { DDefine (Nothing, PlainVar) (Just $3) $5 }
+  | '_' ':=' expr { DDefine (Nothing, PlainVar) Nothing $3 }
 
 ------
 

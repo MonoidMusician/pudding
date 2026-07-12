@@ -23,13 +23,13 @@ import Data.Text (Text)
 import Pudding.Types.Name (Name (..), internalize, NameTable, canonicalName)
 import Pudding.Types.Base (Plicit (Explicit), type (@::))
 import Pudding.Types.Metadata
-import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), StackLike(size), pattern Nil, pattern (:>))
+import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), Index(Index), StackLike(size, Elem), pattern Nil, pattern (:>), StackFunctor (mapWithLevel), (@@?))
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift))
-import Pudding.Core.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused), ScopedTerm (Scoped), Eval (ENeut, EUniv), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase), globalsFrom, Ctx (ctxGlobals))
+import Pudding.Core.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval (ENeut, EUniv), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase), globalsFrom, Ctx (ctxGlobals), GlobalTypeInfo (GlobalTypeInfo, typeParams, typeIndices))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl (..), CST (..), CBinder)
-import Data.Foldable (traverse_, Foldable (fold))
+import Data.Foldable (Foldable (fold))
 import Data.Functor.Compose (Compose (Compose))
 import Control.Monad.Reader.Class (MonadReader (local, ask), asks)
 import Data.List.NonEmpty (NonEmpty(..))
@@ -37,12 +37,15 @@ import Pudding.Core.Eval (EvalTypeCtx)
 import qualified Pudding.Core.Unify as U
 import qualified Pudding.Core.Eval as E
 import Pudding.Surface.Lexer (VariableDB(..), NameForm (..))
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, catMaybes)
 import qualified Pudding.Core.Printer as P
 import qualified Data.Text as T
 import Control.Arrow (Arrow(first))
 import qualified Data.List.NonEmpty as NE
 import Control.Monad.Trans.Cont (ContT(ContT, runContT))
+import Data.Traversable (for)
+import qualified Data.Vector as Vector
+import Control.Monad (join)
 
 class Applicative m => TwoPhase m where
   twoPhases :: m (m r) -> m r
@@ -125,9 +128,13 @@ type GLM = Compose (ReaderT (IORef NameTable) IO) (GGather Scoped)
 -- also the local context that is pushed under binders and such.
 type Scoped = GInit (ReaderT GLScope IO)
 
-willInitGLM :: Text -> (Name -> Scoped GlobalInfo) -> GLM ()
-willInitGLM name creator = Compose $ mintName id name <&>
-  \name' -> void $ willInit name' (creator name')
+willInitGLM :: Text -> (Name -> Scoped GlobalInfo) -> GLM (Name, Scoped GlobalInfo)
+willInitGLM text creator = Compose $ mintName id text <&>
+  \name -> (name,) <$> willInit name (creator name)
+
+-- | For `@example`, for example
+willUseGLM :: Scoped r -> GLM r
+willUseGLM = Compose . pure . GGather mempty . const
 
 initedGLM :: Name -> Scoped GlobalInfo
 initedGLM n = do
@@ -135,15 +142,26 @@ initedGLM n = do
     Nothing -> error $ "Missing name: " <> show n
     Just i -> i
 
+joinScoped :: GLM (Scoped r) -> GLM r
+joinScoped (Compose stage0) = Compose $ stage0 <&>
+  \(GGather outs ins) -> GGather outs $ join <$> ins
 
-runElabFull :: IORef NameTable -> GLM r -> IO (Map Name GlobalInfo, r)
+
+runElabFull :: forall r. IORef NameTable -> GLM r -> IO (Map Name GlobalInfo, r)
 runElabFull tbl (Compose stage0) = do
+  -- First we provide the name table to mint all the names
   GGather items stage1 <- runReaderT stage0 tbl
   let
+    -- Now we run a scoped computation
+    stage2 :: Scoped (Map Name GlobalInfo, r)
     stage2 = do
+      -- Do whatever computation the user asked for
       r <- stage1 items
+      -- Ensure all of the items are elaborated
       env <- sequence items
       pure (env, r)
+  -- Keep track of all the globals in state, and provide the default
+  -- global context with no locals, plus the name table to mint more names
   (r, _) <- runReaderT (runStateT stage2 (Uninitialized <$ items))
     (GLScope tbl items M.empty Nil)
   pure r
@@ -156,8 +174,12 @@ runElabScoped tbl stage2 = do
 
 
 
-elaborateModule :: [Decl] -> GLM ()
-elaborateModule = traverse_ elaborateDecl
+elaborateModule :: [Decl] -> GLM (Vector.Vector (Maybe Name, GlobalInfo))
+elaborateModule decls = joinScoped do
+  traverse elaborateDecl decls <&> \loading -> do
+    loaded <- for loading \(name, cachedCreator) ->
+      (name,) <$> cachedCreator
+    pure $ Vector.fromList loaded
 
 -- TODO: memoize
 currentCtx :: Scoped EvalTypeCtx
@@ -170,18 +192,33 @@ currentCtx = do
   localCtx <- asks ctx
   pure $ localCtx { ctxGlobals = currentGlobals }
 
-elaborateDecl :: Decl -> GLM ()
+elaborateDecl :: Decl -> GLM (Maybe Name, Scoped GlobalInfo)
 elaborateDecl = \case
-  DDefine (Just (PlainName [] text), PlainVar) mty tm -> willInitGLM text \name -> DefnGlobal <$> do
-    case mty of
-      Nothing -> do
-        defn@(GlobalTerm t _) <- elaborateDefn tm
-        ctx <- currentCtx
-        let tyE = U.quickTermType ctx t
-        let tyD = GlobalTerm (E.quote (void ctx) tyE) tyE
-        pure $ GlobalDefn 0 tyD defn
-      Just ty -> do
-        GlobalDefn 0 <$> elaborateDefn ty <*> elaborateDefn tm
+  DDefine (Just (PlainName [] text), PlainVar) mty tm ->
+    first Just <$> willInitGLM text \_name -> DefnGlobal <$> do
+      case mty of
+        Nothing -> do
+          defn@(GlobalTerm t _) <- elaborateDefn tm
+          ctx <- currentCtx
+          let tyE = U.quickTermType ctx t
+          let tyD = GlobalTerm (E.quote (void ctx) tyE) tyE
+          pure $ GlobalDefn 0 tyD defn
+        Just ty -> do
+          GlobalDefn 0 <$> elaborateDefn ty <*> elaborateDefn tm
+  -- An example, e.g. declared by `@example` or `@define _ := Type`
+  DDefine (Nothing, PlainVar) mty tm -> willUseGLM do
+    mty' <- for mty \ty -> do
+      -- TODO: Type
+      tyT <- elab Nothing ty
+      ctx <- currentCtx
+      pure (tyT, E.eval (snd <$> ctx) tyT)
+    tm' <- elab (snd <$> mty') tm
+    ctx <- currentCtx
+    let
+      ty' = (mty' <&> uncurry GlobalTerm) & fromMaybe
+        let tyE = U.quickTermType ctx tm' in
+        GlobalTerm (E.quote (void ctx) tyE) tyE
+    pure (Nothing, pure $ DefnGlobal $ GlobalDefn 0 ty' (GlobalTerm tm' (E.eval (snd <$> ctx) tm')))
   _ -> error "Not supported"
 
 
@@ -205,17 +242,39 @@ elab mexp = \case
     name <- mintName names text
     asks (M.lookup name . locals) >>= \case
       Just (_ :> e) -> do
-        qc <- asks (void . ctx)
+        qc <- void <$> currentCtx
         pure $ E.quote qc e
-      _ -> error $ "Missing variable: " <> show name
+      _ -> asks (M.lookup name . globals) >>= \case
+        Just getter -> getter <&> \case
+          TypeGlobal (GlobalTypeInfo { typeParams, typeIndices }) ->
+            let
+              abstract ((p, b, paramType) : more) focus =
+                TLambda mempty p b paramType $ Scoped $ abstract more focus
+              abstract [] focus = focus
+
+              toVars :: forall i. Int -> Vector.Vector i -> Vector.Vector Term
+              toVars skipped = mapWithLevel \(_, Index idx) _ ->
+                TVar mempty $ Index $ idx + skipped
+            in abstract (Vector.toList typeParams <> Vector.toList typeIndices) $
+              TTyCtor mempty name (toVars (Vector.length typeIndices) typeParams) (toVars 0 typeIndices)
+          DefnGlobal (GlobalDefn _ _ _) -> TGlobal mempty name
+        _ -> error $ "Missing name: " <> show name
   CVar Nothing idxOrLvl -> case idxOrLvl of
     PlainVar -> error "impossible: CVar Nothing PlainVar"
     DBIndex i -> do
-      c <- asks ctx
+      c <- currentCtx
       pure $ TVar mempty $ index c i
     DBLevel l -> do
-      c <- asks ctx
+      c <- currentCtx
       pure $ TVar mempty $ index c $ level c l
+  CVar (Just (PlainName [] text)) idxOrLvl -> do
+    name <- mintName names text
+    asks (M.lookup name . locals) >>= \case
+      Just stack | Just found <- lookupDB stack idxOrLvl -> do
+        qc <- void <$> currentCtx
+        pure $ E.quote qc found
+      Just _ -> error $ "Local stack too small: " <> T.unpack (nameText name)
+      Nothing -> error $ "Missing local: " <> T.unpack (nameText name)
 
   -- | CMod  ![Text]
 
@@ -228,7 +287,11 @@ elab mexp = \case
   CSplice e -> TSplice mempty <$> elab Nothing e
 
   -- | CMatch ![CST] !("cases" @:: [("pats" @:: [CST], "body" @:: CST)])
-  -- | CField  !CST !Text
+  CField tm field -> do
+    name <- mintName names field
+    tm' <- elab Nothing tm
+    pure $ TField mempty tm' name
+
   CAscribe tm ty -> do
     here <- ask
     tyT <- elab Nothing ty
@@ -259,7 +322,6 @@ elabBinders cons binders body = foldr addBinder (elab Nothing body) binders
       Nothing -> error "Missing type for lambda/pi/sigma"
       Just ty -> elab Nothing ty
     evalCtx <- asks ctx
-    let tytyT = U.quickTermType evalCtx tyT
     let tyE = E.eval (snd <$> evalCtx) tyT
     runContT (elabMultiBinderCont tyE binder) \binderB ->
       multiCons plicit binderB tyT <$> inner
@@ -289,6 +351,10 @@ elabBinder1 tyE = \case
     pure $ (BUnused,) $ \outer ->
       let neutral = Neutral (NVar mempty (Level (size (ctx outer)))) Nil
       in outer { ctx = ctx outer :> (BUnused, (tyE, ENeut neutral)) }
+  CAssign l r -> do
+    (b1, f1) <- elabBinder1 tyE l
+    (b2, f2) <- elabBinder1 tyE r
+    pure (BMulti b1 b2, f2 . f1)
   _ -> error "Bad/unsupported binder"
 
 elabMultiBinderCont :: ("ty" @:: Eval) -> NonEmpty CBinder -> ContT c Scoped (NonEmpty Binder)
@@ -302,3 +368,11 @@ elabBinder1Cont tyE b = do
   (c, f) <- lift $ elabBinder1 tyE b
   ContT \k -> do
     local f $ k c
+
+
+lookupDB :: forall s. StackLike s => s -> VariableDB -> Maybe (Elem s)
+lookupDB (_ :> hd) PlainVar = Just hd
+lookupDB _ PlainVar = Nothing
+lookupDB s (DBIndex i) = s @@? Index (fromIntegral i)
+lookupDB s (DBLevel i) = s @@? Level (fromIntegral i)
+

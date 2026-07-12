@@ -1,0 +1,41 @@
+[ Command [] "define"
+, VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+, SAssignL
+, Univ
+, Command [] "example"
+, SLambda
+, Parens
+  [ VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+  , SAscribe
+  , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+  ]
+, SPeriod
+, VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+, Command [] "example"
+, SLambda
+, Parens
+  [ VariableName ( Just ( PlainName [] "x" ) ) PlainVar
+  , SAscribe
+  , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+  ]
+, SPeriod
+, VariableName ( Just ( PlainName [] "x" ) ) PlainVar
+, Command [] "example"
+, SLambda
+, Parens
+  [ VariableName ( Just ( PlainName [] "x" ) ) PlainVar
+  , SAscribe
+  , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+  ]
+, SPeriod
+, VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+, Command [] "example"
+, SLambda
+, Parens
+  [ SPlaceholder
+  , SAscribe
+  , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+  ]
+, SPeriod
+, VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+]

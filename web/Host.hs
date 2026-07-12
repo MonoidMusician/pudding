@@ -2,7 +2,6 @@ module Host where
 
 import Prelude hiding (lex)
 
-import System.Environment (getArgs)
 import qualified Data.Text as T
 import qualified Data.Text.IO.Utf8 as TIO
 import Control.Monad.IO.Class (MonadIO(liftIO))
@@ -12,15 +11,11 @@ import qualified Web.Scotty as Scotty
 import qualified Network.HTTP.Types as HTTP
 import qualified Data.Aeson as AE
 import GHC.Generics (Generic)
-import Pudding.Surface.Surface (surfaceToCore)
 import qualified Pudding.Surface.Web as SW
 import Data.Function ((&))
-import Data.Functor ((<&>))
 import Data.Monoid (All(All))
 import qualified Data.Set as Set
-import Control.Monad (join)
-import Data.Show.Reshow (reshowAs, Style (Ansi))
-import Control.Exception (try, evaluate)
+import Control.Exception (evaluate)
 import Control.Monad.Error.Class (tryError)
 import qualified Data.List as List
 import Witherable (Filterable(mapMaybe))

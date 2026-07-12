@@ -1,0 +1,287 @@
+[
+    {
+        "contents": [
+            [
+                {
+                    "contents": [
+                        [],
+                        "T"
+                    ],
+                    "tag": "PlainName"
+                },
+                {
+                    "tag": "PlainVar"
+                }
+            ],
+            null,
+            {
+                "tag": "CUniv"
+            }
+        ],
+        "tag": "DDefine"
+    },
+    {
+        "contents": [
+            [
+                null,
+                {
+                    "tag": "PlainVar"
+                }
+            ],
+            null,
+            {
+                "contents": [
+                    [
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "T"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            }
+                        ]
+                    ],
+                    {
+                        "contents": [
+                            {
+                                "contents": [
+                                    [],
+                                    "T"
+                                ],
+                                "tag": "PlainName"
+                            },
+                            {
+                                "tag": "PlainVar"
+                            }
+                        ],
+                        "tag": "CVar"
+                    }
+                ],
+                "tag": "CLambda"
+            }
+        ],
+        "tag": "DDefine"
+    },
+    {
+        "contents": [
+            [
+                null,
+                {
+                    "tag": "PlainVar"
+                }
+            ],
+            null,
+            {
+                "contents": [
+                    [
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "x"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            }
+                        ]
+                    ],
+                    {
+                        "contents": [
+                            {
+                                "contents": [
+                                    [],
+                                    "x"
+                                ],
+                                "tag": "PlainName"
+                            },
+                            {
+                                "tag": "PlainVar"
+                            }
+                        ],
+                        "tag": "CVar"
+                    }
+                ],
+                "tag": "CLambda"
+            }
+        ],
+        "tag": "DDefine"
+    },
+    {
+        "contents": [
+            [
+                null,
+                {
+                    "tag": "PlainVar"
+                }
+            ],
+            null,
+            {
+                "contents": [
+                    [
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "x"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            }
+                        ]
+                    ],
+                    {
+                        "contents": [
+                            {
+                                "contents": [
+                                    [],
+                                    "T"
+                                ],
+                                "tag": "PlainName"
+                            },
+                            {
+                                "tag": "PlainVar"
+                            }
+                        ],
+                        "tag": "CVar"
+                    }
+                ],
+                "tag": "CLambda"
+            }
+        ],
+        "tag": "DDefine"
+    },
+    {
+        "contents": [
+            [
+                null,
+                {
+                    "tag": "PlainVar"
+                }
+            ],
+            null,
+            {
+                "contents": [
+                    [
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "tag": "CPlaceholder"
+                                }
+                            ],
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            }
+                        ]
+                    ],
+                    {
+                        "contents": [
+                            {
+                                "contents": [
+                                    [],
+                                    "T"
+                                ],
+                                "tag": "PlainName"
+                            },
+                            {
+                                "tag": "PlainVar"
+                            }
+                        ],
+                        "tag": "CVar"
+                    }
+                ],
+                "tag": "CLambda"
+            }
+        ],
+        "tag": "DDefine"
+    }
+]

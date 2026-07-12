@@ -1,0 +1,3 @@
+@define X := Π (Z : Type). Π (y : Y). Z
+
+@define Y := Π (x : X). X

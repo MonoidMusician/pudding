@@ -1,0 +1,1097 @@
+[
+    [
+        [
+            [
+                1,
+                1,
+                1,
+                1
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                1,
+                1,
+                2
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "@",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                2,
+                1,
+                8
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "define",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                8,
+                1,
+                9
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                9,
+                1,
+                10
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "T",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                10,
+                1,
+                11
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                11,
+                1,
+                13
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": ":=",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                13,
+                1,
+                14
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                14,
+                1,
+                18
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "Type",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                18,
+                3,
+                1
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                1,
+                3,
+                2
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "@",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                2,
+                3,
+                9
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "example",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                9,
+                3,
+                10
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                10,
+                3,
+                11
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "λ",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                11,
+                3,
+                12
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                12,
+                3,
+                13
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                13,
+                3,
+                14
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "T",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                14,
+                3,
+                15
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                15,
+                3,
+                16
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                16,
+                3,
+                17
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                17,
+                3,
+                18
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "T",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                18,
+                3,
+                19
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                19,
+                3,
+                20
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": ".",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                20,
+                3,
+                21
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                21,
+                3,
+                22
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "T",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                22,
+                4,
+                1
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                1,
+                4,
+                2
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "@",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                2,
+                4,
+                9
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "example",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                9,
+                4,
+                10
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                10,
+                4,
+                11
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "λ",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                11,
+                4,
+                12
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                12,
+                4,
+                13
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                13,
+                4,
+                14
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "x",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                14,
+                4,
+                15
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                15,
+                4,
+                16
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                16,
+                4,
+                17
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                17,
+                4,
+                18
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "T",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                18,
+                4,
+                19
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                19,
+                4,
+                20
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": ".",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                20,
+                4,
+                21
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                21,
+                4,
+                22
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "x",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                22,
+                5,
+                1
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                1,
+                5,
+                2
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "@",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                2,
+                5,
+                9
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "example",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                9,
+                5,
+                10
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                10,
+                5,
+                11
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "λ",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                11,
+                5,
+                12
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                12,
+                5,
+                13
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                13,
+                5,
+                14
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "x",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                14,
+                5,
+                15
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                15,
+                5,
+                16
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                16,
+                5,
+                17
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                17,
+                5,
+                18
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "T",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                18,
+                5,
+                19
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                19,
+                5,
+                20
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": ".",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                20,
+                5,
+                21
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                21,
+                5,
+                22
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "T",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                5,
+                22,
+                6,
+                1
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                1,
+                6,
+                2
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "@",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                2,
+                6,
+                9
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "example",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                9,
+                6,
+                10
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                10,
+                6,
+                11
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "λ",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                11,
+                6,
+                12
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                12,
+                6,
+                13
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "(",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                13,
+                6,
+                14
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "_",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                14,
+                6,
+                15
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                15,
+                6,
+                16
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": ":",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                16,
+                6,
+                17
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                17,
+                6,
+                18
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "T",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                18,
+                6,
+                19
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": ")",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                19,
+                6,
+                20
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": ".",
+            "tag": "BUILTIN"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                20,
+                6,
+                21
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                21,
+                6,
+                22
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "contents": "T",
+            "tag": "NAME"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                22,
+                7,
+                1
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ],
+    [
+        [
+            [
+                7,
+                1,
+                7,
+                1
+            ],
+            "./test/golden/surface/binders"
+        ],
+        {
+            "tag": "WHITESPACE"
+        }
+    ]
+]
