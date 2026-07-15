@@ -1,0 +1,1 @@
+@define T := λ (T : Type) (T T : T) (T : Type) (T T : T@_3). T

@@ -1,0 +1,10 @@
+[ WHITESPACE
+, NUM "3"
+, OP "+"
+, BUILTIN "["
+, NUM "+4"
+, OP "+"
+, BUILTIN "]"
+, NUM "+5"
+, WHITESPACE
+]

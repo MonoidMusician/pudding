@@ -73,7 +73,8 @@ bootGlobalDefns globals = newGlobals
 bootGlobalTypes globals =
   globals { globalDefns = globalDefns globals `disjointUnion` constructors (globalTypes globals) }
   where
-  disjointUnion = Map.unionWithKey \k _ _ -> error $ "Duplicate global: " <> show k
+  disjointUnion = Map.union
+  -- disjointUnion = Map.unionWithKey \k _ _ -> error $ "Duplicate global: " <> show k
   fakeGlobal tm = GlobalDefn (arityOfTerm tm) undefined (GlobalTerm tm undefined)
   constructors = fold . Map.mapWithKey \typeName -> \case
     GlobalTypeInfo { typeParams, typeIndices, typeConstrs } -> fold

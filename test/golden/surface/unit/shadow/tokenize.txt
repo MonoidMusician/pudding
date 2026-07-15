@@ -1,0 +1,21 @@
+[ Command [] "define"
+, VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+, SAssignL
+, SLambda
+, Parens [ VariableName ( Just ( PlainName [] "T" ) ) PlainVar, SAscribe, Univ ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+  , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+  , SAscribe
+  , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+  ]
+, Parens [ VariableName ( Just ( PlainName [] "T" ) ) PlainVar, SAscribe, Univ ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+  , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+  , SAscribe
+  , VariableName ( Just ( PlainName [] "T" ) ) ( DBLevel 3 )
+  ]
+, SPeriod
+, VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+]

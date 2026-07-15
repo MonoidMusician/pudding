@@ -1,0 +1,57 @@
+[ DDefine ( Nothing, PlainVar ) Nothing ( CLift CUniv )
+, DDefine
+  ( Just ( PlainName [] "Id" ), PlainVar )
+  Nothing
+  ( CLambda
+    ( ( Explicit
+      , CVar ( Just ( PlainName [] "T" ) ) PlainVar :| []
+      , Just CUniv
+      )
+      :|
+      []
+    )
+    ( CVar ( Just ( PlainName [] "T" ) ) PlainVar )
+  )
+, DDataType ( Just ( PlainName [] "Void" ), PlainVar ) [] [] Nothing []
+, DDefine
+  ( Nothing, PlainVar )
+  Nothing
+  ( CLift
+    ( CApps
+      ( CVar ( Just ( PlainName [] "Id" ) ) PlainVar )
+      ( CVar ( Just ( PlainName [] "Void" ) ) PlainVar :| [] )
+    )
+  )
+, DDefine
+  ( Nothing, PlainVar )
+  Nothing
+  ( CLambda
+    ( ( Explicit
+      , CVar ( Just ( PlainName [] "void" ) ) PlainVar :| []
+      , Just ( CVar ( Just ( PlainName [] "Void" ) ) PlainVar )
+      )
+      :|
+      []
+    )
+    ( CQuote ( CVar ( Just ( PlainName [] "void" ) ) PlainVar ) )
+  )
+, DDefine
+  ( Nothing, PlainVar )
+  Nothing
+  ( CLambda
+    ( ( Explicit
+      , CVar ( Just ( PlainName [] "void" ) ) PlainVar :| []
+      , Just
+        ( CLift
+          ( CApps
+            ( CVar ( Just ( PlainName [] "Id" ) ) PlainVar )
+            ( CVar ( Just ( PlainName [] "Void" ) ) PlainVar :| [] )
+          )
+        )
+      )
+      :|
+      []
+    )
+    ( CSplice ( CVar ( Just ( PlainName [] "void" ) ) PlainVar ) )
+  )
+]

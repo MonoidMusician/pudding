@@ -1,0 +1,10 @@
+[ DDefine ( Just ( PlainName [] "X" ), PlainVar ) Nothing CUniv
+, DDefine
+  ( Just ( PlainName [] "Y" ), PlainVar )
+  Nothing
+  ( CVar ( Just ( PlainName [] "Z" ) ) PlainVar )
+, DDefine
+  ( Just ( PlainName [] "Z" ), PlainVar )
+  Nothing
+  ( CVar ( Just ( PlainName [] "X" ) ) PlainVar )
+]

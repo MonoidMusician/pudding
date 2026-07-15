@@ -1,0 +1,391 @@
+[
+    [
+        "T",
+        {
+            "contents": [
+                0,
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        "Explicit",
+                        {
+                            "contents": {
+                                "allNames": [
+                                    "T"
+                                ],
+                                "chosenName": "T"
+                            },
+                            "tag": "BVar"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": 0,
+                                    "tag": "UBase"
+                                }
+                            ],
+                            "tag": "TUniv"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                "Explicit",
+                                {
+                                    "contents": {
+                                        "allNames": [
+                                            "T"
+                                        ],
+                                        "chosenName": "T"
+                                    },
+                                    "tag": "BVar"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        0
+                                    ],
+                                    "tag": "TVar"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        "Explicit",
+                                        {
+                                            "contents": {
+                                                "allNames": [
+                                                    "T"
+                                                ],
+                                                "chosenName": "T"
+                                            },
+                                            "tag": "BVar"
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                1
+                                            ],
+                                            "tag": "TVar"
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                "Explicit",
+                                                {
+                                                    "contents": {
+                                                        "allNames": [
+                                                            "T"
+                                                        ],
+                                                        "chosenName": "T"
+                                                    },
+                                                    "tag": "BVar"
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        {
+                                                            "contents": 0,
+                                                            "tag": "UBase"
+                                                        }
+                                                    ],
+                                                    "tag": "TUniv"
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        "Explicit",
+                                                        {
+                                                            "contents": {
+                                                                "allNames": [
+                                                                    "T"
+                                                                ],
+                                                                "chosenName": "T"
+                                                            },
+                                                            "tag": "BVar"
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                0
+                                                            ],
+                                                            "tag": "TVar"
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                "Explicit",
+                                                                {
+                                                                    "contents": {
+                                                                        "allNames": [
+                                                                            "T"
+                                                                        ],
+                                                                        "chosenName": "T"
+                                                                    },
+                                                                    "tag": "BVar"
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        1
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        2
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                }
+                                                            ],
+                                                            "tag": "TPi"
+                                                        }
+                                                    ],
+                                                    "tag": "TPi"
+                                                }
+                                            ],
+                                            "tag": "TPi"
+                                        }
+                                    ],
+                                    "tag": "TPi"
+                                }
+                            ],
+                            "tag": "TPi"
+                        }
+                    ],
+                    "tag": "TPi"
+                },
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        "Explicit",
+                        {
+                            "contents": {
+                                "allNames": [
+                                    "T"
+                                ],
+                                "chosenName": "T"
+                            },
+                            "tag": "BVar"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": 0,
+                                    "tag": "UBase"
+                                }
+                            ],
+                            "tag": "TUniv"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                "Explicit",
+                                {
+                                    "contents": {
+                                        "allNames": [
+                                            "T"
+                                        ],
+                                        "chosenName": "T"
+                                    },
+                                    "tag": "BVar"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        0
+                                    ],
+                                    "tag": "TVar"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        "Explicit",
+                                        {
+                                            "contents": {
+                                                "allNames": [
+                                                    "T"
+                                                ],
+                                                "chosenName": "T"
+                                            },
+                                            "tag": "BVar"
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                1
+                                            ],
+                                            "tag": "TVar"
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                "Explicit",
+                                                {
+                                                    "contents": {
+                                                        "allNames": [
+                                                            "T"
+                                                        ],
+                                                        "chosenName": "T"
+                                                    },
+                                                    "tag": "BVar"
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        {
+                                                            "contents": 0,
+                                                            "tag": "UBase"
+                                                        }
+                                                    ],
+                                                    "tag": "TUniv"
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        "Explicit",
+                                                        {
+                                                            "contents": {
+                                                                "allNames": [
+                                                                    "T"
+                                                                ],
+                                                                "chosenName": "T"
+                                                            },
+                                                            "tag": "BVar"
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                0
+                                                            ],
+                                                            "tag": "TVar"
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                "Explicit",
+                                                                {
+                                                                    "contents": {
+                                                                        "allNames": [
+                                                                            "T"
+                                                                        ],
+                                                                        "chosenName": "T"
+                                                                    },
+                                                                    "tag": "BVar"
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        1
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        0
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                }
+                                                            ],
+                                                            "tag": "TLambda"
+                                                        }
+                                                    ],
+                                                    "tag": "TLambda"
+                                                }
+                                            ],
+                                            "tag": "TLambda"
+                                        }
+                                    ],
+                                    "tag": "TLambda"
+                                }
+                            ],
+                            "tag": "TLambda"
+                        }
+                    ],
+                    "tag": "TLambda"
+                }
+            ],
+            "tag": "DefnGlobal"
+        }
+    ]
+]

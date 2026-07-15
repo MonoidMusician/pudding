@@ -1,0 +1,108 @@
+[
+    [
+        [
+            [
+                1,
+                1,
+                1,
+                2
+            ],
+            "./test/golden/surface/unit/bracket_ops"
+        ],
+        {
+            "contents": {
+                "contents": "3",
+                "tag": "Number"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                2,
+                1,
+                8
+            ],
+            "./test/golden/surface/unit/bracket_ops"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "+",
+                    [
+                        [
+                            [
+                                [
+                                    [
+                                        [
+                                            1,
+                                            4,
+                                            1,
+                                            6
+                                        ],
+                                        "./test/golden/surface/unit/bracket_ops"
+                                    ],
+                                    {
+                                        "contents": {
+                                            "contents": "+4",
+                                            "tag": "Number"
+                                        },
+                                        "tag": "Content"
+                                    }
+                                ],
+                                [
+                                    [
+                                        [
+                                            1,
+                                            6,
+                                            1,
+                                            7
+                                        ],
+                                        "./test/golden/surface/unit/bracket_ops"
+                                    ],
+                                    {
+                                        "contents": {
+                                            "contents": {
+                                                "contents": [
+                                                    [],
+                                                    "+"
+                                                ],
+                                                "tag": "PlainOp"
+                                            },
+                                            "tag": "QualifiedOp"
+                                        },
+                                        "tag": "Content"
+                                    }
+                                ]
+                            ],
+                            ""
+                        ]
+                    ]
+                ],
+                "tag": "Bracketed"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                8,
+                1,
+                10
+            ],
+            "./test/golden/surface/unit/bracket_ops"
+        ],
+        {
+            "contents": {
+                "contents": "+5",
+                "tag": "Number"
+            },
+            "tag": "Content"
+        }
+    ]
+]

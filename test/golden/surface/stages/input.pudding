@@ -1,0 +1,11 @@
+@example % Type
+
+@define Id := λ (T : Type). T
+
+@data Void.
+
+@example % Id Void
+
+@example λ (void : Void). $q[ void ]
+
+@example λ (void : % Id Void). $s[ void ]

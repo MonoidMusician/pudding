@@ -35,9 +35,9 @@ data Plicit = Explicit | Implicit
 --   - Implicit arguments
 --   - Uhh there is no structural subtyping, i think ...
 data UnifyMode
-  = RSubsumesL RequestSubsumption -- e.g. (t : l) : r
-  | LSubsumesR RequestSubsumption -- e.g. id {l} (t : r)
-  | Invariant RequestSubsumption -- e.g. l = r
+  = RSubsumesL { shouldSubsume :: RequestSubsumption, stillInjective :: Injective } -- e.g. (t : l) : r
+  | LSubsumesR { shouldSubsume :: RequestSubsumption, stillInjective :: Injective } -- e.g. id {l} (t : r)
+  | Invariant  { shouldSubsume :: RequestSubsumption, stillInjective :: Injective } -- e.g. l = r
   deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 -- | Each unification mode can generate a subsumption (an actual term to mediate
@@ -51,8 +51,6 @@ data UnifyMode
 data RequestSubsumption = GenerateSubsumption | IdentitySubsumption
   deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
-shouldSubsume :: UnifyMode -> RequestSubsumption
-shouldSubsume = \case
-  LSubsumesR sub -> sub
-  RSubsumesL sub -> sub
-  Invariant sub -> sub
+-- | Whether we can still learn unification equalities.
+data Injective = StillInjective | NotInjective
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)

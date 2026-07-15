@@ -1,0 +1,34 @@
+[ DDefine
+  ( Just ( PlainName [] "T" ), PlainVar )
+  Nothing
+  ( CLambda
+    ( ( Explicit
+      , CVar ( Just ( PlainName [] "T" ) ) PlainVar :| []
+      , Just CUniv
+      )
+      :|
+      [ ( Explicit
+        , CVar
+          ( Just ( PlainName [] "T" ) )
+          PlainVar
+          :|
+          [ CVar ( Just ( PlainName [] "T" ) ) PlainVar ]
+        , Just ( CVar ( Just ( PlainName [] "T" ) ) PlainVar )
+        )
+      , ( Explicit
+        , CVar ( Just ( PlainName [] "T" ) ) PlainVar :| []
+        , Just CUniv
+        )
+      , ( Explicit
+        , CVar
+          ( Just ( PlainName [] "T" ) )
+          PlainVar
+          :|
+          [ CVar ( Just ( PlainName [] "T" ) ) PlainVar ]
+        , Just ( CVar ( Just ( PlainName [] "T" ) ) ( DBLevel 3 ) )
+        )
+      ]
+    )
+    ( CVar ( Just ( PlainName [] "T" ) ) PlainVar )
+  )
+]

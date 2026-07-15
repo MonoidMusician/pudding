@@ -67,11 +67,14 @@ main = do
       Scotty.json tests
     Scotty.post "/api/surface/load" do
       filename :: T.Text <- Scotty.jsonData
-      result <- liftIO $
+      fileRead <- liftIO $
         tryError (TIO.readFile (under goldenTests filename </> "input.pudding"))
-      case result of
+      case fileRead of
         Left _ -> Scotty.status HTTP.notFound404
-        Right contents -> Scotty.json contents
+        Right content -> do
+          (success, files, result, _commit) <- liftIO $ SW.runTestText (under goldenTests filename) content
+          let extra = (success, files, result)
+          Scotty.json (content, extra)
     Scotty.post "/api/surface/test" do
       Content { content, filename } :: Content <- Scotty.jsonData
       stages <- liftIO $ SW.fullSurfaceProcess (maybe "<input>" T.unpack filename) content
@@ -97,9 +100,9 @@ main = do
       tests <- liftIO do SW.findTests goldenTests
       results <- for tests \test -> do
         for (List.stripPrefix (goldenTests <> "/") test) \name -> do
-          (content, All success, result, _commit) <- liftIO do
+          (content, success, files, result, _commit) <- liftIO do
             evaluate . force =<< SW.runTestIn test
-          pure (name, (content, success, result))
+          pure (name, (content, success, files, result))
       Scotty.json results
 
     -- Everything else: static files

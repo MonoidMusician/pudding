@@ -1,0 +1,5 @@
+@define X := Type
+
+@define Y := Z
+
+@define Z := X

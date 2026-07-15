@@ -1,0 +1,9 @@
+X : (Type0 1)
+X := (Type0 0)
+
+Y : (Type0 1)
+Y := Z
+
+Z : (Type0 1)
+Z := X
+

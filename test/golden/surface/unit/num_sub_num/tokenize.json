@@ -1,0 +1,62 @@
+[
+    [
+        [
+            [
+                1,
+                1,
+                1,
+                2
+            ],
+            "./test/golden/surface/unit/num_sub_num"
+        ],
+        {
+            "contents": {
+                "contents": "4",
+                "tag": "Number"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                2,
+                1,
+                3
+            ],
+            "./test/golden/surface/unit/num_sub_num"
+        ],
+        {
+            "contents": {
+                "contents": {
+                    "contents": [
+                        [],
+                        "-"
+                    ],
+                    "tag": "PlainOp"
+                },
+                "tag": "QualifiedOp"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                3,
+                1,
+                4
+            ],
+            "./test/golden/surface/unit/num_sub_num"
+        ],
+        {
+            "contents": {
+                "contents": "6",
+                "tag": "Number"
+            },
+            "tag": "Content"
+        }
+    ]
+]

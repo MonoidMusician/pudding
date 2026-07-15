@@ -1,0 +1,3 @@
+CApps
+  ( CVar ( Just ( OperatorName [] Nothing [ "-" ] Nothing ) ) PlainVar )
+  ( CNum "4" :| [ CNum "6" ] )

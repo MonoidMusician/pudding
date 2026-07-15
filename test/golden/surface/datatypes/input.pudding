@@ -1,0 +1,30 @@
+@data Void.
+
+@data Unit
+| unit : Unit.
+
+@data Bool | true | false.
+
+@data IsTrue : Π (b : Bool). Type
+| proveTrue : IsTrue true
+
+@define Fun := λ (I : Type) (O : Type). Π(_ : I). O
+@define Not := λ (P : Type). Fun P Void
+
+@data Maybe : Π (T : Type). Type
+| nothing (T : Type) : Maybe T
+| just (T : Type) (v : T) : Maybe T
+
+@data IsJust : Π (T : Type) (mv : Maybe T). Type
+| proveJust (T : Type) (v : T) : IsJust T (just T v)
+
+@data Either : Π (L : Type) (R : Type). Type
+| left (L : Type) (R : Type) (v : L)
+| right (L : Type) (R : Type) (v : R)
+
+@data Decide (P : Type)
+| proven (P : Type) (proof : P) : Decide P
+| disproven (P : Type) (disproof : Not P) : Decide P
+
+@data Eq : Π (T : Type) (t1 : T) (t2 : T). Type
+| refl (T : Type) (y : T) : Eq T y y

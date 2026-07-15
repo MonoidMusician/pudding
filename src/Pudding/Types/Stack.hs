@@ -20,6 +20,8 @@ import Control.Applicative.Backwards (Backwards(Backwards, forwards))
 import Data.Foldable (foldl')
 import qualified Data.Vector as Vector
 import qualified Data.Aeson as AE
+import qualified Prettyprinter as Doc
+import Data.Text (Text)
 
 -- | Finite mapping of indices `i` to elements `Elem`
 class StackLike c where
@@ -175,3 +177,25 @@ rstack = iso
 fromFoldable :: Foldable f => f a -> Stack a
 fromFoldable = foldl' (:>) Nil
 
+
+-- | Either a de Bruijn Level or Index
+data VariableDB
+  = PlainVar
+  | DBIndex !Word
+  | DBLevel !Word
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
+
+instance Doc.Pretty VariableDB where
+  pretty = \case
+    PlainVar -> mempty
+    DBIndex i -> Doc.pretty @Text "@^" <> Doc.pretty i
+    DBLevel l -> Doc.pretty @Text "@_" <> Doc.pretty l
+
+instance ToIndex VariableDB where
+  index c PlainVar = index c $ Index 0
+  index c (DBIndex i) = index c i
+  index c (DBLevel l) = index c $ level c l
+instance ToLevel VariableDB where
+  level c PlainVar = level c $ Index 0
+  level c (DBIndex i) = level c $ index c i
+  level c (DBLevel l) = level c l

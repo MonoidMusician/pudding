@@ -1,0 +1,5058 @@
+[
+    [
+        [
+            [
+                1,
+                1,
+                1,
+                6
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "data"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                7,
+                1,
+                11
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Void"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                11,
+                3,
+                1
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                1,
+                3,
+                6
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "data"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                3,
+                7,
+                3,
+                11
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Unit"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                1,
+                4,
+                2
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                3,
+                4,
+                7
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "unit"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                8,
+                4,
+                10
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                10,
+                4,
+                14
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Unit"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                4,
+                14,
+                6,
+                1
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                1,
+                6,
+                6
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "data"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                7,
+                6,
+                11
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Bool"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                12,
+                6,
+                13
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                14,
+                6,
+                18
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "true"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                19,
+                6,
+                20
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                21,
+                6,
+                26
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "false"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                6,
+                26,
+                8,
+                1
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                8,
+                1,
+                8,
+                6
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "data"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                8,
+                7,
+                8,
+                13
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "IsTrue"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                8,
+                14,
+                8,
+                16
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                8,
+                16,
+                8,
+                17
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPi",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                8,
+                18,
+                8,
+                28
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                8,
+                                19,
+                                8,
+                                20
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "b"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                8,
+                                21,
+                                8,
+                                23
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                8,
+                                23,
+                                8,
+                                27
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "Bool"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                8,
+                28,
+                8,
+                30
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                8,
+                30,
+                8,
+                34
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "tag": "Univ"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                9,
+                1,
+                9,
+                2
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                9,
+                3,
+                9,
+                12
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "proveTrue"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                9,
+                13,
+                9,
+                15
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                9,
+                15,
+                9,
+                21
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "IsTrue"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                9,
+                22,
+                9,
+                26
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "true"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                1,
+                11,
+                8
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "define"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                9,
+                11,
+                12
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Fun"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                13,
+                11,
+                15
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAssignL",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                16,
+                11,
+                17
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SLambda",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                18,
+                11,
+                28
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                11,
+                                19,
+                                11,
+                                20
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "I"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                11,
+                                21,
+                                11,
+                                23
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                11,
+                                23,
+                                11,
+                                27
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                29,
+                11,
+                39
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                11,
+                                30,
+                                11,
+                                31
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "O"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                11,
+                                32,
+                                11,
+                                34
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                11,
+                                34,
+                                11,
+                                38
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                39,
+                11,
+                41
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                41,
+                11,
+                42
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPi",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                42,
+                11,
+                49
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                11,
+                                43,
+                                11,
+                                44
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SPlaceholder",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                11,
+                                45,
+                                11,
+                                47
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                11,
+                                47,
+                                11,
+                                48
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "I"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                49,
+                11,
+                51
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                51,
+                11,
+                52
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "O"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                1,
+                12,
+                8
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "define"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                9,
+                12,
+                12
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Not"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                13,
+                12,
+                15
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAssignL",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                16,
+                12,
+                17
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SLambda",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                18,
+                12,
+                28
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                12,
+                                19,
+                                12,
+                                20
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "P"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                12,
+                                21,
+                                12,
+                                23
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                12,
+                                23,
+                                12,
+                                27
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                28,
+                12,
+                30
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                30,
+                12,
+                33
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Fun"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                34,
+                12,
+                35
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "P"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                36,
+                12,
+                40
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Void"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                1,
+                14,
+                6
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "data"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                7,
+                14,
+                12
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Maybe"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                13,
+                14,
+                15
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                15,
+                14,
+                16
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPi",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                17,
+                14,
+                27
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                14,
+                                18,
+                                14,
+                                19
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                14,
+                                20,
+                                14,
+                                22
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                14,
+                                22,
+                                14,
+                                26
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                27,
+                14,
+                29
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                29,
+                14,
+                33
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "tag": "Univ"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                1,
+                15,
+                2
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                3,
+                15,
+                10
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "nothing"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                11,
+                15,
+                21
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                15,
+                                12,
+                                15,
+                                13
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                15,
+                                14,
+                                15,
+                                16
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                15,
+                                16,
+                                15,
+                                20
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                22,
+                15,
+                24
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                24,
+                15,
+                29
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Maybe"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                30,
+                15,
+                31
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "T"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                16,
+                1,
+                16,
+                2
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                16,
+                3,
+                16,
+                7
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "just"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                16,
+                8,
+                16,
+                18
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                16,
+                                9,
+                                16,
+                                10
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                16,
+                                11,
+                                16,
+                                13
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                16,
+                                13,
+                                16,
+                                17
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                16,
+                19,
+                16,
+                26
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                16,
+                                20,
+                                16,
+                                21
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "v"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                16,
+                                22,
+                                16,
+                                24
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                16,
+                                24,
+                                16,
+                                25
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                16,
+                27,
+                16,
+                29
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                16,
+                29,
+                16,
+                34
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Maybe"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                16,
+                35,
+                16,
+                36
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "T"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                18,
+                1,
+                18,
+                6
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "data"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                18,
+                7,
+                18,
+                13
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "IsJust"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                18,
+                14,
+                18,
+                16
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                18,
+                16,
+                18,
+                17
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPi",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                18,
+                18,
+                18,
+                28
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                18,
+                                19,
+                                18,
+                                20
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                18,
+                                21,
+                                18,
+                                23
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                18,
+                                23,
+                                18,
+                                27
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                18,
+                29,
+                18,
+                43
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                18,
+                                30,
+                                18,
+                                32
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "mv"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                18,
+                                33,
+                                18,
+                                35
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                18,
+                                35,
+                                18,
+                                40
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "Maybe"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                18,
+                                41,
+                                18,
+                                42
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                18,
+                43,
+                18,
+                45
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                18,
+                45,
+                18,
+                49
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "tag": "Univ"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                19,
+                1,
+                19,
+                2
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                19,
+                3,
+                19,
+                12
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "proveJust"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                19,
+                13,
+                19,
+                23
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                19,
+                                14,
+                                19,
+                                15
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                19,
+                                16,
+                                19,
+                                18
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                19,
+                                18,
+                                19,
+                                22
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                19,
+                24,
+                19,
+                31
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                19,
+                                25,
+                                19,
+                                26
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "v"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                19,
+                                27,
+                                19,
+                                29
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                19,
+                                29,
+                                19,
+                                30
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                19,
+                32,
+                19,
+                34
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                19,
+                34,
+                19,
+                40
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "IsJust"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                19,
+                41,
+                19,
+                42
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "T"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                19,
+                43,
+                19,
+                53
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                19,
+                                44,
+                                19,
+                                48
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "just"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                19,
+                                49,
+                                19,
+                                50
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                19,
+                                51,
+                                19,
+                                52
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "v"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                21,
+                1,
+                21,
+                6
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "data"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                21,
+                7,
+                21,
+                13
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Either"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                21,
+                14,
+                21,
+                16
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                21,
+                16,
+                21,
+                17
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPi",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                21,
+                18,
+                21,
+                28
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                21,
+                                19,
+                                21,
+                                20
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "L"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                21,
+                                21,
+                                21,
+                                23
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                21,
+                                23,
+                                21,
+                                27
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                21,
+                29,
+                21,
+                39
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                21,
+                                30,
+                                21,
+                                31
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "R"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                21,
+                                32,
+                                21,
+                                34
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                21,
+                                34,
+                                21,
+                                38
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                21,
+                39,
+                21,
+                41
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                21,
+                41,
+                21,
+                45
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "tag": "Univ"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                22,
+                1,
+                22,
+                2
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                22,
+                3,
+                22,
+                7
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "left"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                22,
+                8,
+                22,
+                18
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                22,
+                                9,
+                                22,
+                                10
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "L"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                22,
+                                11,
+                                22,
+                                13
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                22,
+                                13,
+                                22,
+                                17
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                22,
+                19,
+                22,
+                29
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                22,
+                                20,
+                                22,
+                                21
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "R"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                22,
+                                22,
+                                22,
+                                24
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                22,
+                                24,
+                                22,
+                                28
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                22,
+                30,
+                22,
+                37
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                22,
+                                31,
+                                22,
+                                32
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "v"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                22,
+                                33,
+                                22,
+                                35
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                22,
+                                35,
+                                22,
+                                36
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "L"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                23,
+                1,
+                23,
+                2
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                23,
+                3,
+                23,
+                8
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "right"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                23,
+                9,
+                23,
+                19
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                23,
+                                10,
+                                23,
+                                11
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "L"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                23,
+                                12,
+                                23,
+                                14
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                23,
+                                14,
+                                23,
+                                18
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                23,
+                20,
+                23,
+                30
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                23,
+                                21,
+                                23,
+                                22
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "R"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                23,
+                                23,
+                                23,
+                                25
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                23,
+                                25,
+                                23,
+                                29
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                23,
+                31,
+                23,
+                38
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                23,
+                                32,
+                                23,
+                                33
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "v"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                23,
+                                34,
+                                23,
+                                36
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                23,
+                                36,
+                                23,
+                                37
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "R"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                25,
+                1,
+                25,
+                6
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "data"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                25,
+                7,
+                25,
+                13
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Decide"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                25,
+                14,
+                25,
+                24
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                25,
+                                15,
+                                25,
+                                16
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "P"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                25,
+                                17,
+                                25,
+                                19
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                25,
+                                19,
+                                25,
+                                23
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                1,
+                26,
+                2
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                3,
+                26,
+                9
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "proven"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                10,
+                26,
+                20
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                26,
+                                11,
+                                26,
+                                12
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "P"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                26,
+                                13,
+                                26,
+                                15
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                26,
+                                15,
+                                26,
+                                19
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                21,
+                26,
+                32
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                26,
+                                22,
+                                26,
+                                27
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "proof"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                26,
+                                28,
+                                26,
+                                30
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                26,
+                                30,
+                                26,
+                                31
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "P"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                33,
+                26,
+                35
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                35,
+                26,
+                41
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Decide"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                26,
+                42,
+                26,
+                43
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "P"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                1,
+                27,
+                2
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                3,
+                27,
+                12
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "disproven"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                13,
+                27,
+                23
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                27,
+                                14,
+                                27,
+                                15
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "P"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                27,
+                                16,
+                                27,
+                                18
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                27,
+                                18,
+                                27,
+                                22
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                24,
+                27,
+                42
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                27,
+                                25,
+                                27,
+                                33
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "disproof"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                27,
+                                34,
+                                27,
+                                36
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                27,
+                                36,
+                                27,
+                                39
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "Not"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                27,
+                                40,
+                                27,
+                                41
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "P"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                43,
+                27,
+                45
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                45,
+                27,
+                51
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Decide"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                27,
+                52,
+                27,
+                53
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "P"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                1,
+                29,
+                6
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "data"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                7,
+                29,
+                9
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Eq"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                10,
+                29,
+                12
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                12,
+                29,
+                13
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPi",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                14,
+                29,
+                24
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                29,
+                                15,
+                                29,
+                                16
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                29,
+                                17,
+                                29,
+                                19
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                29,
+                                19,
+                                29,
+                                23
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                25,
+                29,
+                33
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                29,
+                                26,
+                                29,
+                                28
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "t1"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                29,
+                                29,
+                                29,
+                                31
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                29,
+                                31,
+                                29,
+                                32
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                34,
+                29,
+                42
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                29,
+                                35,
+                                29,
+                                37
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "t2"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                29,
+                                38,
+                                29,
+                                40
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                29,
+                                40,
+                                29,
+                                41
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                42,
+                29,
+                44
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                44,
+                29,
+                48
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "tag": "Univ"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                1,
+                30,
+                2
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                3,
+                30,
+                7
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "refl"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                8,
+                30,
+                18
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                30,
+                                9,
+                                30,
+                                10
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                30,
+                                11,
+                                30,
+                                13
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                30,
+                                13,
+                                30,
+                                17
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                19,
+                30,
+                26
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                30,
+                                20,
+                                30,
+                                21
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "y"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                30,
+                                22,
+                                30,
+                                24
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                30,
+                                24,
+                                30,
+                                25
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                27,
+                30,
+                29
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                29,
+                30,
+                31
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Eq"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                32,
+                30,
+                33
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "T"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                34,
+                30,
+                35
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "y"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                30,
+                36,
+                30,
+                37
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "y"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ]
+]

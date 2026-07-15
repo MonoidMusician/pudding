@@ -1,0 +1,3 @@
+Circular dependency: X
+CallStack (from HasCallStack):
+  error, called at src/Pudding/Surface/Elaborator.hs:92:38 in pudding-0.1.0.0-inplace:Pudding.Surface.Elaborator

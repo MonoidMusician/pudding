@@ -61,6 +61,9 @@ import Data.Maybe (fromMaybe)
   '@define' { Token _ (Content (Command _ "define")) }
   '@example' { Token _ (Content (Command _ "example")) }
 
+  '$q[...]' { Token _ (Content (Splote _ "q" _)) }
+  '$s[...]' { Token _ (Content (Splote _ "s" _)) }
+
   VNAME { Token _ (Content (VariableName _ _)) }
   MNAME { Token _ (Content (ModuleName _)) }
   ONAME { Token _ (Content (QualifiedOp _)) }
@@ -142,6 +145,8 @@ exprAtom :: { CST }
   | num { $1 }
   | 'Type' { CUniv }
   | ModuleName { CMod $1 }
+  | '$q[...]' {% fmap CQuote  case $1 of Token _ (Content (Splote _ _ ts)) -> parseExprInParens ts }
+  | '$s[...]' {% fmap CSplice case $1 of Token _ (Content (Splote _ _ ts)) -> parseExprInParens ts }
 
 -- Parse an expression inside parens
 exprInParens :: { CST }
@@ -188,7 +193,7 @@ binderInner :: { (NonEmpty CBinder, Maybe CST) }
 
 
 decl :: { Decl }
-  : '@module' ModuleName Braces {% fmap (DModule $2) $ parseDecls $3 }
+  : '@module' ModuleName Braces {% fmap (DModule $2 []) $ parseDecls $3 }
   | '@data' datatype { $2 }
   | '@define' definition { $2 }
   -- | definition { $1 }
@@ -198,12 +203,16 @@ decls :: { [Decl] }
   : many(decl) { $1 }
 
 datatype :: { Decl }
-  : VariableName many(binder) ':' expr many(datatypeCase)
+  : VariableName many(binder) ':' expr many(datatypeCase) opt('.')
     { DDataType $1 $2 [] (Just $4) $5 }
+  | VariableName many(binder) many(datatypeCase) opt('.')
+    { DDataType $1 $2 [] Nothing $3 }
 
-datatypeCase :: { (VariableName, "arguments" @:: [CBinderGroup], "indices" @:: [CST]) }
-  : '|' VariableName many(binder) ':' varOrNot many(exprAtom) -- TODO: revisit
-    { ($2, $3, $6) }
+datatypeCase :: { (VariableName, "arguments" @:: [CBinderGroup], "result" @:: Maybe CST) }
+  : '|' VariableName many(binder) ':' expr
+    { ($2, $3, Just $5) }
+  | '|' VariableName many(binder)
+    { ($2, $3, Nothing) }
 
 definition :: { Decl }
   : VariableName ':' expr ':=' expr { DDefine $1 (Just $3) $5 }
@@ -213,6 +222,9 @@ definition :: { Decl }
 
 ------
 
+opt(a) :: { Maybe a }
+  : {- empty -} { Nothing }
+  | a { Just $1 }
 
 many(a) :: { [a] }
   : {- empty -} { [] }

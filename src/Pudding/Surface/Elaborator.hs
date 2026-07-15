@@ -11,6 +11,7 @@
 -- |
 -- | The third is the most important and complicated, involving unification and
 -- | and evaluation.
+{-# LANGUAGE ApplicativeDo #-}
 module Pudding.Surface.Elaborator where
 
 import Prelude
@@ -21,31 +22,31 @@ import Data.Map (Map)
 import Data.Map qualified as M
 import Data.Text (Text)
 import Pudding.Types.Name (Name (..), internalize, NameTable, canonicalName)
-import Pudding.Types.Base (Plicit (Explicit), type (@::))
+import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), Index(Index), StackLike(size, Elem), pattern Nil, pattern (:>), StackFunctor (mapWithLevel), (@@?))
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift))
-import Pudding.Core.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval (ENeut, EUniv), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase), globalsFrom, Ctx (ctxGlobals), GlobalTypeInfo (GlobalTypeInfo, typeParams, typeIndices))
+import Pudding.Core.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval (..), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase), globalsFrom, Ctx (ctxGlobals), GlobalTypeInfo (GlobalTypeInfo, typeParams, typeIndices), Closure, ConstructorInfo (ConstructorInfo), Globals (globalDefns))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
-import Pudding.Surface.Parser (Decl (..), CST (..), CBinder)
-import Data.Foldable (Foldable (fold))
+import Pudding.Surface.Parser (Decl (..), CST (..), CBinder, CBinderGroup)
+import Data.Foldable (Foldable (fold), foldlM, for_)
 import Data.Functor.Compose (Compose (Compose))
 import Control.Monad.Reader.Class (MonadReader (local, ask), asks)
 import Data.List.NonEmpty (NonEmpty(..))
 import Pudding.Core.Eval (EvalTypeCtx)
 import qualified Pudding.Core.Unify as U
 import qualified Pudding.Core.Eval as E
-import Pudding.Surface.Lexer (VariableDB(..), NameForm (..))
+import Pudding.Surface.Lexer (VariableDB(..), NameForm (..), VariableName)
 import Data.Maybe (fromMaybe, catMaybes)
 import qualified Pudding.Core.Printer as P
 import qualified Data.Text as T
 import Control.Arrow (Arrow(first))
 import qualified Data.List.NonEmpty as NE
-import Control.Monad.Trans.Cont (ContT(ContT, runContT))
+import Control.Monad.Trans.Cont (ContT(ContT, runContT), evalContT)
 import Data.Traversable (for)
 import qualified Data.Vector as Vector
-import Control.Monad (join)
+import Control.Monad (join, when)
 
 class Applicative m => TwoPhase m where
   twoPhases :: m (m r) -> m r
@@ -103,10 +104,10 @@ inited !n = GGather M.empty \items ->
     Just r -> r
 
 data GLScope = GLScope
-  { names :: IORef NameTable
-  , globals :: Map Name (Scoped GlobalInfo)
-  , locals :: Map Name (Stack Eval)
-  , ctx :: EvalTypeCtx
+  { glNames :: IORef NameTable
+  , glGlobals :: Map Name (Scoped GlobalInfo)
+  , glLocals :: Map Name (Stack Eval)
+  , glCtx :: EvalTypeCtx
   }
 
 mintName :: forall r m. MonadIO m => MonadReader r m => (r -> IORef NameTable) -> Text -> m Name
@@ -115,18 +116,20 @@ mintName getTable t = do
   internalize tbl t
 
 
--- Global Local Monad
--- Stage 1: Text -> Name
--- Stage 2: gather global definitions
--- Stage 3: initialize global definitions
--- Stage 4: evaluate expressions with globals, locals, and names
+-- | Global Local Monad
+-- | Stage 1: Text -> Name
+-- | Stage 2: gather global definitions
+-- | Stage 3: initialize global definitions
+-- | Stage 4: evaluate expressions with globals, locals, and names
 type GLM = Compose (ReaderT (IORef NameTable) IO) (GGather Scoped)
--- Scoped has GInit which tracks the state of initializing all global
--- definitions, so they are all initialized once and circular dependencies
--- are caught (TODO: define exactly what circular dependencies are).
--- GLScope holds the global scope as it is *expected* to be defined, and
--- also the local context that is pushed under binders and such.
+-- | Scoped has GInit which tracks the state of initializing all global
+-- | definitions, so they are all initialized once and circular dependencies
+-- | are caught (TODO: define exactly what circular dependencies are).
+-- | GLScope holds the global scope as it is *expected* to be defined, and
+-- | also the local context that is pushed under binders and such.
 type Scoped = GInit (ReaderT GLScope IO)
+-- | Continuation monad, so `traverse` can adjust locals
+type Scoping r = ContT r Scoped
 
 willInitGLM :: Text -> (Name -> Scoped GlobalInfo) -> GLM (Name, Scoped GlobalInfo)
 willInitGLM text creator = Compose $ mintName id text <&>
@@ -138,13 +141,49 @@ willUseGLM = Compose . pure . GGather mempty . const
 
 initedGLM :: Name -> Scoped GlobalInfo
 initedGLM n = do
-  asks (M.lookup n . globals) >>= \case
+  asks (M.lookup n . glGlobals) >>= \case
     Nothing -> error $ "Missing name: " <> show n
     Just i -> i
 
 joinScoped :: GLM (Scoped r) -> GLM r
 joinScoped (Compose stage0) = Compose $ stage0 <&>
   \(GGather outs ins) -> GGather outs $ join <$> ins
+
+eval :: Term -> Scoped Eval
+eval t = do
+  c <- fmap snd <$> currentCtx
+  pure $ E.eval c t
+
+quote :: Eval -> Scoped Term
+quote e = do
+  c <- void <$> currentCtx
+  pure $ E.quote c e
+
+reinfer :: Term -> Scoped Eval
+reinfer t = do
+  c <- currentCtx
+  pure $ U.quickTermType c t
+
+validate :: Term -> Scoped Eval
+validate t = do
+  c <- currentCtx
+  pure $! U.validate c t
+
+conversionCheck :: Eval -> Eval -> Scoped Bool
+conversionCheck e1 e2 = do
+  c <- void <$> currentCtx
+  pure $ U.conversionCheck c e1 e2
+
+globalEval :: Term -> Scoped GlobalTerm
+globalEval t = do
+  e <- eval t
+  pure $ GlobalTerm t e
+
+globalQuote :: Eval -> Scoped GlobalTerm
+globalQuote e = do
+  t <- quote e
+  pure $ GlobalTerm t e
+
 
 
 runElabFull :: forall r. IORef NameTable -> GLM r -> IO (Map Name GlobalInfo, r)
@@ -189,47 +228,121 @@ currentCtx = do
     Initialized r -> Just r
     _ -> Nothing
   let currentGlobals = U.bootGlobals $ globalsFrom initialized
-  localCtx <- asks ctx
+  localCtx <- asks glCtx
   pure $ localCtx { ctxGlobals = currentGlobals }
 
+intoClosure :: Eval -> Closure -> (Eval -> Scoped r) -> Scoped r
+intoClosure argTy clo cb = do
+  outer <- ask
+  let neutral = Neutral (NVar mempty (Level (size (glCtx outer)))) Nil
+  local (const $ outer { glCtx = glCtx outer :> (BUnused, (argTy, ENeut neutral)) }) do
+    cb $ E.instantiateClosure clo $ ENeut neutral
+
+
+-- | Elaborate a top-level declaration. This tells the `GGather` layer about
+-- | the name and definition, which is then available in the `GInit` layer to
+-- | handle the graph of dependencies.
 elaborateDecl :: Decl -> GLM (Maybe Name, Scoped GlobalInfo)
 elaborateDecl = \case
   DDefine (Just (PlainName [] text), PlainVar) mty tm ->
     first Just <$> willInitGLM text \_name -> DefnGlobal <$> do
-      case mty of
-        Nothing -> do
-          defn@(GlobalTerm t _) <- elaborateDefn tm
-          ctx <- currentCtx
-          let tyE = U.quickTermType ctx t
-          let tyD = GlobalTerm (E.quote (void ctx) tyE) tyE
-          pure $ GlobalDefn 0 tyD defn
-        Just ty -> do
-          GlobalDefn 0 <$> elaborateDefn ty <*> elaborateDefn tm
+      elaborateDefn mty tm
   -- An example, e.g. declared by `@example` or `@define _ := Type`
   DDefine (Nothing, PlainVar) mty tm -> willUseGLM do
-    mty' <- for mty \ty -> do
-      -- TODO: Type
-      tyT <- elab Nothing ty
-      ctx <- currentCtx
-      pure (tyT, E.eval (snd <$> ctx) tyT)
-    tm' <- elab (snd <$> mty') tm
-    ctx <- currentCtx
-    let
-      ty' = (mty' <&> uncurry GlobalTerm) & fromMaybe
-        let tyE = U.quickTermType ctx tm' in
-        GlobalTerm (E.quote (void ctx) tyE) tyE
-    pure (Nothing, pure $ DefnGlobal $ GlobalDefn 0 ty' (GlobalTerm tm' (E.eval (snd <$> ctx) tm')))
+    tm' <- elaborateDefn mty tm
+    pure (Nothing, pure $ DefnGlobal tm')
+
+  -- Elaborating inductive types is by far the most complicated, it has
+  -- a dedicated fnuction
+  DDataType (Just (PlainName [] tyText), PlainVar) rawParams rawIndices mdest rawConstrs -> do
+    ret <- first Just <$> willInitGLM tyText \name -> TypeGlobal <$> do
+      elaborateDataType name rawParams rawIndices mdest rawConstrs
+    for_ rawConstrs \(cname, _, _) -> do
+      let
+        ctor = case cname of
+          (Just (PlainName [] ctext), PlainVar) -> ctext
+          _ -> error "Bad constructor name"
+      willInitGLM ctor \ctorName -> do
+        tyName <- mintName glNames tyText
+        asks (M.lookup tyName . glGlobals) >>= \case
+          Just tyDef -> tyDef >>= \case
+            TypeGlobal (GlobalTypeInfo _ _ ctors) -> do
+              ctx <- currentCtx
+              pure $ DefnGlobal $ fromMaybe (error "wat") $ M.lookup ctorName $ globalDefns $ ctxGlobals ctx
+            _ -> error "Impossible"
+          Nothing -> error "Impossible!"
+    pure ret
+
   _ -> error "Not supported"
 
+-- | Elaborate a type (optional) and a term of that type, into a "global"
+-- | definition which caches the term and type as both `Term` and `Eval`.
+-- | (The definition does not have to be global, just the wrapper is called that.)
+elaborateDefn :: Maybe CST -> CST -> Scoped GlobalDefn
+elaborateDefn mty tm = do
+  mty' <- for mty \ty -> do
+    tyT <- elabType ty
+    tyE <- eval tyT
+    pure (tyT, tyE)
+  tmT <- elab (snd <$> mty') tm
+  ty' <- case mty' of
+    Just (tyT, tyE) -> pure $ GlobalTerm tyT tyE
+    Nothing -> globalQuote =<< reinfer tmT
+  -- TODO: arity
+  GlobalDefn 0 ty' <$> globalEval tmT
 
-elaborateDefn :: CST -> Scoped GlobalTerm
-elaborateDefn = fmap (\t -> GlobalTerm t undefined) . elab Nothing
 
+elabType :: CST -> Scoped Term
+elabType = elab Nothing -- TODO: Type
 
+-- | Coerce a synthesized term to an expected type, if provided.
+synth :: Maybe ("expected type" @:: Eval) -> Term -> Scoped Term
+synth Nothing term = pure term
+synth (Just expE) term = do
+  actE <- reinfer term
+  fromMaybe term <$> do
+    coe term (actE, expE) >>= traverse
+      \result -> do
+        actE' <- reinfer result
+        conversionCheck actE' expE >>= \case
+          True -> pure result
+          False -> error "Synthesized coercion failed"
+
+-- | Generate a term coerced from actual type to expected type, or `Nothing` if
+-- | no coercion is necessary.
+coe :: Term -> ("actual type" @:: Eval, "expected type" @:: Eval) -> Scoped (Maybe Term)
+coe term = \case
+  -- Both are lifted terms? operate inside the lifted value
+  (ELift _ actE, ELift _ expE) -> do
+    coeMap (TQuote mempty) (TSplice mempty) (actE, expE)
+  -- Lifted term where it is not expected?
+  (ELift _ actE, expE) -> do
+    -- Splice, and continue coercing
+    Just <$> coe' (TSplice mempty term) (actE, expE)
+  -- Otherwise make sure they match literally
+  (actE, expE) -> conversionCheck actE expE >>= \case
+    True -> pure Nothing
+    False -> error "Synthesized type mismatch"
+  where
+  coe' inner tys = fromMaybe inner <$> coe inner tys
+  coeMap outOf inTo tys = fmap @Maybe outOf <$> coe (inTo term) tys
+
+-- | Elaborate a piece of surface syntax against an expected type.
 elab :: Maybe ("expected type" @:: Eval) -> CST -> Scoped Term
 elab mexp = \case
-  CApp fun arg -> TApp mempty Explicit <$> elab Nothing fun <*> elab Nothing arg
-  CUniv -> pure $ TUniv mempty (UBase 0)
+  CApps fun args -> synth mexp =<< do
+    funTmT <- elab Nothing fun
+    funTyE <- validate funTmT
+    let
+      thingy (_, EPi _ Implicit _ _ _) _ = error "cannot handle implicits"
+      thingy (funT, EPi _ Explicit _ argTy clo) arg = do
+        argT <- elab (Just argTy) arg
+        argE <- eval argT
+        pure (TApp mempty Explicit funT argT, E.instantiateClosure clo argE)
+      thingy _ _ = error "not a function/overapplied"
+    -- TODO: stash type?
+    fst <$> foldlM thingy (funTmT, funTyE) args
+  CUniv -> synth mexp $ TUniv mempty (UBase 0)
 
   CLambda binders body -> elabBinders (TLambda mempty) binders body
   CPi     binders body -> elabBinders (TPi     mempty) binders body
@@ -238,13 +351,11 @@ elab mexp = \case
 
   -- | CSentence !(NonEmpty (Either L.OpForm CST))
 
-  CVar (Just (PlainName [] text)) PlainVar -> do
-    name <- mintName names text
-    asks (M.lookup name . locals) >>= \case
-      Just (_ :> e) -> do
-        qc <- void <$> currentCtx
-        pure $ E.quote qc e
-      _ -> asks (M.lookup name . globals) >>= \case
+  CVar (Just (PlainName [] text)) PlainVar -> synth mexp =<< do
+    name <- mintName glNames text
+    asks (M.lookup name . glLocals) >>= \case
+      Just (_ :> e) -> quote e
+      _ -> asks (M.lookup name . glGlobals) >>= \case
         Just getter -> getter <&> \case
           TypeGlobal (GlobalTypeInfo { typeParams, typeIndices }) ->
             let
@@ -259,7 +370,7 @@ elab mexp = \case
               TTyCtor mempty name (toVars (Vector.length typeIndices) typeParams) (toVars 0 typeIndices)
           DefnGlobal (GlobalDefn _ _ _) -> TGlobal mempty name
         _ -> error $ "Missing name: " <> show name
-  CVar Nothing idxOrLvl -> case idxOrLvl of
+  CVar Nothing idxOrLvl -> synth mexp =<< case idxOrLvl of
     PlainVar -> error "impossible: CVar Nothing PlainVar"
     DBIndex i -> do
       c <- currentCtx
@@ -267,12 +378,11 @@ elab mexp = \case
     DBLevel l -> do
       c <- currentCtx
       pure $ TVar mempty $ index c $ level c l
-  CVar (Just (PlainName [] text)) idxOrLvl -> do
-    name <- mintName names text
-    asks (M.lookup name . locals) >>= \case
-      Just stack | Just found <- lookupDB stack idxOrLvl -> do
-        qc <- void <$> currentCtx
-        pure $ E.quote qc found
+  CVar (Just (PlainName [] text)) idxOrLvl -> synth mexp =<< do
+    name <- mintName glNames text
+    asks (M.lookup name . glLocals) >>= \case
+      Just stack | Just found <- stack @@? idxOrLvl -> do
+        quote found
       Just _ -> error $ "Local stack too small: " <> T.unpack (nameText name)
       Nothing -> error $ "Missing local: " <> T.unpack (nameText name)
 
@@ -282,30 +392,38 @@ elab mexp = \case
   -- | CStr ![Either Text CST]
   -- | CHole !(Maybe Text)
 
-  CLift t -> TLift mempty <$> elab (Just (EUniv mempty (UBase 0))) t
-  CQuote e -> TQuote mempty <$> elab Nothing e
-  CSplice e -> TSplice mempty <$> elab Nothing e
+  CLift t -> synth mexp . TLift mempty =<< elabType t
+  CQuote e -> do
+    mexp' <- case mexp of
+      Just (ELift _ exp') -> pure (Just exp')
+      Just _ -> error "Quote needs to go to a lifted type"
+      Nothing -> pure Nothing
+    TQuote mempty <$> elab mexp' e
+  CSplice e -> TSplice mempty <$> elab (ELift mempty <$> mexp) e
 
   -- | CMatch ![CST] !("cases" @:: [("pats" @:: [CST], "body" @:: CST)])
   CField tm field -> do
-    name <- mintName names field
+    name <- mintName glNames field
     tm' <- elab Nothing tm
     pure $ TField mempty tm' name
 
   CAscribe tm ty -> do
-    here <- ask
-    tyT <- elab Nothing ty
-    let tyE = E.eval (snd <$> ctx here) tyT
+    tyT <- elabType ty
+    tyE <- eval tyT
     tmT <- elab (Just tyE) tm
-    let tmtyE = U.validate (ctx here) tmT
-    if U.conversionCheck (void (ctx here)) tyE tmtyE
-      then pure tmT
-      else error $ fold
-        [ "Type error: "
-        , "\n" <> T.unpack do P.format P.Ansi $ P.printCore (E.quote (void (ctx here)) tyE) (P.PS 0 $ size $ ctx here)
-        , "\n" <> T.unpack do P.format P.Ansi $ P.printCore (E.quote (void (ctx here)) tmtyE) (P.PS 0 $ size $ ctx here)
-        , "\n" <> T.unpack do P.format P.Ansi $ P.printCore tmT (P.PS 0 $ size $ ctx here)
-        ]
+    tmtyE <- validate tmT
+    conversionCheck tyE tmtyE >>= \case
+      True -> pure tmT
+      False -> do
+        tyN <- quote tyE
+        tmtyT <- quote tmtyE
+        ps <- asks (P.PS 0 . size . glCtx)
+        error $ fold
+          [ "Type error: "
+          , "\n" <> T.unpack do P.format P.Ansi $ P.printCore tyN ps
+          , "\n" <> T.unpack do P.format P.Ansi $ P.printCore tmtyT ps
+          , "\n" <> T.unpack do P.format P.Ansi $ P.printCore tmT ps
+          ]
 
   -- | CAssign !CST !CST -- for patterns and do notation
 
@@ -321,8 +439,7 @@ elabBinders cons binders body = foldr addBinder (elab Nothing body) binders
     tyT <- case mty of
       Nothing -> error "Missing type for lambda/pi/sigma"
       Just ty -> elab Nothing ty
-    evalCtx <- asks ctx
-    let tyE = E.eval (snd <$> evalCtx) tyT
+    tyE <- eval tyT
     runContT (elabMultiBinderCont tyE binder) \binderB ->
       multiCons plicit binderB tyT <$> inner
   multiCons plicit bounders tyT inner =
@@ -330,27 +447,19 @@ elabBinders cons binders body = foldr addBinder (elab Nothing body) binders
       inner
       (zip [0..] (NE.toList bounders))
 
-elabMultiBinder :: ("ty" @:: Eval) -> NonEmpty CBinder -> Scoped (NonEmpty Binder, GLScope -> GLScope)
-elabMultiBinder tyE (b0 :| []) = first pure <$> elabBinder1 tyE b0
-elabMultiBinder tyE (b0 :| (b1 : bs)) = do
-  (c0, f0) <- elabBinder1 tyE b0
-  local f0 do
-    (cs, fs) <- elabMultiBinder tyE (b1 :| bs)
-    pure (NE.cons c0 cs, fs . f0)
-
 elabBinder1 :: ("ty" @:: Eval) -> CBinder -> Scoped (Binder, GLScope -> GLScope)
 elabBinder1 tyE = \case
   CVar (Just (PlainName [] text)) PlainVar -> do
-    name <- mintName names text
+    name <- mintName glNames text
     let binder = BVar (Meta (canonicalName name))
     pure $ (binder, ) $ \outer ->
-      let neutral = Neutral (NVar mempty (Level (size (ctx outer)))) Nil
+      let neutral = Neutral (NVar mempty (Level (size (glCtx outer)))) Nil
           addVar = name & M.alter do Just . (:> ENeut neutral) . fromMaybe Nil
-      in outer { locals = addVar (locals outer), ctx = ctx outer :> (binder, (tyE, ENeut neutral)) }
+      in outer { glLocals = addVar (glLocals outer), glCtx = glCtx outer :> (binder, (tyE, ENeut neutral)) }
   CPlaceholder -> do
     pure $ (BUnused,) $ \outer ->
-      let neutral = Neutral (NVar mempty (Level (size (ctx outer)))) Nil
-      in outer { ctx = ctx outer :> (BUnused, (tyE, ENeut neutral)) }
+      let neutral = Neutral (NVar mempty (Level (size (glCtx outer)))) Nil
+      in outer { glCtx = glCtx outer :> (BUnused, (tyE, ENeut neutral)) }
   CAssign l r -> do
     (b1, f1) <- elabBinder1 tyE l
     (b2, f2) <- elabBinder1 tyE r
@@ -370,9 +479,68 @@ elabBinder1Cont tyE b = do
     local f $ k c
 
 
-lookupDB :: forall s. StackLike s => s -> VariableDB -> Maybe (Elem s)
-lookupDB (_ :> hd) PlainVar = Just hd
-lookupDB _ PlainVar = Nothing
-lookupDB s (DBIndex i) = s @@? Index (fromIntegral i)
-lookupDB s (DBLevel i) = s @@? Level (fromIntegral i)
-
+elaborateDataType :: Name -> [CBinderGroup] -> [CBinderGroup] -> Maybe CST -> [(VariableName, "arguments" @:: [CBinderGroup], "result" @:: Maybe CST)] -> Scoped GlobalTypeInfo
+elaborateDataType name rawParams rawIndices mdest rawConstrs = do
+  (newParams, newIndices) <- evalContT do
+    termParams <- processBinders rawParams $
+      error "Missing type for datatype parameter"
+    explicitTermIndices <- processBinders rawIndices $
+      error "Missing type for datatype index"
+    implicitTermIndices <- fromMaybe [] <$> for mdest \dest -> lift do
+      term <- elabType dest
+      e <- eval term
+      fst <$> peelToUniv e
+    let termIndices = explicitTermIndices <> implicitTermIndices
+    pure (Vector.fromList termParams, Vector.fromList termIndices)
+  let prelim = GlobalTypeInfo newParams newIndices M.empty
+  modify' $ M.insert name $ Initializing $ Just $ TypeGlobal prelim
+  constructors <- for rawConstrs \(cname, argTypes, resultType) -> do
+    ctor <- case cname of
+      (Just (PlainName [] text), PlainVar) -> mintName glNames text
+      _ -> error "Bad constructor name"
+    (ctor,) <$> evalContT do
+      explicitArguments <- processBinders argTypes $
+        error "Missing type for constructor argument"
+      (implicitArguments, (params, indices)) <- do
+        fromMaybe mempty <$> for resultType \r -> do
+          rE <- lift $ eval =<< elabType r
+          peelToTyCtor rE
+      for_ (zip [0..] (Vector.toList params)) \case
+        (i, ENeut (Neutral (NVar _ (Level j)) Nil)) | i == j -> pure ()
+        _ -> error "Bad constructor parameter: must be a plain variable, in order"
+      let ctorArguments = Vector.fromList (explicitArguments <> implicitArguments)
+      ctorIndices <- lift $ traverse quote indices
+      pure $ ConstructorInfo ctorArguments ctorIndices
+  pure $ GlobalTypeInfo newParams newIndices (M.fromList constructors)
+  where
+  multiCons plicit bounders tyT =
+    foldr (\(i, b) -> (:) (plicit, b, E.shift i tyT))
+      []
+      (zip [0..] (NE.toList bounders))
+  processBinders :: forall c. [CBinderGroup] -> (forall void. Scoped void) -> Scoping c [(Plicit, Binder, Term)]
+  processBinders rawBinders nope =
+    join <$> for rawBinders \(plicit, binder, mty) -> do
+      tyT <- lift case mty of
+        Nothing -> nope
+        Just ty -> elab Nothing ty
+      tyE <- lift $ eval tyT
+      multiCons plicit <$> elabMultiBinderCont tyE binder <*> pure tyT
+  peelToUniv :: Eval -> Scoped ([(Plicit, Binder, Term)], ULevel)
+  peelToUniv = \case
+    EPi _ plicit binder indexTy inner -> do
+      idx <- quote indexTy
+      first ((plicit, binder, idx) :) <$>
+        intoClosure indexTy inner peelToUniv
+    EUniv _ univ -> pure ([], univ)
+    _ -> error "Bad annotation for datatype"
+  peelToTyCtor :: forall c. Eval -> Scoping c ([(Plicit, Binder, Term)], ("params" @:: Vector.Vector Eval, "indices" @:: Vector.Vector Eval))
+  peelToTyCtor = \case
+    EPi _ plicit binder indexTy inner -> do
+      idx <- lift $ quote indexTy
+      peeled <- ContT $ intoClosure indexTy inner
+      first ((plicit, binder, idx) :) <$> peelToTyCtor peeled
+    ETyCtor _ tyName params indices -> do
+      when (tyName /= name) do
+        error "Constructor for wrong datatype"
+      pure ([], (params, indices))
+    _ -> error "Bad annotation for constructor"

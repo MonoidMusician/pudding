@@ -1,0 +1,101 @@
+[
+    [
+        "X",
+        {
+            "contents": [
+                0,
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        {
+                            "contents": 1,
+                            "tag": "UBase"
+                        }
+                    ],
+                    "tag": "TUniv"
+                },
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        {
+                            "contents": 0,
+                            "tag": "UBase"
+                        }
+                    ],
+                    "tag": "TUniv"
+                }
+            ],
+            "tag": "DefnGlobal"
+        }
+    ],
+    [
+        "Y",
+        {
+            "contents": [
+                0,
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        {
+                            "contents": 1,
+                            "tag": "UBase"
+                        }
+                    ],
+                    "tag": "TUniv"
+                },
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        "Z"
+                    ],
+                    "tag": "TGlobal"
+                }
+            ],
+            "tag": "DefnGlobal"
+        }
+    ],
+    [
+        "Z",
+        {
+            "contents": [
+                0,
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        {
+                            "contents": 1,
+                            "tag": "UBase"
+                        }
+                    ],
+                    "tag": "TUniv"
+                },
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        "X"
+                    ],
+                    "tag": "TGlobal"
+                }
+            ],
+            "tag": "DefnGlobal"
+        }
+    ]
+]

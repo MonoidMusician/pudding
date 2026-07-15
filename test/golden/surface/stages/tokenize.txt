@@ -1,0 +1,38 @@
+[ Command [] "example"
+, QualifiedOp ( PlainOp [] "%" )
+, Univ
+, Command [] "define"
+, VariableName ( Just ( PlainName [] "Id" ) ) PlainVar
+, SAssignL
+, SLambda
+, Parens [ VariableName ( Just ( PlainName [] "T" ) ) PlainVar, SAscribe, Univ ]
+, SPeriod
+, VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+, Command [] "data"
+, VariableName ( Just ( PlainName [] "Void" ) ) PlainVar
+, SPeriod
+, Command [] "example"
+, QualifiedOp ( PlainOp [] "%" )
+, VariableName ( Just ( PlainName [] "Id" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "Void" ) ) PlainVar
+, Command [] "example"
+, SLambda
+, Parens
+  [ VariableName ( Just ( PlainName [] "void" ) ) PlainVar
+  , SAscribe
+  , VariableName ( Just ( PlainName [] "Void" ) ) PlainVar
+  ]
+, SPeriod
+, Splote [] "q" [ VariableName ( Just ( PlainName [] "void" ) ) PlainVar ]
+, Command [] "example"
+, SLambda
+, Parens
+  [ VariableName ( Just ( PlainName [] "void" ) ) PlainVar
+  , SAscribe
+  , QualifiedOp ( PlainOp [] "%" )
+  , VariableName ( Just ( PlainName [] "Id" ) ) PlainVar
+  , VariableName ( Just ( PlainName [] "Void" ) ) PlainVar
+  ]
+, SPeriod
+, Splote [] "s" [ VariableName ( Just ( PlainName [] "void" ) ) PlainVar ]
+]

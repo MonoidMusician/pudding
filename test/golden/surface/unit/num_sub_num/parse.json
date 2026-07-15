@@ -1,0 +1,34 @@
+{
+    "contents": [
+        {
+            "contents": [
+                {
+                    "contents": [
+                        [],
+                        null,
+                        [
+                            "-"
+                        ],
+                        null
+                    ],
+                    "tag": "OperatorName"
+                },
+                {
+                    "tag": "PlainVar"
+                }
+            ],
+            "tag": "CVar"
+        },
+        [
+            {
+                "contents": "4",
+                "tag": "CNum"
+            },
+            {
+                "contents": "6",
+                "tag": "CNum"
+            }
+        ]
+    ],
+    "tag": "CApps"
+}

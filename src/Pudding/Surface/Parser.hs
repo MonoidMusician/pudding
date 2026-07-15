@@ -40,9 +40,9 @@ data Decl
     ![CBinderGroup] -- those that are written out?
     !(Maybe CST) -- must evaluate to a Pi type resulting in Type
     -- Constructors
-    ![(L.VariableName, "arguments" @:: [CBinderGroup], "indices" @:: [CST])]
+    ![(L.VariableName, "arguments" @:: [CBinderGroup], "result" @:: Maybe CST)]
   | DDefine L.VariableName !(Maybe CST) !CST
-  | DModule ![Text] ![Decl]
+  | DModule ![Text] ![CBinderGroup] ![Decl]
   deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 data PartOfSpeech t
@@ -52,7 +52,7 @@ data PartOfSpeech t
   deriving (Eq, Ord, Show, Generic, NFData, Functor, Foldable, Traversable, AE.ToJSON, AE.FromJSON)
 
 data CST
-  = CApp !CST !CST
+  = CApps !CST !(NonEmpty CST)
   | CLambda !(NonEmpty CBinderGroup) !CST
   | CPi     !(NonEmpty CBinderGroup) !CST
   | CSigma  !(NonEmpty CBinderGroup) !CST
@@ -109,7 +109,8 @@ cSentence (SOp (L.PlainOp [] "[") :| [Subexpr l, SOp (L.PlainOp [] ","), Subexpr
 cSentence sentence = CSentence sentence
 
 apps :: NonEmpty CST -> CST
-apps (f :| args) = foldl CApp f args
+apps (f :| (arg : args)) = CApps f (arg :| args)
+apps (f :| []) = f
 
 -- map {A B : % Type} : (% A -> % B) -> % List A -> % List B
 -- map A B f as := $q[

@@ -20,7 +20,8 @@ const tab_by_name = Object.fromEntries([
 
 
 outputTab.subscribe(v => {
-    for (const [name, stage] of v.output) {
+    const stages = v.output;
+    for (const [name, stage] of stages) {
         const tab = tab_by_name[name];
         if (stage.stageError) {
             tab.classList.add("error");
@@ -28,7 +29,7 @@ outputTab.subscribe(v => {
             tab.classList.remove("error");
         }
     }
-    for (const [name, stage] of v.output) {
+    for (const [name, stage] of stages) {
         if (name === v.tab || stage.stageError) {
             if (stage.stageError) {
                 const prefix = {
@@ -48,9 +49,13 @@ const actions = {
     file_load() {
         const filename = ById.filename.value;
         if (!filename) return;
-        Ve.POST("/api/surface/load", filename).then(content => {
+        Ve.POST("/api/surface/load", filename).then(([content, [success, files, stages]]) => {
             ById.input.value = content;
             actions.update();
+            if (files.length)
+                Ve.forQuery("#output_side .tabs > .tab > .formats input[type=checkbox]", e => {
+                    e.checked = files.includes(e.value);
+                });
         });
     },
     async update() {
@@ -87,12 +92,13 @@ const actions = {
         const dash = ById.results;
         dash.replaceChildren();
         const results = await Ve.GET("/api/surface/report");
-        for (const [name, [content, success, stages]] of results) {
+        console.log(results);
+        for (const [name, [content, success, files, stages]] of results) {
             dash.appendChild(HTML.tr({
-                class: success ? 'succeeded' : 'failed',
+                class: success === true ? 'succeeded' : 'failed',
             }, [
                 HTML.th(name),
-                HTML.td(success ? "succeeded" : "failed"),
+                HTML.td(success === true ? "succeeded" : "failed"),
             ]));
         }
     },
@@ -105,7 +111,6 @@ Verity.ContentLoad(() => {
     section.send(document.querySelector("input[name=section_tab]:checked")?.value ?? section.current());
     Ve.forQuery("input[name=section_tab]", which => {
         Ve.on.change(which, () => {
-            console.log(which);
             if (which.checked)
                 section.send(which.value);
         });
@@ -114,7 +119,6 @@ Verity.ContentLoad(() => {
         const section_current = `section_${current}`;
         Ve.forQuery("section", section => {
             const selected = section.id === section_current;
-            console.log(selected, section);
             section.style.display = selected ? null : "none";
         });
         actions[section_current]?.();

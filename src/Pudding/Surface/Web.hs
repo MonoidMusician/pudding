@@ -39,6 +39,7 @@ import qualified Data.Aeson.Encode.Pretty as AEP
 import Control.Monad.Error.Class (tryError)
 import Control.DeepSeq (NFData, force)
 import qualified Data.Vector as Vector
+import Data.IORef (newIORef, modifyIORef', readIORef)
 
 data Formats = Formats
   { text :: Text
@@ -246,7 +247,7 @@ saveTestIn :: FilePath -> Text -> Set.Set FilePath -> IO Stages
 saveTestIn iodir contents selection = do
   Dir.createDirectoryIfMissing True iodir
   TIO.writeFile (iodir </> "input.pudding") contents
-  (_status, stages, commit) <- runTestText iodir contents
+  (_status, _, stages, commit) <- runTestText iodir contents
   join $ commit selection
   pure stages
 
@@ -259,19 +260,30 @@ deleteTest iodir = do
   _ <- tryError $ Dir.removeDirectory iodir
   pure ()
 
-runTestIn :: FilePath -> IO (Text, All, Stages, Set.Set FilePath -> IO (IO ()))
+runTestIn :: FilePath -> IO (Text, All, Set.Set FilePath, Stages, Set.Set FilePath -> IO (IO ()))
 runTestIn iodir = do
   let input = iodir </> "input.pudding"
   contents <- TIO.readFile input
-  (success, stages, commit) <- runTestText iodir contents
-  pure (contents, success, stages, commit)
+  (success, files, stages, commit) <- runTestText iodir contents
+  pure (contents, success, files, stages, commit)
 
-runTestText :: FilePath -> Text -> IO (All, Stages, Set.Set FilePath -> IO (IO ()))
+runTestText :: FilePath -> Text -> IO (All, Set.Set FilePath, Stages, Set.Set FilePath -> IO (IO ()))
 runTestText iodir contents = do
   initialResults <- fullSurfaceProcess iodir contents
+  files <- newIORef mempty
+  let
+    tryFile :: Text -> String -> IO (Maybe Text)
+    tryFile name ext = do
+      let filename = T.unpack name <> ext
+      catchAny
+        do
+          fileContents <- TIO.readFile (iodir </> filename)
+          modifyIORef' files (Set.insert filename)
+          pure $ Just fileContents
+        mempty
   comparedResults <- for initialResults \(name, stage) -> do
-    outputText     <- catchAny (Just <$> TIO.readFile (iodir </> (T.unpack name <> ".txt"))) mempty
-    outputJsonText <- catchAny (Just <$> TIO.readFile (iodir </> (T.unpack name <> ".json"))) mempty
+    outputText     <- tryFile name ".txt"
+    outputJsonText <- tryFile name ".json"
     outputJson <- case AE.eitherDecodeStrictText <$> outputJsonText of
       Just (Left e) -> error e
       Just (Right r) -> pure (Just r)
@@ -282,7 +294,8 @@ runTestText iodir contents = do
       StageDiff {} -> False
       _ -> True
     save selection = saveTestOutput iodir selection comparedResults
-  pure (All $ all (notDiff . snd . snd) comparedResults, snd <$> comparedResults, save)
+  filesRead <- readIORef files
+  pure (All $ all (notDiff . snd . snd) comparedResults, filesRead, snd <$> comparedResults, save)
 
 saveTestOutput :: FilePath -> Set.Set FilePath -> [(StageStatus, (Text, Stage))] -> IO (IO ())
 saveTestOutput iodir selection = foldMap \(status, (name, stage)) -> do

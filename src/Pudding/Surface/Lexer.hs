@@ -17,7 +17,7 @@
 -- | after this stage.
 -- |
 -- | Eventually it will be indentation-sensitive, but that needs more research.
-module Pudding.Surface.Lexer where
+module Pudding.Surface.Lexer ( module Pudding.Surface.Lexer, module Pudding.Types.Stack ) where
 
 import Prelude hiding (lex)
 import Control.Applicative (many, (<|>), empty, asum, Alternative (some))
@@ -43,6 +43,7 @@ import Prettyprinter.Util (reflow)
 import qualified Data.Aeson as AE
 import Pudding.Types.Parser (SourceSpan (SourceSpan, spanEnd))
 import Control.Monad (join)
+import Pudding.Types.Stack (VariableDB(..))
 
 instance NFData P.SourcePos where
   rnf a = seq a ()
@@ -386,17 +387,6 @@ instance Show Tok where
   show (Comment c) = show c
 
 type VariableName = (Maybe NameForm, VariableDB)
-data VariableDB
-  = PlainVar
-  | DBIndex !Word
-  | DBLevel !Word
-  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
-
-instance Doc.Pretty VariableDB where
-  pretty = \case
-    PlainVar -> mempty
-    DBIndex i -> reflow "@^" <> Doc.pretty i
-    DBLevel l -> reflow "@_" <> Doc.pretty l
 
 -- | Content words include names, operators, numbers, and so on. Names and
 -- | operators are tricky because operators can be turned into names and names

@@ -10,12 +10,13 @@ import Data.Functor.Apply (Apply, MaybeApply(..))
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Set (Set)
 import qualified Data.Set as Set
-import GHC.Generics (Generic)
+import GHC.Generics (Generic, Generically(..))
 import Pudding.Types.Parser (SourceSpan)
 import Data.IntMap.Monoidal.Strict (MonoidalIntMap)
 import Data.Semigroup (Min)
 import qualified Data.Aeson as AE
 import Prettyprinter (Pretty)
+import Data.FastEq (FastEq(..))
 
 -- Tag for metadata: not relevant to normalization/unification, just display or
 -- implementation efficiency or so on.
@@ -41,7 +42,11 @@ data Metadata = Metadata
   , metaVars :: MonoidalIntMap (Min Int)
     -- ^ current generation of each meta var, for substitution
   }
-  deriving (Eq, Ord, Generic, NFData, AE.ToJSON, AE.FromJSON)
+  deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
+  deriving Semigroup via Generically Metadata
+  deriving Monoid via Generically Metadata
+  deriving Eq via FastEq Metadata
+  deriving Ord via FastEq Metadata
 
 parseMetadata :: SourceSpan -> Metadata
 parseMetadata pos = Metadata
@@ -61,15 +66,6 @@ recalcMetadata fromChildren fromSelf = fromSelf
   { metaVars = foldMap metaVars fromChildren
   }
 
-
-instance Semigroup Metadata where
-  m1 <> m2 = Metadata
-    { sourcePos = sourcePos m1 <> sourcePos m2
-    , metaVars = metaVars m1 <> metaVars m2
-    }
-
-instance Monoid Metadata where
-  mempty = Metadata mempty mempty
 
 class HasMetadata t where
   -- | Traverse metadata from self, and children with specified depth.
@@ -112,6 +108,9 @@ foldMetadata1 = foldMapOf traverseMetadata1
 
 foldMetadata :: forall t m. Monoid m => HasMetadata t => (Metadata -> m) -> t -> m
 foldMetadata = foldMapOf traverseMetadata
+
+clearMetadata :: forall t. HasMetadata t => t -> t
+clearMetadata = over traverseMetadata1 mempty
 
 -- | Strengthen an `Apply` profunctor in to an `Applicative` profunctor
 apply :: Apply f => (a -> f b) -> a -> MaybeApply f b

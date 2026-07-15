@@ -1,0 +1,529 @@
+[
+    [
+        [
+            [
+                1,
+                1,
+                1,
+                8
+            ],
+            "./test/golden/surface/unit/shadow"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "define"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                9,
+                1,
+                10
+            ],
+            "./test/golden/surface/unit/shadow"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "T"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                11,
+                1,
+                13
+            ],
+            "./test/golden/surface/unit/shadow"
+        ],
+        {
+            "contents": "SAssignL",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                14,
+                1,
+                15
+            ],
+            "./test/golden/surface/unit/shadow"
+        ],
+        {
+            "contents": "SLambda",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                16,
+                1,
+                26
+            ],
+            "./test/golden/surface/unit/shadow"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                1,
+                                17,
+                                1,
+                                18
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                1,
+                                19,
+                                1,
+                                21
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                1,
+                                21,
+                                1,
+                                25
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                27,
+                1,
+                36
+            ],
+            "./test/golden/surface/unit/shadow"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                1,
+                                28,
+                                1,
+                                29
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                1,
+                                30,
+                                1,
+                                31
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                1,
+                                32,
+                                1,
+                                34
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                1,
+                                34,
+                                1,
+                                35
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                37,
+                1,
+                47
+            ],
+            "./test/golden/surface/unit/shadow"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                1,
+                                38,
+                                1,
+                                39
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                1,
+                                40,
+                                1,
+                                42
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                1,
+                                42,
+                                1,
+                                46
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                48,
+                1,
+                60
+            ],
+            "./test/golden/surface/unit/shadow"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                1,
+                                49,
+                                1,
+                                50
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                1,
+                                51,
+                                1,
+                                52
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                1,
+                                53,
+                                1,
+                                55
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                1,
+                                55,
+                                1,
+                                59
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "contents": 3,
+                                        "tag": "DBLevel"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                60,
+                1,
+                62
+            ],
+            "./test/golden/surface/unit/shadow"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                1,
+                62,
+                1,
+                63
+            ],
+            "./test/golden/surface/unit/shadow"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "T"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ]
+]

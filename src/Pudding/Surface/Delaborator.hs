@@ -22,7 +22,7 @@ import Data.Function ((&))
 import Data.Map (Map)
 import Data.Map qualified as M
 import Data.Text (Text)
-import GHC.Generics (Generic)
+import GHC.Generics (Generic, Generically(..))
 import Pudding.Types.Name (CanonicalName (..), Name (..))
 import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::), Fresh (Fresh))
 import Pudding.Types.Metadata
@@ -46,7 +46,6 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import Control.Applicative ((<|>))
 import Control.Applicative.Backwards (Backwards (forwards, Backwards))
-import Data.Monoid.Generic (GenericMonoid(..), GenericSemigroup(..))
 
 
 type Delab = RWS DelabR DelabW DelabS
@@ -60,8 +59,8 @@ data DelabW = DelabW
   { demand :: Set (Name, Level)
   }
   deriving (Eq, Ord, Show, Generic, NFData)
-  deriving Monoid via GenericMonoid DelabW
-  deriving Semigroup via GenericSemigroup DelabW
+  deriving Monoid via Generically DelabW
+  deriving Semigroup via Generically DelabW
 
 data DelabS = DelabS
   { fresh :: Fresh
@@ -208,7 +207,7 @@ delab = \case
       CSigma (pure (p, pure $ fromMaybe CPlaceholder b', Just ty')) body'
   -- TODO validate Plicit
   TApp _m p fun arg -> case p of
-    Explicit -> CApp <$> delab fun <*> delab arg
+    Explicit -> CApps <$> delab fun <*> (pure <$> delab arg)
     Implicit -> CSentence <$> do
       fun' <- delab fun
       arg' <- delab arg
@@ -280,7 +279,7 @@ wrap s e inner = juxt [ lit s, spaced inner, lit e ]
 
 printCST :: CST -> Printer
 printCST = \case
-  CApp f a -> spaced [printCST f, printCST a]
+  CApps f (a :| as) -> spaced (printCST f : fmap printCST (a : as))
   CLambda binders body -> printBindingForm "λ" binders body
   CPi     binders body -> printBindingForm "Π" binders body
   CSigma  binders body -> printBindingForm "Σ" binders body

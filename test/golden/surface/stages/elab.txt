@@ -1,0 +1,21 @@
+_ : (Type1 1)
+_ := (Lift (Type0 0))
+
+Id : (Π (_0 (Type0 0)) 
+  (Type0 0))
+Id := (λ (_0 (Type0 0)) 
+  _0)
+
+_ : (Type1 0)
+_ := (Lift (Id ($Void)))
+
+_ : (Π (_0 ($Void)) 
+  (Lift ($Void)))
+_ := (λ (_0 ($Void)) 
+  (quote _0))
+
+_ : (Π (_0 (Lift ($Void))) 
+  ($Void))
+_ := (λ (_0 (Lift (Id ($Void)))) 
+  (splice _0))
+
