@@ -165,7 +165,7 @@
                 1,
                 27,
                 1,
-                36
+                38
             ],
             "./test/golden/surface/unit/shadow"
         ],
@@ -212,6 +212,21 @@
                             "./test/golden/surface/unit/shadow"
                         ],
                         {
+                            "contents": "SConj",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                1,
+                                32,
+                                1,
+                                33
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
                             "contents": {
                                 "contents": [
                                     {
@@ -234,9 +249,9 @@
                         [
                             [
                                 1,
-                                32,
+                                34,
                                 1,
-                                34
+                                36
                             ],
                             "./test/golden/surface/unit/shadow"
                         ],
@@ -249,9 +264,9 @@
                         [
                             [
                                 1,
-                                34,
+                                36,
                                 1,
-                                35
+                                37
                             ],
                             "./test/golden/surface/unit/shadow"
                         ],
@@ -284,9 +299,9 @@
         [
             [
                 1,
-                37,
+                39,
                 1,
-                47
+                49
             ],
             "./test/golden/surface/unit/shadow"
         ],
@@ -297,9 +312,9 @@
                         [
                             [
                                 1,
-                                38,
+                                40,
                                 1,
-                                39
+                                41
                             ],
                             "./test/golden/surface/unit/shadow"
                         ],
@@ -326,9 +341,9 @@
                         [
                             [
                                 1,
-                                40,
+                                42,
                                 1,
-                                42
+                                44
                             ],
                             "./test/golden/surface/unit/shadow"
                         ],
@@ -341,9 +356,9 @@
                         [
                             [
                                 1,
-                                42,
+                                44,
                                 1,
-                                46
+                                48
                             ],
                             "./test/golden/surface/unit/shadow"
                         ],
@@ -364,44 +379,15 @@
         [
             [
                 1,
-                48,
+                50,
                 1,
-                60
+                64
             ],
             "./test/golden/surface/unit/shadow"
         ],
         {
             "contents": {
                 "contents": [
-                    [
-                        [
-                            [
-                                1,
-                                49,
-                                1,
-                                50
-                            ],
-                            "./test/golden/surface/unit/shadow"
-                        ],
-                        {
-                            "contents": {
-                                "contents": [
-                                    {
-                                        "contents": [
-                                            [],
-                                            "T"
-                                        ],
-                                        "tag": "PlainName"
-                                    },
-                                    {
-                                        "tag": "PlainVar"
-                                    }
-                                ],
-                                "tag": "VariableName"
-                            },
-                            "tag": "Content"
-                        }
-                    ],
                     [
                         [
                             [
@@ -437,7 +423,51 @@
                                 1,
                                 53,
                                 1,
-                                55
+                                54
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
+                            "contents": "SConj",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                1,
+                                55,
+                                1,
+                                56
+                            ],
+                            "./test/golden/surface/unit/shadow"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                1,
+                                57,
+                                1,
+                                59
                             ],
                             "./test/golden/surface/unit/shadow"
                         ],
@@ -450,9 +480,9 @@
                         [
                             [
                                 1,
-                                55,
+                                59,
                                 1,
-                                59
+                                63
                             ],
                             "./test/golden/surface/unit/shadow"
                         ],
@@ -486,9 +516,9 @@
         [
             [
                 1,
-                60,
+                64,
                 1,
-                62
+                66
             ],
             "./test/golden/surface/unit/shadow"
         ],
@@ -501,9 +531,9 @@
         [
             [
                 1,
-                62,
+                66,
                 1,
-                63
+                67
             ],
             "./test/golden/surface/unit/shadow"
         ],

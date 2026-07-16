@@ -8,23 +8,36 @@
 @data IsTrue : Π (b : Bool). Type
 | proveTrue : IsTrue true
 
-@define Fun := λ (I : Type) (O : Type). Π(_ : I). O
+@data Nat
+| zero
+| succ : Fun Nat Nat
+
+@data IsEven : Π(n : Nat). Type
+| zeroIsEven : IsEven zero
+| succsuccIsEven : Π(n : Nat). Fun (IsEven n) (IsEven (succ (succ n)))
+
+@define Fun := λ (I & O : Type). Π(_ : I). O
 @define Not := λ (P : Type). Fun P Void
 
 @data Maybe : Π (T : Type). Type
 | nothing (T : Type) : Maybe T
-| just (T : Type) (v : T) : Maybe T
+| just (T : Type) : Fun T (Maybe T)
 
 @data IsJust : Π (T : Type) (mv : Maybe T). Type
 | proveJust (T : Type) (v : T) : IsJust T (just T v)
 
-@data Either : Π (L : Type) (R : Type). Type
-| left (L : Type) (R : Type) (v : L)
-| right (L : Type) (R : Type) (v : R)
+@normalize proveJust Unit unit
+
+@data Either : Π (L & R : Type). Type
+| left (L & R : Type) (v : L) : Either L R
+| right (L & R : Type) (v : R) : Either L R
+
+@data Tuple : Π (L & R : Type). Type
+| tuple (L & R : Type) (l : L) (r : R) : Tuple L R
 
 @data Decide (P : Type)
 | proven (P : Type) (proof : P) : Decide P
 | disproven (P : Type) (disproof : Not P) : Decide P
 
-@data Eq : Π (T : Type) (t1 : T) (t2 : T). Type
-| refl (T : Type) (y : T) : Eq T y y
+@data Eq : Π (T : Type) (t0 & t1 : T). Type
+| refl (T : Type) (t : T) : Eq T t t

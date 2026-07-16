@@ -697,6 +697,1027 @@
                 11,
                 1,
                 11,
+                6
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "data"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                11,
+                7,
+                11,
+                10
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Nat"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                1,
+                12,
+                2
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                12,
+                3,
+                12,
+                7
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "zero"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                1,
+                13,
+                2
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                3,
+                13,
+                7
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "succ"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                8,
+                13,
+                10
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                10,
+                13,
+                13
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Fun"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                14,
+                13,
+                17
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Nat"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                18,
+                13,
+                21
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Nat"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                1,
+                15,
+                6
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "data"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                7,
+                15,
+                13
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "IsEven"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                14,
+                15,
+                16
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                16,
+                15,
+                17
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPi",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                17,
+                15,
+                26
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                15,
+                                18,
+                                15,
+                                19
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "n"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                15,
+                                20,
+                                15,
+                                22
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                15,
+                                22,
+                                15,
+                                25
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "Nat"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                26,
+                15,
+                28
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                15,
+                28,
+                15,
+                32
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "tag": "Univ"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                16,
+                1,
+                16,
+                2
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                16,
+                3,
+                16,
+                13
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "zeroIsEven"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                16,
+                14,
+                16,
+                16
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                16,
+                16,
+                16,
+                22
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "IsEven"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                16,
+                23,
+                16,
+                27
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "zero"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                17,
+                1,
+                17,
+                2
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                17,
+                3,
+                17,
+                17
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "succsuccIsEven"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                17,
+                18,
+                17,
+                20
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                17,
+                20,
+                17,
+                21
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPi",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                17,
+                21,
+                17,
+                30
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                17,
+                                22,
+                                17,
+                                23
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "n"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                17,
+                                24,
+                                17,
+                                26
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                17,
+                                26,
+                                17,
+                                29
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "Nat"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                17,
+                30,
+                17,
+                32
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                17,
+                32,
+                17,
+                35
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Fun"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                17,
+                36,
+                17,
+                46
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                17,
+                                37,
+                                17,
+                                43
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "IsEven"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                17,
+                                44,
+                                17,
+                                45
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "n"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                17,
+                47,
+                17,
+                71
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                17,
+                                48,
+                                17,
+                                54
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "IsEven"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                17,
+                                55,
+                                17,
+                                70
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    [
+                                        [
+                                            [
+                                                17,
+                                                56,
+                                                17,
+                                                60
+                                            ],
+                                            "./test/golden/surface/datatypes"
+                                        ],
+                                        {
+                                            "contents": {
+                                                "contents": [
+                                                    {
+                                                        "contents": [
+                                                            [],
+                                                            "succ"
+                                                        ],
+                                                        "tag": "PlainName"
+                                                    },
+                                                    {
+                                                        "tag": "PlainVar"
+                                                    }
+                                                ],
+                                                "tag": "VariableName"
+                                            },
+                                            "tag": "Content"
+                                        }
+                                    ],
+                                    [
+                                        [
+                                            [
+                                                17,
+                                                61,
+                                                17,
+                                                69
+                                            ],
+                                            "./test/golden/surface/datatypes"
+                                        ],
+                                        {
+                                            "contents": {
+                                                "contents": [
+                                                    [
+                                                        [
+                                                            [
+                                                                17,
+                                                                62,
+                                                                17,
+                                                                66
+                                                            ],
+                                                            "./test/golden/surface/datatypes"
+                                                        ],
+                                                        {
+                                                            "contents": {
+                                                                "contents": [
+                                                                    {
+                                                                        "contents": [
+                                                                            [],
+                                                                            "succ"
+                                                                        ],
+                                                                        "tag": "PlainName"
+                                                                    },
+                                                                    {
+                                                                        "tag": "PlainVar"
+                                                                    }
+                                                                ],
+                                                                "tag": "VariableName"
+                                                            },
+                                                            "tag": "Content"
+                                                        }
+                                                    ],
+                                                    [
+                                                        [
+                                                            [
+                                                                17,
+                                                                67,
+                                                                17,
+                                                                68
+                                                            ],
+                                                            "./test/golden/surface/datatypes"
+                                                        ],
+                                                        {
+                                                            "contents": {
+                                                                "contents": [
+                                                                    {
+                                                                        "contents": [
+                                                                            [],
+                                                                            "n"
+                                                                        ],
+                                                                        "tag": "PlainName"
+                                                                    },
+                                                                    {
+                                                                        "tag": "PlainVar"
+                                                                    }
+                                                                ],
+                                                                "tag": "VariableName"
+                                                            },
+                                                            "tag": "Content"
+                                                        }
+                                                    ]
+                                                ],
+                                                "tag": "Parens"
+                                            },
+                                            "tag": "Content"
+                                        }
+                                    ]
+                                ],
+                                "tag": "Parens"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                19,
+                1,
+                19,
                 8
             ],
             "./test/golden/surface/datatypes"
@@ -715,9 +1736,9 @@
     [
         [
             [
-                11,
+                19,
                 9,
-                11,
+                19,
                 12
             ],
             "./test/golden/surface/datatypes"
@@ -744,9 +1765,9 @@
     [
         [
             [
-                11,
+                19,
                 13,
-                11,
+                19,
                 15
             ],
             "./test/golden/surface/datatypes"
@@ -759,9 +1780,9 @@
     [
         [
             [
-                11,
+                19,
                 16,
-                11,
+                19,
                 17
             ],
             "./test/golden/surface/datatypes"
@@ -774,10 +1795,10 @@
     [
         [
             [
-                11,
+                19,
                 18,
-                11,
-                28
+                19,
+                32
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -787,9 +1808,9 @@
                     [
                         [
                             [
-                                11,
                                 19,
-                                11,
+                                19,
+                                19,
                                 20
                             ],
                             "./test/golden/surface/datatypes"
@@ -816,61 +1837,25 @@
                     [
                         [
                             [
-                                11,
+                                19,
                                 21,
-                                11,
-                                23
+                                19,
+                                22
                             ],
                             "./test/golden/surface/datatypes"
                         ],
                         {
-                            "contents": "SAscribe",
+                            "contents": "SConj",
                             "tag": "Syntax"
                         }
                     ],
                     [
                         [
                             [
-                                11,
+                                19,
                                 23,
-                                11,
-                                27
-                            ],
-                            "./test/golden/surface/datatypes"
-                        ],
-                        {
-                            "contents": {
-                                "tag": "Univ"
-                            },
-                            "tag": "Content"
-                        }
-                    ]
-                ],
-                "tag": "Parens"
-            },
-            "tag": "Content"
-        }
-    ],
-    [
-        [
-            [
-                11,
-                29,
-                11,
-                39
-            ],
-            "./test/golden/surface/datatypes"
-        ],
-        {
-            "contents": {
-                "contents": [
-                    [
-                        [
-                            [
-                                11,
-                                30,
-                                11,
-                                31
+                                19,
+                                24
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -896,10 +1881,10 @@
                     [
                         [
                             [
-                                11,
-                                32,
-                                11,
-                                34
+                                19,
+                                25,
+                                19,
+                                27
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -911,10 +1896,10 @@
                     [
                         [
                             [
-                                11,
-                                34,
-                                11,
-                                38
+                                19,
+                                27,
+                                19,
+                                31
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -934,10 +1919,10 @@
     [
         [
             [
-                11,
-                39,
-                11,
-                41
+                19,
+                32,
+                19,
+                34
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -949,10 +1934,10 @@
     [
         [
             [
-                11,
-                41,
-                11,
-                42
+                19,
+                34,
+                19,
+                35
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -964,10 +1949,10 @@
     [
         [
             [
-                11,
-                42,
-                11,
-                49
+                19,
+                35,
+                19,
+                42
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -977,10 +1962,10 @@
                     [
                         [
                             [
-                                11,
-                                43,
-                                11,
-                                44
+                                19,
+                                36,
+                                19,
+                                37
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -992,10 +1977,10 @@
                     [
                         [
                             [
-                                11,
-                                45,
-                                11,
-                                47
+                                19,
+                                38,
+                                19,
+                                40
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -1007,10 +1992,10 @@
                     [
                         [
                             [
-                                11,
-                                47,
-                                11,
-                                48
+                                19,
+                                40,
+                                19,
+                                41
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -1042,10 +2027,10 @@
     [
         [
             [
-                11,
-                49,
-                11,
-                51
+                19,
+                42,
+                19,
+                44
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -1057,10 +2042,10 @@
     [
         [
             [
-                11,
-                51,
-                11,
-                52
+                19,
+                44,
+                19,
+                45
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -1086,9 +2071,9 @@
     [
         [
             [
-                12,
+                20,
                 1,
-                12,
+                20,
                 8
             ],
             "./test/golden/surface/datatypes"
@@ -1107,9 +2092,9 @@
     [
         [
             [
-                12,
+                20,
                 9,
-                12,
+                20,
                 12
             ],
             "./test/golden/surface/datatypes"
@@ -1136,9 +2121,9 @@
     [
         [
             [
-                12,
+                20,
                 13,
-                12,
+                20,
                 15
             ],
             "./test/golden/surface/datatypes"
@@ -1151,9 +2136,9 @@
     [
         [
             [
-                12,
+                20,
                 16,
-                12,
+                20,
                 17
             ],
             "./test/golden/surface/datatypes"
@@ -1166,9 +2151,9 @@
     [
         [
             [
-                12,
+                20,
                 18,
-                12,
+                20,
                 28
             ],
             "./test/golden/surface/datatypes"
@@ -1179,9 +2164,9 @@
                     [
                         [
                             [
-                                12,
+                                20,
                                 19,
-                                12,
+                                20,
                                 20
                             ],
                             "./test/golden/surface/datatypes"
@@ -1208,9 +2193,9 @@
                     [
                         [
                             [
-                                12,
+                                20,
                                 21,
-                                12,
+                                20,
                                 23
                             ],
                             "./test/golden/surface/datatypes"
@@ -1223,9 +2208,9 @@
                     [
                         [
                             [
-                                12,
+                                20,
                                 23,
-                                12,
+                                20,
                                 27
                             ],
                             "./test/golden/surface/datatypes"
@@ -1246,9 +2231,9 @@
     [
         [
             [
-                12,
+                20,
                 28,
-                12,
+                20,
                 30
             ],
             "./test/golden/surface/datatypes"
@@ -1261,9 +2246,9 @@
     [
         [
             [
-                12,
+                20,
                 30,
-                12,
+                20,
                 33
             ],
             "./test/golden/surface/datatypes"
@@ -1290,9 +2275,9 @@
     [
         [
             [
-                12,
+                20,
                 34,
-                12,
+                20,
                 35
             ],
             "./test/golden/surface/datatypes"
@@ -1319,9 +2304,9 @@
     [
         [
             [
-                12,
+                20,
                 36,
-                12,
+                20,
                 40
             ],
             "./test/golden/surface/datatypes"
@@ -1348,9 +2333,9 @@
     [
         [
             [
-                14,
+                22,
                 1,
-                14,
+                22,
                 6
             ],
             "./test/golden/surface/datatypes"
@@ -1369,9 +2354,9 @@
     [
         [
             [
-                14,
+                22,
                 7,
-                14,
+                22,
                 12
             ],
             "./test/golden/surface/datatypes"
@@ -1398,9 +2383,9 @@
     [
         [
             [
-                14,
+                22,
                 13,
-                14,
+                22,
                 15
             ],
             "./test/golden/surface/datatypes"
@@ -1413,9 +2398,9 @@
     [
         [
             [
-                14,
+                22,
                 15,
-                14,
+                22,
                 16
             ],
             "./test/golden/surface/datatypes"
@@ -1428,9 +2413,9 @@
     [
         [
             [
-                14,
+                22,
                 17,
-                14,
+                22,
                 27
             ],
             "./test/golden/surface/datatypes"
@@ -1441,9 +2426,9 @@
                     [
                         [
                             [
-                                14,
+                                22,
                                 18,
-                                14,
+                                22,
                                 19
                             ],
                             "./test/golden/surface/datatypes"
@@ -1470,9 +2455,9 @@
                     [
                         [
                             [
-                                14,
+                                22,
                                 20,
-                                14,
+                                22,
                                 22
                             ],
                             "./test/golden/surface/datatypes"
@@ -1485,9 +2470,9 @@
                     [
                         [
                             [
-                                14,
                                 22,
-                                14,
+                                22,
+                                22,
                                 26
                             ],
                             "./test/golden/surface/datatypes"
@@ -1508,9 +2493,9 @@
     [
         [
             [
-                14,
+                22,
                 27,
-                14,
+                22,
                 29
             ],
             "./test/golden/surface/datatypes"
@@ -1523,9 +2508,9 @@
     [
         [
             [
-                14,
+                22,
                 29,
-                14,
+                22,
                 33
             ],
             "./test/golden/surface/datatypes"
@@ -1540,9 +2525,9 @@
     [
         [
             [
-                15,
+                23,
                 1,
-                15,
+                23,
                 2
             ],
             "./test/golden/surface/datatypes"
@@ -1555,9 +2540,9 @@
     [
         [
             [
-                15,
+                23,
                 3,
-                15,
+                23,
                 10
             ],
             "./test/golden/surface/datatypes"
@@ -1584,9 +2569,9 @@
     [
         [
             [
-                15,
+                23,
                 11,
-                15,
+                23,
                 21
             ],
             "./test/golden/surface/datatypes"
@@ -1597,9 +2582,9 @@
                     [
                         [
                             [
-                                15,
+                                23,
                                 12,
-                                15,
+                                23,
                                 13
                             ],
                             "./test/golden/surface/datatypes"
@@ -1626,9 +2611,9 @@
                     [
                         [
                             [
-                                15,
+                                23,
                                 14,
-                                15,
+                                23,
                                 16
                             ],
                             "./test/golden/surface/datatypes"
@@ -1641,9 +2626,9 @@
                     [
                         [
                             [
-                                15,
+                                23,
                                 16,
-                                15,
+                                23,
                                 20
                             ],
                             "./test/golden/surface/datatypes"
@@ -1664,9 +2649,9 @@
     [
         [
             [
-                15,
+                23,
                 22,
-                15,
+                23,
                 24
             ],
             "./test/golden/surface/datatypes"
@@ -1679,9 +2664,9 @@
     [
         [
             [
-                15,
+                23,
                 24,
-                15,
+                23,
                 29
             ],
             "./test/golden/surface/datatypes"
@@ -1708,9 +2693,9 @@
     [
         [
             [
-                15,
+                23,
                 30,
-                15,
+                23,
                 31
             ],
             "./test/golden/surface/datatypes"
@@ -1737,9 +2722,9 @@
     [
         [
             [
-                16,
+                24,
                 1,
-                16,
+                24,
                 2
             ],
             "./test/golden/surface/datatypes"
@@ -1752,9 +2737,9 @@
     [
         [
             [
-                16,
+                24,
                 3,
-                16,
+                24,
                 7
             ],
             "./test/golden/surface/datatypes"
@@ -1781,9 +2766,9 @@
     [
         [
             [
-                16,
+                24,
                 8,
-                16,
+                24,
                 18
             ],
             "./test/golden/surface/datatypes"
@@ -1794,9 +2779,9 @@
                     [
                         [
                             [
-                                16,
+                                24,
                                 9,
-                                16,
+                                24,
                                 10
                             ],
                             "./test/golden/surface/datatypes"
@@ -1823,9 +2808,9 @@
                     [
                         [
                             [
-                                16,
+                                24,
                                 11,
-                                16,
+                                24,
                                 13
                             ],
                             "./test/golden/surface/datatypes"
@@ -1838,9 +2823,9 @@
                     [
                         [
                             [
-                                16,
+                                24,
                                 13,
-                                16,
+                                24,
                                 17
                             ],
                             "./test/golden/surface/datatypes"
@@ -1861,10 +2846,83 @@
     [
         [
             [
-                16,
+                24,
                 19,
-                16,
+                24,
+                21
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                24,
+                21,
+                24,
+                24
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Fun"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                24,
+                25,
+                24,
                 26
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "T"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                24,
+                27,
+                24,
+                36
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -1874,10 +2932,10 @@
                     [
                         [
                             [
-                                16,
-                                20,
-                                16,
-                                21
+                                24,
+                                28,
+                                24,
+                                33
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -1887,7 +2945,7 @@
                                     {
                                         "contents": [
                                             [],
-                                            "v"
+                                            "Maybe"
                                         ],
                                         "tag": "PlainName"
                                     },
@@ -1903,25 +2961,10 @@
                     [
                         [
                             [
-                                16,
-                                22,
-                                16,
-                                24
-                            ],
-                            "./test/golden/surface/datatypes"
-                        ],
-                        {
-                            "contents": "SAscribe",
-                            "tag": "Syntax"
-                        }
-                    ],
-                    [
-                        [
-                            [
-                                16,
                                 24,
-                                16,
-                                25
+                                34,
+                                24,
+                                35
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -1953,82 +2996,9 @@
     [
         [
             [
-                16,
-                27,
-                16,
-                29
-            ],
-            "./test/golden/surface/datatypes"
-        ],
-        {
-            "contents": "SAscribe",
-            "tag": "Syntax"
-        }
-    ],
-    [
-        [
-            [
-                16,
-                29,
-                16,
-                34
-            ],
-            "./test/golden/surface/datatypes"
-        ],
-        {
-            "contents": {
-                "contents": [
-                    {
-                        "contents": [
-                            [],
-                            "Maybe"
-                        ],
-                        "tag": "PlainName"
-                    },
-                    {
-                        "tag": "PlainVar"
-                    }
-                ],
-                "tag": "VariableName"
-            },
-            "tag": "Content"
-        }
-    ],
-    [
-        [
-            [
-                16,
-                35,
-                16,
-                36
-            ],
-            "./test/golden/surface/datatypes"
-        ],
-        {
-            "contents": {
-                "contents": [
-                    {
-                        "contents": [
-                            [],
-                            "T"
-                        ],
-                        "tag": "PlainName"
-                    },
-                    {
-                        "tag": "PlainVar"
-                    }
-                ],
-                "tag": "VariableName"
-            },
-            "tag": "Content"
-        }
-    ],
-    [
-        [
-            [
-                18,
+                26,
                 1,
-                18,
+                26,
                 6
             ],
             "./test/golden/surface/datatypes"
@@ -2047,9 +3017,9 @@
     [
         [
             [
-                18,
+                26,
                 7,
-                18,
+                26,
                 13
             ],
             "./test/golden/surface/datatypes"
@@ -2076,9 +3046,9 @@
     [
         [
             [
-                18,
+                26,
                 14,
-                18,
+                26,
                 16
             ],
             "./test/golden/surface/datatypes"
@@ -2091,9 +3061,9 @@
     [
         [
             [
-                18,
+                26,
                 16,
-                18,
+                26,
                 17
             ],
             "./test/golden/surface/datatypes"
@@ -2106,9 +3076,9 @@
     [
         [
             [
+                26,
                 18,
-                18,
-                18,
+                26,
                 28
             ],
             "./test/golden/surface/datatypes"
@@ -2119,9 +3089,9 @@
                     [
                         [
                             [
-                                18,
+                                26,
                                 19,
-                                18,
+                                26,
                                 20
                             ],
                             "./test/golden/surface/datatypes"
@@ -2148,9 +3118,9 @@
                     [
                         [
                             [
-                                18,
+                                26,
                                 21,
-                                18,
+                                26,
                                 23
                             ],
                             "./test/golden/surface/datatypes"
@@ -2163,9 +3133,9 @@
                     [
                         [
                             [
-                                18,
+                                26,
                                 23,
-                                18,
+                                26,
                                 27
                             ],
                             "./test/golden/surface/datatypes"
@@ -2186,9 +3156,9 @@
     [
         [
             [
-                18,
+                26,
                 29,
-                18,
+                26,
                 43
             ],
             "./test/golden/surface/datatypes"
@@ -2199,9 +3169,9 @@
                     [
                         [
                             [
-                                18,
+                                26,
                                 30,
-                                18,
+                                26,
                                 32
                             ],
                             "./test/golden/surface/datatypes"
@@ -2228,9 +3198,9 @@
                     [
                         [
                             [
-                                18,
+                                26,
                                 33,
-                                18,
+                                26,
                                 35
                             ],
                             "./test/golden/surface/datatypes"
@@ -2243,9 +3213,9 @@
                     [
                         [
                             [
-                                18,
+                                26,
                                 35,
-                                18,
+                                26,
                                 40
                             ],
                             "./test/golden/surface/datatypes"
@@ -2272,9 +3242,9 @@
                     [
                         [
                             [
-                                18,
+                                26,
                                 41,
-                                18,
+                                26,
                                 42
                             ],
                             "./test/golden/surface/datatypes"
@@ -2307,9 +3277,9 @@
     [
         [
             [
-                18,
+                26,
                 43,
-                18,
+                26,
                 45
             ],
             "./test/golden/surface/datatypes"
@@ -2322,9 +3292,9 @@
     [
         [
             [
-                18,
+                26,
                 45,
-                18,
+                26,
                 49
             ],
             "./test/golden/surface/datatypes"
@@ -2339,9 +3309,9 @@
     [
         [
             [
-                19,
+                27,
                 1,
-                19,
+                27,
                 2
             ],
             "./test/golden/surface/datatypes"
@@ -2354,9 +3324,9 @@
     [
         [
             [
-                19,
+                27,
                 3,
-                19,
+                27,
                 12
             ],
             "./test/golden/surface/datatypes"
@@ -2383,9 +3353,9 @@
     [
         [
             [
-                19,
+                27,
                 13,
-                19,
+                27,
                 23
             ],
             "./test/golden/surface/datatypes"
@@ -2396,9 +3366,9 @@
                     [
                         [
                             [
-                                19,
+                                27,
                                 14,
-                                19,
+                                27,
                                 15
                             ],
                             "./test/golden/surface/datatypes"
@@ -2425,9 +3395,9 @@
                     [
                         [
                             [
-                                19,
+                                27,
                                 16,
-                                19,
+                                27,
                                 18
                             ],
                             "./test/golden/surface/datatypes"
@@ -2440,9 +3410,9 @@
                     [
                         [
                             [
-                                19,
+                                27,
                                 18,
-                                19,
+                                27,
                                 22
                             ],
                             "./test/golden/surface/datatypes"
@@ -2463,9 +3433,9 @@
     [
         [
             [
-                19,
+                27,
                 24,
-                19,
+                27,
                 31
             ],
             "./test/golden/surface/datatypes"
@@ -2476,9 +3446,9 @@
                     [
                         [
                             [
-                                19,
+                                27,
                                 25,
-                                19,
+                                27,
                                 26
                             ],
                             "./test/golden/surface/datatypes"
@@ -2505,9 +3475,9 @@
                     [
                         [
                             [
-                                19,
                                 27,
-                                19,
+                                27,
+                                27,
                                 29
                             ],
                             "./test/golden/surface/datatypes"
@@ -2520,9 +3490,9 @@
                     [
                         [
                             [
-                                19,
+                                27,
                                 29,
-                                19,
+                                27,
                                 30
                             ],
                             "./test/golden/surface/datatypes"
@@ -2555,9 +3525,9 @@
     [
         [
             [
-                19,
+                27,
                 32,
-                19,
+                27,
                 34
             ],
             "./test/golden/surface/datatypes"
@@ -2570,9 +3540,9 @@
     [
         [
             [
-                19,
+                27,
                 34,
-                19,
+                27,
                 40
             ],
             "./test/golden/surface/datatypes"
@@ -2599,9 +3569,9 @@
     [
         [
             [
-                19,
+                27,
                 41,
-                19,
+                27,
                 42
             ],
             "./test/golden/surface/datatypes"
@@ -2628,9 +3598,9 @@
     [
         [
             [
-                19,
+                27,
                 43,
-                19,
+                27,
                 53
             ],
             "./test/golden/surface/datatypes"
@@ -2641,9 +3611,9 @@
                     [
                         [
                             [
-                                19,
+                                27,
                                 44,
-                                19,
+                                27,
                                 48
                             ],
                             "./test/golden/surface/datatypes"
@@ -2670,9 +3640,9 @@
                     [
                         [
                             [
-                                19,
+                                27,
                                 49,
-                                19,
+                                27,
                                 50
                             ],
                             "./test/golden/surface/datatypes"
@@ -2699,9 +3669,9 @@
                     [
                         [
                             [
-                                19,
+                                27,
                                 51,
-                                19,
+                                27,
                                 52
                             ],
                             "./test/golden/surface/datatypes"
@@ -2734,9 +3704,117 @@
     [
         [
             [
-                21,
+                29,
                 1,
-                21,
+                29,
+                11
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "normalize"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                12,
+                29,
+                21
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "proveJust"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                22,
+                29,
+                26
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Unit"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                29,
+                27,
+                29,
+                31
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "unit"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                31,
+                1,
+                31,
                 6
             ],
             "./test/golden/surface/datatypes"
@@ -2755,9 +3833,9 @@
     [
         [
             [
-                21,
+                31,
                 7,
-                21,
+                31,
                 13
             ],
             "./test/golden/surface/datatypes"
@@ -2784,9 +3862,9 @@
     [
         [
             [
-                21,
+                31,
                 14,
-                21,
+                31,
                 16
             ],
             "./test/golden/surface/datatypes"
@@ -2799,9 +3877,9 @@
     [
         [
             [
-                21,
+                31,
                 16,
-                21,
+                31,
                 17
             ],
             "./test/golden/surface/datatypes"
@@ -2814,10 +3892,10 @@
     [
         [
             [
-                21,
+                31,
                 18,
-                21,
-                28
+                31,
+                32
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -2827,9 +3905,9 @@
                     [
                         [
                             [
-                                21,
+                                31,
                                 19,
-                                21,
+                                31,
                                 20
                             ],
                             "./test/golden/surface/datatypes"
@@ -2856,61 +3934,25 @@
                     [
                         [
                             [
+                                31,
                                 21,
-                                21,
-                                21,
-                                23
+                                31,
+                                22
                             ],
                             "./test/golden/surface/datatypes"
                         ],
                         {
-                            "contents": "SAscribe",
+                            "contents": "SConj",
                             "tag": "Syntax"
                         }
                     ],
                     [
                         [
                             [
-                                21,
+                                31,
                                 23,
-                                21,
-                                27
-                            ],
-                            "./test/golden/surface/datatypes"
-                        ],
-                        {
-                            "contents": {
-                                "tag": "Univ"
-                            },
-                            "tag": "Content"
-                        }
-                    ]
-                ],
-                "tag": "Parens"
-            },
-            "tag": "Content"
-        }
-    ],
-    [
-        [
-            [
-                21,
-                29,
-                21,
-                39
-            ],
-            "./test/golden/surface/datatypes"
-        ],
-        {
-            "contents": {
-                "contents": [
-                    [
-                        [
-                            [
-                                21,
-                                30,
-                                21,
-                                31
+                                31,
+                                24
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -2936,10 +3978,10 @@
                     [
                         [
                             [
-                                21,
-                                32,
-                                21,
-                                34
+                                31,
+                                25,
+                                31,
+                                27
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -2951,10 +3993,10 @@
                     [
                         [
                             [
-                                21,
-                                34,
-                                21,
-                                38
+                                31,
+                                27,
+                                31,
+                                31
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -2974,10 +4016,10 @@
     [
         [
             [
-                21,
-                39,
-                21,
-                41
+                31,
+                32,
+                31,
+                34
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -2989,10 +4031,10 @@
     [
         [
             [
-                21,
-                41,
-                21,
-                45
+                31,
+                34,
+                31,
+                38
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -3006,9 +4048,9 @@
     [
         [
             [
-                22,
+                32,
                 1,
-                22,
+                32,
                 2
             ],
             "./test/golden/surface/datatypes"
@@ -3021,9 +4063,9 @@
     [
         [
             [
-                22,
+                32,
                 3,
-                22,
+                32,
                 7
             ],
             "./test/golden/surface/datatypes"
@@ -3050,10 +4092,10 @@
     [
         [
             [
-                22,
+                32,
                 8,
-                22,
-                18
+                32,
+                22
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -3063,9 +4105,9 @@
                     [
                         [
                             [
-                                22,
+                                32,
                                 9,
-                                22,
+                                32,
                                 10
                             ],
                             "./test/golden/surface/datatypes"
@@ -3092,61 +4134,25 @@
                     [
                         [
                             [
-                                22,
+                                32,
                                 11,
-                                22,
-                                13
+                                32,
+                                12
                             ],
                             "./test/golden/surface/datatypes"
                         ],
                         {
-                            "contents": "SAscribe",
+                            "contents": "SConj",
                             "tag": "Syntax"
                         }
                     ],
                     [
                         [
                             [
-                                22,
+                                32,
                                 13,
-                                22,
-                                17
-                            ],
-                            "./test/golden/surface/datatypes"
-                        ],
-                        {
-                            "contents": {
-                                "tag": "Univ"
-                            },
-                            "tag": "Content"
-                        }
-                    ]
-                ],
-                "tag": "Parens"
-            },
-            "tag": "Content"
-        }
-    ],
-    [
-        [
-            [
-                22,
-                19,
-                22,
-                29
-            ],
-            "./test/golden/surface/datatypes"
-        ],
-        {
-            "contents": {
-                "contents": [
-                    [
-                        [
-                            [
-                                22,
-                                20,
-                                22,
-                                21
+                                32,
+                                14
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -3172,10 +4178,10 @@
                     [
                         [
                             [
-                                22,
-                                22,
-                                22,
-                                24
+                                32,
+                                15,
+                                32,
+                                17
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -3187,10 +4193,10 @@
                     [
                         [
                             [
-                                22,
-                                24,
-                                22,
-                                28
+                                32,
+                                17,
+                                32,
+                                21
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -3210,10 +4216,10 @@
     [
         [
             [
-                22,
-                30,
-                22,
-                37
+                32,
+                23,
+                32,
+                30
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -3223,10 +4229,10 @@
                     [
                         [
                             [
-                                22,
-                                31,
-                                22,
-                                32
+                                32,
+                                24,
+                                32,
+                                25
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -3252,10 +4258,10 @@
                     [
                         [
                             [
-                                22,
-                                33,
-                                22,
-                                35
+                                32,
+                                26,
+                                32,
+                                28
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -3267,10 +4273,10 @@
                     [
                         [
                             [
-                                22,
-                                35,
-                                22,
-                                36
+                                32,
+                                28,
+                                32,
+                                29
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -3302,9 +4308,111 @@
     [
         [
             [
-                23,
+                32,
+                31,
+                32,
+                33
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                32,
+                33,
+                32,
+                39
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Either"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                32,
+                40,
+                32,
+                41
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "L"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                32,
+                42,
+                32,
+                43
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "R"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                33,
                 1,
-                23,
+                33,
                 2
             ],
             "./test/golden/surface/datatypes"
@@ -3317,9 +4425,9 @@
     [
         [
             [
-                23,
+                33,
                 3,
-                23,
+                33,
                 8
             ],
             "./test/golden/surface/datatypes"
@@ -3346,10 +4454,10 @@
     [
         [
             [
-                23,
+                33,
                 9,
-                23,
-                19
+                33,
+                23
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -3359,9 +4467,9 @@
                     [
                         [
                             [
-                                23,
+                                33,
                                 10,
-                                23,
+                                33,
                                 11
                             ],
                             "./test/golden/surface/datatypes"
@@ -3388,61 +4496,25 @@
                     [
                         [
                             [
-                                23,
+                                33,
                                 12,
-                                23,
-                                14
+                                33,
+                                13
                             ],
                             "./test/golden/surface/datatypes"
                         ],
                         {
-                            "contents": "SAscribe",
+                            "contents": "SConj",
                             "tag": "Syntax"
                         }
                     ],
                     [
                         [
                             [
-                                23,
+                                33,
                                 14,
-                                23,
-                                18
-                            ],
-                            "./test/golden/surface/datatypes"
-                        ],
-                        {
-                            "contents": {
-                                "tag": "Univ"
-                            },
-                            "tag": "Content"
-                        }
-                    ]
-                ],
-                "tag": "Parens"
-            },
-            "tag": "Content"
-        }
-    ],
-    [
-        [
-            [
-                23,
-                20,
-                23,
-                30
-            ],
-            "./test/golden/surface/datatypes"
-        ],
-        {
-            "contents": {
-                "contents": [
-                    [
-                        [
-                            [
-                                23,
-                                21,
-                                23,
-                                22
+                                33,
+                                15
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -3468,10 +4540,10 @@
                     [
                         [
                             [
-                                23,
-                                23,
-                                23,
-                                25
+                                33,
+                                16,
+                                33,
+                                18
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -3483,10 +4555,10 @@
                     [
                         [
                             [
-                                23,
-                                25,
-                                23,
-                                29
+                                33,
+                                18,
+                                33,
+                                22
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -3506,10 +4578,10 @@
     [
         [
             [
-                23,
-                31,
-                23,
-                38
+                33,
+                24,
+                33,
+                31
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -3519,10 +4591,10 @@
                     [
                         [
                             [
-                                23,
-                                32,
-                                23,
-                                33
+                                33,
+                                25,
+                                33,
+                                26
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -3548,10 +4620,10 @@
                     [
                         [
                             [
-                                23,
-                                34,
-                                23,
-                                36
+                                33,
+                                27,
+                                33,
+                                29
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -3563,10 +4635,10 @@
                     [
                         [
                             [
-                                23,
-                                36,
-                                23,
-                                37
+                                33,
+                                29,
+                                33,
+                                30
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -3598,9 +4670,111 @@
     [
         [
             [
-                25,
+                33,
+                32,
+                33,
+                34
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                33,
+                34,
+                33,
+                40
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Either"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                33,
+                41,
+                33,
+                42
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "L"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                33,
+                43,
+                33,
+                44
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "R"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                35,
                 1,
-                25,
+                35,
                 6
             ],
             "./test/golden/surface/datatypes"
@@ -3619,9 +4793,699 @@
     [
         [
             [
-                25,
+                35,
                 7,
-                25,
+                35,
+                12
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Tuple"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                35,
+                13,
+                35,
+                15
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                35,
+                15,
+                35,
+                16
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPi",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                35,
+                17,
+                35,
+                31
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                35,
+                                18,
+                                35,
+                                19
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "L"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                35,
+                                20,
+                                35,
+                                21
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SConj",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                35,
+                                22,
+                                35,
+                                23
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "R"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                35,
+                                24,
+                                35,
+                                26
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                35,
+                                26,
+                                35,
+                                30
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                35,
+                31,
+                35,
+                33
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                35,
+                33,
+                35,
+                37
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "tag": "Univ"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                36,
+                1,
+                36,
+                2
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SDisj",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                36,
+                3,
+                36,
+                8
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "tuple"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                36,
+                9,
+                36,
+                23
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                36,
+                                10,
+                                36,
+                                11
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "L"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                36,
+                                12,
+                                36,
+                                13
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SConj",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                36,
+                                14,
+                                36,
+                                15
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "R"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                36,
+                                16,
+                                36,
+                                18
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                36,
+                                18,
+                                36,
+                                22
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                36,
+                24,
+                36,
+                31
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                36,
+                                25,
+                                36,
+                                26
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "l"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                36,
+                                27,
+                                36,
+                                29
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                36,
+                                29,
+                                36,
+                                30
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "L"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                36,
+                32,
+                36,
+                39
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                36,
+                                33,
+                                36,
+                                34
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "r"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                36,
+                                35,
+                                36,
+                                37
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                36,
+                                37,
+                                36,
+                                38
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "R"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                36,
+                40,
+                36,
+                42
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                36,
+                42,
+                36,
+                47
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "Tuple"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                36,
+                48,
+                36,
+                49
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "L"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                36,
+                50,
+                36,
+                51
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "R"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                38,
+                1,
+                38,
+                6
+            ],
+            "./test/golden/surface/datatypes"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "data"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                38,
+                7,
+                38,
                 13
             ],
             "./test/golden/surface/datatypes"
@@ -3648,9 +5512,9 @@
     [
         [
             [
-                25,
+                38,
                 14,
-                25,
+                38,
                 24
             ],
             "./test/golden/surface/datatypes"
@@ -3661,9 +5525,9 @@
                     [
                         [
                             [
-                                25,
+                                38,
                                 15,
-                                25,
+                                38,
                                 16
                             ],
                             "./test/golden/surface/datatypes"
@@ -3690,9 +5554,9 @@
                     [
                         [
                             [
-                                25,
+                                38,
                                 17,
-                                25,
+                                38,
                                 19
                             ],
                             "./test/golden/surface/datatypes"
@@ -3705,9 +5569,9 @@
                     [
                         [
                             [
-                                25,
+                                38,
                                 19,
-                                25,
+                                38,
                                 23
                             ],
                             "./test/golden/surface/datatypes"
@@ -3728,9 +5592,9 @@
     [
         [
             [
-                26,
+                39,
                 1,
-                26,
+                39,
                 2
             ],
             "./test/golden/surface/datatypes"
@@ -3743,9 +5607,9 @@
     [
         [
             [
-                26,
+                39,
                 3,
-                26,
+                39,
                 9
             ],
             "./test/golden/surface/datatypes"
@@ -3772,9 +5636,9 @@
     [
         [
             [
-                26,
+                39,
                 10,
-                26,
+                39,
                 20
             ],
             "./test/golden/surface/datatypes"
@@ -3785,9 +5649,9 @@
                     [
                         [
                             [
-                                26,
+                                39,
                                 11,
-                                26,
+                                39,
                                 12
                             ],
                             "./test/golden/surface/datatypes"
@@ -3814,9 +5678,9 @@
                     [
                         [
                             [
-                                26,
+                                39,
                                 13,
-                                26,
+                                39,
                                 15
                             ],
                             "./test/golden/surface/datatypes"
@@ -3829,9 +5693,9 @@
                     [
                         [
                             [
-                                26,
+                                39,
                                 15,
-                                26,
+                                39,
                                 19
                             ],
                             "./test/golden/surface/datatypes"
@@ -3852,9 +5716,9 @@
     [
         [
             [
-                26,
+                39,
                 21,
-                26,
+                39,
                 32
             ],
             "./test/golden/surface/datatypes"
@@ -3865,9 +5729,9 @@
                     [
                         [
                             [
-                                26,
+                                39,
                                 22,
-                                26,
+                                39,
                                 27
                             ],
                             "./test/golden/surface/datatypes"
@@ -3894,9 +5758,9 @@
                     [
                         [
                             [
-                                26,
+                                39,
                                 28,
-                                26,
+                                39,
                                 30
                             ],
                             "./test/golden/surface/datatypes"
@@ -3909,9 +5773,9 @@
                     [
                         [
                             [
-                                26,
+                                39,
                                 30,
-                                26,
+                                39,
                                 31
                             ],
                             "./test/golden/surface/datatypes"
@@ -3944,9 +5808,9 @@
     [
         [
             [
-                26,
+                39,
                 33,
-                26,
+                39,
                 35
             ],
             "./test/golden/surface/datatypes"
@@ -3959,9 +5823,9 @@
     [
         [
             [
-                26,
+                39,
                 35,
-                26,
+                39,
                 41
             ],
             "./test/golden/surface/datatypes"
@@ -3988,9 +5852,9 @@
     [
         [
             [
-                26,
+                39,
                 42,
-                26,
+                39,
                 43
             ],
             "./test/golden/surface/datatypes"
@@ -4017,9 +5881,9 @@
     [
         [
             [
-                27,
+                40,
                 1,
-                27,
+                40,
                 2
             ],
             "./test/golden/surface/datatypes"
@@ -4032,9 +5896,9 @@
     [
         [
             [
-                27,
+                40,
                 3,
-                27,
+                40,
                 12
             ],
             "./test/golden/surface/datatypes"
@@ -4061,9 +5925,9 @@
     [
         [
             [
-                27,
+                40,
                 13,
-                27,
+                40,
                 23
             ],
             "./test/golden/surface/datatypes"
@@ -4074,9 +5938,9 @@
                     [
                         [
                             [
-                                27,
+                                40,
                                 14,
-                                27,
+                                40,
                                 15
                             ],
                             "./test/golden/surface/datatypes"
@@ -4103,9 +5967,9 @@
                     [
                         [
                             [
-                                27,
+                                40,
                                 16,
-                                27,
+                                40,
                                 18
                             ],
                             "./test/golden/surface/datatypes"
@@ -4118,9 +5982,9 @@
                     [
                         [
                             [
-                                27,
+                                40,
                                 18,
-                                27,
+                                40,
                                 22
                             ],
                             "./test/golden/surface/datatypes"
@@ -4141,9 +6005,9 @@
     [
         [
             [
-                27,
+                40,
                 24,
-                27,
+                40,
                 42
             ],
             "./test/golden/surface/datatypes"
@@ -4154,9 +6018,9 @@
                     [
                         [
                             [
-                                27,
+                                40,
                                 25,
-                                27,
+                                40,
                                 33
                             ],
                             "./test/golden/surface/datatypes"
@@ -4183,9 +6047,9 @@
                     [
                         [
                             [
-                                27,
+                                40,
                                 34,
-                                27,
+                                40,
                                 36
                             ],
                             "./test/golden/surface/datatypes"
@@ -4198,9 +6062,9 @@
                     [
                         [
                             [
-                                27,
+                                40,
                                 36,
-                                27,
+                                40,
                                 39
                             ],
                             "./test/golden/surface/datatypes"
@@ -4227,9 +6091,9 @@
                     [
                         [
                             [
-                                27,
                                 40,
-                                27,
+                                40,
+                                40,
                                 41
                             ],
                             "./test/golden/surface/datatypes"
@@ -4262,9 +6126,9 @@
     [
         [
             [
-                27,
+                40,
                 43,
-                27,
+                40,
                 45
             ],
             "./test/golden/surface/datatypes"
@@ -4277,9 +6141,9 @@
     [
         [
             [
-                27,
+                40,
                 45,
-                27,
+                40,
                 51
             ],
             "./test/golden/surface/datatypes"
@@ -4306,9 +6170,9 @@
     [
         [
             [
-                27,
+                40,
                 52,
-                27,
+                40,
                 53
             ],
             "./test/golden/surface/datatypes"
@@ -4335,9 +6199,9 @@
     [
         [
             [
-                29,
+                42,
                 1,
-                29,
+                42,
                 6
             ],
             "./test/golden/surface/datatypes"
@@ -4356,9 +6220,9 @@
     [
         [
             [
-                29,
+                42,
                 7,
-                29,
+                42,
                 9
             ],
             "./test/golden/surface/datatypes"
@@ -4385,9 +6249,9 @@
     [
         [
             [
-                29,
+                42,
                 10,
-                29,
+                42,
                 12
             ],
             "./test/golden/surface/datatypes"
@@ -4400,9 +6264,9 @@
     [
         [
             [
-                29,
+                42,
                 12,
-                29,
+                42,
                 13
             ],
             "./test/golden/surface/datatypes"
@@ -4415,9 +6279,9 @@
     [
         [
             [
-                29,
+                42,
                 14,
-                29,
+                42,
                 24
             ],
             "./test/golden/surface/datatypes"
@@ -4428,9 +6292,9 @@
                     [
                         [
                             [
-                                29,
+                                42,
                                 15,
-                                29,
+                                42,
                                 16
                             ],
                             "./test/golden/surface/datatypes"
@@ -4457,9 +6321,9 @@
                     [
                         [
                             [
-                                29,
+                                42,
                                 17,
-                                29,
+                                42,
                                 19
                             ],
                             "./test/golden/surface/datatypes"
@@ -4472,9 +6336,9 @@
                     [
                         [
                             [
-                                29,
+                                42,
                                 19,
-                                29,
+                                42,
                                 23
                             ],
                             "./test/golden/surface/datatypes"
@@ -4495,10 +6359,10 @@
     [
         [
             [
-                29,
+                42,
                 25,
-                29,
-                33
+                42,
+                38
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -4508,10 +6372,54 @@
                     [
                         [
                             [
-                                29,
+                                42,
                                 26,
-                                29,
+                                42,
                                 28
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "t0"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                42,
+                                29,
+                                42,
+                                30
+                            ],
+                            "./test/golden/surface/datatypes"
+                        ],
+                        {
+                            "contents": "SConj",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                42,
+                                31,
+                                42,
+                                33
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -4537,10 +6445,10 @@
                     [
                         [
                             [
-                                29,
-                                29,
-                                29,
-                                31
+                                42,
+                                34,
+                                42,
+                                36
                             ],
                             "./test/golden/surface/datatypes"
                         ],
@@ -4552,57 +6460,9 @@
                     [
                         [
                             [
-                                29,
-                                31,
-                                29,
-                                32
-                            ],
-                            "./test/golden/surface/datatypes"
-                        ],
-                        {
-                            "contents": {
-                                "contents": [
-                                    {
-                                        "contents": [
-                                            [],
-                                            "T"
-                                        ],
-                                        "tag": "PlainName"
-                                    },
-                                    {
-                                        "tag": "PlainVar"
-                                    }
-                                ],
-                                "tag": "VariableName"
-                            },
-                            "tag": "Content"
-                        }
-                    ]
-                ],
-                "tag": "Parens"
-            },
-            "tag": "Content"
-        }
-    ],
-    [
-        [
-            [
-                29,
-                34,
-                29,
-                42
-            ],
-            "./test/golden/surface/datatypes"
-        ],
-        {
-            "contents": {
-                "contents": [
-                    [
-                        [
-                            [
-                                29,
-                                35,
-                                29,
+                                42,
+                                36,
+                                42,
                                 37
                             ],
                             "./test/golden/surface/datatypes"
@@ -4613,50 +6473,6 @@
                                     {
                                         "contents": [
                                             [],
-                                            "t2"
-                                        ],
-                                        "tag": "PlainName"
-                                    },
-                                    {
-                                        "tag": "PlainVar"
-                                    }
-                                ],
-                                "tag": "VariableName"
-                            },
-                            "tag": "Content"
-                        }
-                    ],
-                    [
-                        [
-                            [
-                                29,
-                                38,
-                                29,
-                                40
-                            ],
-                            "./test/golden/surface/datatypes"
-                        ],
-                        {
-                            "contents": "SAscribe",
-                            "tag": "Syntax"
-                        }
-                    ],
-                    [
-                        [
-                            [
-                                29,
-                                40,
-                                29,
-                                41
-                            ],
-                            "./test/golden/surface/datatypes"
-                        ],
-                        {
-                            "contents": {
-                                "contents": [
-                                    {
-                                        "contents": [
-                                            [],
                                             "T"
                                         ],
                                         "tag": "PlainName"
@@ -4679,10 +6495,10 @@
     [
         [
             [
-                29,
                 42,
-                29,
-                44
+                38,
+                42,
+                40
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -4694,10 +6510,10 @@
     [
         [
             [
-                29,
-                44,
-                29,
-                48
+                42,
+                40,
+                42,
+                44
             ],
             "./test/golden/surface/datatypes"
         ],
@@ -4711,9 +6527,9 @@
     [
         [
             [
-                30,
+                43,
                 1,
-                30,
+                43,
                 2
             ],
             "./test/golden/surface/datatypes"
@@ -4726,9 +6542,9 @@
     [
         [
             [
-                30,
+                43,
                 3,
-                30,
+                43,
                 7
             ],
             "./test/golden/surface/datatypes"
@@ -4755,9 +6571,9 @@
     [
         [
             [
-                30,
+                43,
                 8,
-                30,
+                43,
                 18
             ],
             "./test/golden/surface/datatypes"
@@ -4768,9 +6584,9 @@
                     [
                         [
                             [
-                                30,
+                                43,
                                 9,
-                                30,
+                                43,
                                 10
                             ],
                             "./test/golden/surface/datatypes"
@@ -4797,9 +6613,9 @@
                     [
                         [
                             [
-                                30,
+                                43,
                                 11,
-                                30,
+                                43,
                                 13
                             ],
                             "./test/golden/surface/datatypes"
@@ -4812,9 +6628,9 @@
                     [
                         [
                             [
-                                30,
+                                43,
                                 13,
-                                30,
+                                43,
                                 17
                             ],
                             "./test/golden/surface/datatypes"
@@ -4835,9 +6651,9 @@
     [
         [
             [
-                30,
+                43,
                 19,
-                30,
+                43,
                 26
             ],
             "./test/golden/surface/datatypes"
@@ -4848,9 +6664,9 @@
                     [
                         [
                             [
-                                30,
+                                43,
                                 20,
-                                30,
+                                43,
                                 21
                             ],
                             "./test/golden/surface/datatypes"
@@ -4861,7 +6677,7 @@
                                     {
                                         "contents": [
                                             [],
-                                            "y"
+                                            "t"
                                         ],
                                         "tag": "PlainName"
                                     },
@@ -4877,9 +6693,9 @@
                     [
                         [
                             [
-                                30,
+                                43,
                                 22,
-                                30,
+                                43,
                                 24
                             ],
                             "./test/golden/surface/datatypes"
@@ -4892,9 +6708,9 @@
                     [
                         [
                             [
-                                30,
+                                43,
                                 24,
-                                30,
+                                43,
                                 25
                             ],
                             "./test/golden/surface/datatypes"
@@ -4927,9 +6743,9 @@
     [
         [
             [
-                30,
+                43,
                 27,
-                30,
+                43,
                 29
             ],
             "./test/golden/surface/datatypes"
@@ -4942,9 +6758,9 @@
     [
         [
             [
-                30,
+                43,
                 29,
-                30,
+                43,
                 31
             ],
             "./test/golden/surface/datatypes"
@@ -4971,9 +6787,9 @@
     [
         [
             [
-                30,
+                43,
                 32,
-                30,
+                43,
                 33
             ],
             "./test/golden/surface/datatypes"
@@ -5000,9 +6816,9 @@
     [
         [
             [
-                30,
+                43,
                 34,
-                30,
+                43,
                 35
             ],
             "./test/golden/surface/datatypes"
@@ -5013,7 +6829,7 @@
                     {
                         "contents": [
                             [],
-                            "y"
+                            "t"
                         ],
                         "tag": "PlainName"
                     },
@@ -5029,9 +6845,9 @@
     [
         [
             [
-                30,
+                43,
                 36,
-                30,
+                43,
                 37
             ],
             "./test/golden/surface/datatypes"
@@ -5042,7 +6858,7 @@
                     {
                         "contents": [
                             [],
-                            "y"
+                            "t"
                         ],
                         "tag": "PlainName"
                     },

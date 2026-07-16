@@ -83,7 +83,6 @@ common defaults
         deepseq >=1.5.1.0 && <1.6,
         directory,
         filepath,
-        generic-monoid >=0.1.0.1 && < 0.2.0.0,
         lens >=5.3.4 && <5.4,
         lifted-async >=0.10.2.7 && <0.11,
         lifted-base >=0.2.3.12 && <0.3,
@@ -126,6 +125,7 @@ library
         Pudding.Types.Metadata,
         Pudding.Types.Stack,
         Pudding.Types.Monads,
+        Pudding.Types.Monads.Verifier,
         Pudding.Types.Monads.Prover,
         Pudding.Core.Types,
         Pudding.Core.Eval,
@@ -143,6 +143,7 @@ library
         Pudding.Surface.Elaborator,
         Pudding.Surface.Delaborator,
         Pudding.Surface.Web,
+        Data.FastEq,
         Data.Show.Reshow,
         Data.Conserve,
 

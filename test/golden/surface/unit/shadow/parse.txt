@@ -1,4 +1,5 @@
 [ DDefine
+  []
   ( Just ( PlainName [] "T" ), PlainVar )
   Nothing
   ( CLambda

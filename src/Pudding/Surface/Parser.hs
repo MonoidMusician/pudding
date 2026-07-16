@@ -5,7 +5,7 @@ module Pudding.Surface.Parser where
 import Prelude hiding (lex)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Text (Text)
-import GHC.Generics (Generic)
+import GHC.Generics (Generic, Generically(..))
 import Control.DeepSeq (NFData)
 
 import qualified Pudding.Surface.Lexer as L
@@ -13,6 +13,7 @@ import Pudding.Types.Base (type (@::), Plicit (..))
 import Pudding.Surface.Lexer (VariableDB)
 import Data.Traversable (for)
 import qualified Data.Aeson as AE
+import Data.Monoid (Any)
 
 -- | A binder currently is just the same CST type since it shares overlap
 -- | and parsing.
@@ -41,9 +42,20 @@ data Decl
     !(Maybe CST) -- must evaluate to a Pi type resulting in Type
     -- Constructors
     ![(L.VariableName, "arguments" @:: [CBinderGroup], "result" @:: Maybe CST)]
-  | DDefine L.VariableName !(Maybe CST) !CST
+  | DDefine ![RawAttribute] L.VariableName !(Maybe CST) !CST
   | DModule ![Text] ![CBinderGroup] ![Decl]
   deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
+
+data RawAttribute = RawAttribute ![Text] !Text ![L.Token]
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
+
+data Attributes = Attributes
+  { aNormalize :: Any
+  }
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
+  deriving Monoid via Generically Attributes
+  deriving Semigroup via Generically Attributes
+
 
 data PartOfSpeech t
   = SOp L.OpForm
@@ -57,6 +69,7 @@ data CST
   | CPi     !(NonEmpty CBinderGroup) !CST
   | CSigma  !(NonEmpty CBinderGroup) !CST
   | CLet    ![(CBinder, "ty" @:: Maybe CST, "tm" @:: CST)]    !CST
+  | CPair !CST !CST
 
   | CSentence !(NonEmpty (PartOfSpeech CST))
 

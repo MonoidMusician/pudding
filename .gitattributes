@@ -1,2 +1,2 @@
 Happy.info linguist-generated=true gitlab-generated -diff
-
+/test/golden/surface/**/*.json linguist-generated=true gitlab-generated -diff

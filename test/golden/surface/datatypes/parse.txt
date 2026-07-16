@@ -42,20 +42,101 @@
       )
     )
   ]
+, DDataType
+  ( Just ( PlainName [] "Nat" ), PlainVar )
+  []
+  []
+  Nothing
+  [ ( ( Just ( PlainName [] "zero" ), PlainVar ), [], Nothing )
+  , ( ( Just ( PlainName [] "succ" ), PlainVar )
+    , []
+    , Just
+      ( CApps
+        ( CVar ( Just ( PlainName [] "Fun" ) ) PlainVar )
+        ( CVar
+          ( Just ( PlainName [] "Nat" ) )
+          PlainVar
+          :|
+          [ CVar ( Just ( PlainName [] "Nat" ) ) PlainVar ]
+        )
+      )
+    )
+  ]
+, DDataType
+  ( Just ( PlainName [] "IsEven" ), PlainVar )
+  []
+  []
+  ( Just
+    ( CPi
+      ( ( Explicit
+        , CVar ( Just ( PlainName [] "n" ) ) PlainVar :| []
+        , Just ( CVar ( Just ( PlainName [] "Nat" ) ) PlainVar )
+        )
+        :|
+        []
+      )
+      CUniv
+    )
+  )
+  [ ( ( Just ( PlainName [] "zeroIsEven" ), PlainVar )
+    , []
+    , Just
+      ( CApps
+        ( CVar ( Just ( PlainName [] "IsEven" ) ) PlainVar )
+        ( CVar ( Just ( PlainName [] "zero" ) ) PlainVar :| [] )
+      )
+    )
+  , ( ( Just ( PlainName [] "succsuccIsEven" ), PlainVar )
+    , []
+    , Just
+      ( CPi
+        ( ( Explicit
+          , CVar ( Just ( PlainName [] "n" ) ) PlainVar :| []
+          , Just ( CVar ( Just ( PlainName [] "Nat" ) ) PlainVar )
+          )
+          :|
+          []
+        )
+        ( CApps
+          ( CVar ( Just ( PlainName [] "Fun" ) ) PlainVar )
+          ( CApps
+            ( CVar ( Just ( PlainName [] "IsEven" ) ) PlainVar )
+            ( CVar ( Just ( PlainName [] "n" ) ) PlainVar :| [] )
+            :|
+            [ CApps
+              ( CVar ( Just ( PlainName [] "IsEven" ) ) PlainVar )
+              ( CApps
+                ( CVar ( Just ( PlainName [] "succ" ) ) PlainVar )
+                ( CApps
+                  ( CVar ( Just ( PlainName [] "succ" ) ) PlainVar )
+                  ( CVar ( Just ( PlainName [] "n" ) ) PlainVar :| [] )
+                  :|
+                  []
+                )
+                :|
+                []
+              )
+            ]
+          )
+        )
+      )
+    )
+  ]
 , DDefine
+  []
   ( Just ( PlainName [] "Fun" ), PlainVar )
   Nothing
   ( CLambda
     ( ( Explicit
-      , CVar ( Just ( PlainName [] "I" ) ) PlainVar :| []
+      , CVar
+        ( Just ( PlainName [] "I" ) )
+        PlainVar
+        :|
+        [ CVar ( Just ( PlainName [] "O" ) ) PlainVar ]
       , Just CUniv
       )
       :|
-      [ ( Explicit
-        , CVar ( Just ( PlainName [] "O" ) ) PlainVar :| []
-        , Just CUniv
-        )
-      ]
+      []
     )
     ( CPi
       ( ( Explicit
@@ -69,6 +150,7 @@
     )
   )
 , DDefine
+  []
   ( Just ( PlainName [] "Not" ), PlainVar )
   Nothing
   ( CLambda
@@ -122,15 +204,19 @@
         , CVar ( Just ( PlainName [] "T" ) ) PlainVar :| []
         , Just CUniv
         )
-      , ( Explicit
-        , CVar ( Just ( PlainName [] "v" ) ) PlainVar :| []
-        , Just ( CVar ( Just ( PlainName [] "T" ) ) PlainVar )
-        )
       ]
     , Just
       ( CApps
-        ( CVar ( Just ( PlainName [] "Maybe" ) ) PlainVar )
-        ( CVar ( Just ( PlainName [] "T" ) ) PlainVar :| [] )
+        ( CVar ( Just ( PlainName [] "Fun" ) ) PlainVar )
+        ( CVar
+          ( Just ( PlainName [] "T" ) )
+          PlainVar
+          :|
+          [ CApps
+            ( CVar ( Just ( PlainName [] "Maybe" ) ) PlainVar )
+            ( CVar ( Just ( PlainName [] "T" ) ) PlainVar :| [] )
+          ]
+        )
       )
     )
   ]
@@ -188,6 +274,19 @@
       )
     )
   ]
+, DDefine
+  [ RawAttribute [] "normalize" [] ]
+  ( Nothing, PlainVar )
+  Nothing
+  ( CApps
+    ( CVar ( Just ( PlainName [] "proveJust" ) ) PlainVar )
+    ( CVar
+      ( Just ( PlainName [] "Unit" ) )
+      PlainVar
+      :|
+      [ CVar ( Just ( PlainName [] "unit" ) ) PlainVar ]
+    )
+  )
 , DDataType
   ( Just ( PlainName [] "Either" ), PlainVar )
   []
@@ -195,26 +294,26 @@
   ( Just
     ( CPi
       ( ( Explicit
-        , CVar ( Just ( PlainName [] "L" ) ) PlainVar :| []
+        , CVar
+          ( Just ( PlainName [] "L" ) )
+          PlainVar
+          :|
+          [ CVar ( Just ( PlainName [] "R" ) ) PlainVar ]
         , Just CUniv
         )
         :|
-        [ ( Explicit
-          , CVar ( Just ( PlainName [] "R" ) ) PlainVar :| []
-          , Just CUniv
-          )
-        ]
+        []
       )
       CUniv
     )
   )
   [ ( ( Just ( PlainName [] "left" ), PlainVar )
     , [ ( Explicit
-        , CVar ( Just ( PlainName [] "L" ) ) PlainVar :| []
-        , Just CUniv
-        )
-      , ( Explicit
-        , CVar ( Just ( PlainName [] "R" ) ) PlainVar :| []
+        , CVar
+          ( Just ( PlainName [] "L" ) )
+          PlainVar
+          :|
+          [ CVar ( Just ( PlainName [] "R" ) ) PlainVar ]
         , Just CUniv
         )
       , ( Explicit
@@ -222,15 +321,24 @@
         , Just ( CVar ( Just ( PlainName [] "L" ) ) PlainVar )
         )
       ]
-    , Nothing
+    , Just
+      ( CApps
+        ( CVar ( Just ( PlainName [] "Either" ) ) PlainVar )
+        ( CVar
+          ( Just ( PlainName [] "L" ) )
+          PlainVar
+          :|
+          [ CVar ( Just ( PlainName [] "R" ) ) PlainVar ]
+        )
+      )
     )
   , ( ( Just ( PlainName [] "right" ), PlainVar )
     , [ ( Explicit
-        , CVar ( Just ( PlainName [] "L" ) ) PlainVar :| []
-        , Just CUniv
-        )
-      , ( Explicit
-        , CVar ( Just ( PlainName [] "R" ) ) PlainVar :| []
+        , CVar
+          ( Just ( PlainName [] "L" ) )
+          PlainVar
+          :|
+          [ CVar ( Just ( PlainName [] "R" ) ) PlainVar ]
         , Just CUniv
         )
       , ( Explicit
@@ -238,7 +346,66 @@
         , Just ( CVar ( Just ( PlainName [] "R" ) ) PlainVar )
         )
       ]
-    , Nothing
+    , Just
+      ( CApps
+        ( CVar ( Just ( PlainName [] "Either" ) ) PlainVar )
+        ( CVar
+          ( Just ( PlainName [] "L" ) )
+          PlainVar
+          :|
+          [ CVar ( Just ( PlainName [] "R" ) ) PlainVar ]
+        )
+      )
+    )
+  ]
+, DDataType
+  ( Just ( PlainName [] "Tuple" ), PlainVar )
+  []
+  []
+  ( Just
+    ( CPi
+      ( ( Explicit
+        , CVar
+          ( Just ( PlainName [] "L" ) )
+          PlainVar
+          :|
+          [ CVar ( Just ( PlainName [] "R" ) ) PlainVar ]
+        , Just CUniv
+        )
+        :|
+        []
+      )
+      CUniv
+    )
+  )
+  [ ( ( Just ( PlainName [] "tuple" ), PlainVar )
+    , [ ( Explicit
+        , CVar
+          ( Just ( PlainName [] "L" ) )
+          PlainVar
+          :|
+          [ CVar ( Just ( PlainName [] "R" ) ) PlainVar ]
+        , Just CUniv
+        )
+      , ( Explicit
+        , CVar ( Just ( PlainName [] "l" ) ) PlainVar :| []
+        , Just ( CVar ( Just ( PlainName [] "L" ) ) PlainVar )
+        )
+      , ( Explicit
+        , CVar ( Just ( PlainName [] "r" ) ) PlainVar :| []
+        , Just ( CVar ( Just ( PlainName [] "R" ) ) PlainVar )
+        )
+      ]
+    , Just
+      ( CApps
+        ( CVar ( Just ( PlainName [] "Tuple" ) ) PlainVar )
+        ( CVar
+          ( Just ( PlainName [] "L" ) )
+          PlainVar
+          :|
+          [ CVar ( Just ( PlainName [] "R" ) ) PlainVar ]
+        )
+      )
     )
   ]
 , DDataType
@@ -296,11 +463,11 @@
         )
         :|
         [ ( Explicit
-          , CVar ( Just ( PlainName [] "t1" ) ) PlainVar :| []
-          , Just ( CVar ( Just ( PlainName [] "T" ) ) PlainVar )
-          )
-        , ( Explicit
-          , CVar ( Just ( PlainName [] "t2" ) ) PlainVar :| []
+          , CVar
+            ( Just ( PlainName [] "t0" ) )
+            PlainVar
+            :|
+            [ CVar ( Just ( PlainName [] "t1" ) ) PlainVar ]
           , Just ( CVar ( Just ( PlainName [] "T" ) ) PlainVar )
           )
         ]
@@ -314,7 +481,7 @@
         , Just CUniv
         )
       , ( Explicit
-        , CVar ( Just ( PlainName [] "y" ) ) PlainVar :| []
+        , CVar ( Just ( PlainName [] "t" ) ) PlainVar :| []
         , Just ( CVar ( Just ( PlainName [] "T" ) ) PlainVar )
         )
       ]
@@ -325,8 +492,8 @@
           ( Just ( PlainName [] "T" ) )
           PlainVar
           :|
-          [ CVar ( Just ( PlainName [] "y" ) ) PlainVar
-          , CVar ( Just ( PlainName [] "y" ) ) PlainVar
+          [ CVar ( Just ( PlainName [] "t" ) ) PlainVar
+          , CVar ( Just ( PlainName [] "t" ) ) PlainVar
           ]
         )
       )

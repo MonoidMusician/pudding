@@ -29,7 +29,9 @@ import Data.Maybe (fromMaybe)
 %name parseExpr expr
 %name parseExprInParens exprInParens
 %name parseRecordInBraces recordInBraces
-%name parseBinderInner binderInner
+%name parseBindersInner bindersInner
+%name parseBindersImplicit bindersImplicit
+%name parseNamedPatternInner namedPatternInner
 %name parseImplicits implicits
 %name parseDecl decl
 %name parseDecls decls
@@ -60,6 +62,8 @@ import Data.Maybe (fromMaybe)
   '@module' { Token _ (Content (Command _ "module")) }
   '@define' { Token _ (Content (Command _ "define")) }
   '@example' { Token _ (Content (Command _ "example")) }
+  '@evaluate' { Token _ (Content (Command _ "evaluate")) }
+  '@normalize' { Token _ (Content (Command _ "normalize")) }
 
   '$q[...]' { Token _ (Content (Splote _ "q" _)) }
   '$s[...]' { Token _ (Content (Splote _ "s" _)) }
@@ -101,8 +105,11 @@ expr :: { CST }
 -- Type ascriptions are lowest precedence / bind weakest
 exprAscribe :: { CST }
   -- %shift here disambiguates `\(X : Type). X : Type`
-  : exprSentence %shift { $1 }
-  | exprSentence ':' exprAscribe { CAscribe $1 $3 }
+  : exprNoAscribe %shift { $1 }
+  | exprNoAscribe ':' exprAscribe { CAscribe $1 $3 }
+
+exprNoAscribe :: { CST }
+  : exprSentence { $1 }
 
 -- A sentence is a sequence of operators and function applications
 exprSentence :: { CST }
@@ -143,6 +150,7 @@ exprAtom :: { CST }
   | Braces {% parseRecordInBraces $1 }
   | var { $1 }
   | num { $1 }
+  | '_' { CPlaceholder }
   | 'Type' { CUniv }
   | ModuleName { CMod $1 }
   | '$q[...]' {% fmap CQuote  case $1 of Token _ (Content (Splote _ _ ts)) -> parseExprInParens ts }
@@ -151,6 +159,7 @@ exprAtom :: { CST }
 -- Parse an expression inside parens
 exprInParens :: { CST }
   : expr { $1 }
+  | expr ',' exprInParens { CPair $1 $3 }
   -- for patterns
   | expr ':=' expr { CAssign $1 $3 }
 
@@ -176,18 +185,33 @@ num :: { CST }
 
 -- A list of binders
 binders :: { NonEmpty CBinderGroup }
-  : some(binder) { $1 }
+  : some(binder) { join $1 }
 
-binder :: { CBinderGroup }
-  : varOrNot { (Explicit, pure $1, Nothing) }
-  | Parens {% parseBinderInner $1 <&> \(vs, t) -> (Explicit, vs, t) }
-  | Braces {% parseBinderInner $1 <&> \(vs, t) -> (Implicit, vs, t) }
+binder :: { NonEmpty CBinderGroup }
+  : varOrNot { pure (Explicit, pure $1, Nothing) }
+  | Parens {% parseBindersInner $1 <&> fmap \(vs, t) -> (Explicit, vs, t) }
+  | Implicits {% parseBindersImplicit $1 <&> fmap \(vs, t) -> (Implicit, vs, t) }
+
+bindersInner :: { NonEmpty (NonEmpty CBinder, Maybe CST) }
+  : binderInner { pure $1 }
 
 binderInner :: { (NonEmpty CBinder, Maybe CST) }
-  : some(varOrNot) { ($1, Nothing) }
-  | some(varOrNot) ':' expr { ($1, Just $3) }
+  : someSep(exprNoAscribe, '&') { ($1, Nothing) }
+  | someSep(exprNoAscribe, '&') ':' expr { ($1, Just $3) }
 
+bindersImplicit :: { NonEmpty (NonEmpty CBinder, Maybe CST) }
+  : commas1(namedBinder) { $1 }
 
+namedBinder :: { (NonEmpty CBinder, Maybe CST) }
+  : someSep(namedPattern, '&') { ($1, Nothing) }
+  | someSep(namedPattern, '&') ':' expr { ($1, Just $3) }
+
+namedPattern :: { CBinder }
+  : var { $1 }
+  | Parens {% parseNamedPatternInner $1 }
+
+namedPatternInner :: { CBinder }
+  : var ':=' expr { CAssign $1 $3 }
 
 ------
 
@@ -197,28 +221,30 @@ decl :: { Decl }
   | '@data' datatype { $2 }
   | '@define' definition { $2 }
   -- | definition { $1 }
-  | '@example' expr { DDefine (Nothing, PlainVar) Nothing $2 }
+  | '@example' expr { DDefine [] (Nothing, PlainVar) Nothing $2 }
+  | '@evaluate' expr { DDefine [RawAttribute [] "normalize" []] (Nothing, PlainVar) Nothing $2 }
+  | '@normalize' expr { DDefine [RawAttribute [] "normalize" []] (Nothing, PlainVar) Nothing $2 }
 
 decls :: { [Decl] }
   : many(decl) { $1 }
 
 datatype :: { Decl }
   : VariableName many(binder) ':' expr many(datatypeCase) opt('.')
-    { DDataType $1 $2 [] (Just $4) $5 }
+    { DDataType $1 (NE.toList =<< $2) [] (Just $4) $5 }
   | VariableName many(binder) many(datatypeCase) opt('.')
-    { DDataType $1 $2 [] Nothing $3 }
+    { DDataType $1 (NE.toList =<< $2) [] Nothing $3 }
 
 datatypeCase :: { (VariableName, "arguments" @:: [CBinderGroup], "result" @:: Maybe CST) }
   : '|' VariableName many(binder) ':' expr
-    { ($2, $3, Just $5) }
+    { ($2, NE.toList =<< $3, Just $5) }
   | '|' VariableName many(binder)
-    { ($2, $3, Nothing) }
+    { ($2, NE.toList =<< $3, Nothing) }
 
 definition :: { Decl }
-  : VariableName ':' expr ':=' expr { DDefine $1 (Just $3) $5 }
-  | VariableName ':=' expr { DDefine $1 Nothing $3 }
-  | '_' ':' expr ':=' expr { DDefine (Nothing, PlainVar) (Just $3) $5 }
-  | '_' ':=' expr { DDefine (Nothing, PlainVar) Nothing $3 }
+  : VariableName ':' expr ':=' expr { DDefine [] $1 (Just $3) $5 }
+  | VariableName ':=' expr { DDefine [] $1 Nothing $3 }
+  | '_' ':' expr ':=' expr { DDefine [] (Nothing, PlainVar) (Just $3) $5 }
+  | '_' ':=' expr { DDefine [] (Nothing, PlainVar) Nothing $3 }
 
 ------
 

@@ -52,6 +52,9 @@ bound _ f (Scoped term) (PS i depth) = f term (PS i (depth + 1))
 formatCore :: Style -> Term -> Text
 formatCore style term = format style $ printCore term (PS 0 Nil)
 
+formatCoreFrom :: Style -> Int -> Term -> Text
+formatCoreFrom style depth term = format style $ printCore term (PS 0 depth)
+
 formatCoreWithSpan :: Style -> Term -> Text
 formatCoreWithSpan style term = format style $ withSpan printCore term (PS 0 Nil)
 

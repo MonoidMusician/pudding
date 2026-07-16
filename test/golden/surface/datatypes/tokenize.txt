@@ -31,12 +31,68 @@
 , SAscribe
 , VariableName ( Just ( PlainName [] "IsTrue" ) ) PlainVar
 , VariableName ( Just ( PlainName [] "true" ) ) PlainVar
+, Command [] "data"
+, VariableName ( Just ( PlainName [] "Nat" ) ) PlainVar
+, SDisj
+, VariableName ( Just ( PlainName [] "zero" ) ) PlainVar
+, SDisj
+, VariableName ( Just ( PlainName [] "succ" ) ) PlainVar
+, SAscribe
+, VariableName ( Just ( PlainName [] "Fun" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "Nat" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "Nat" ) ) PlainVar
+, Command [] "data"
+, VariableName ( Just ( PlainName [] "IsEven" ) ) PlainVar
+, SAscribe
+, SPi
+, Parens
+  [ VariableName ( Just ( PlainName [] "n" ) ) PlainVar
+  , SAscribe
+  , VariableName ( Just ( PlainName [] "Nat" ) ) PlainVar
+  ]
+, SPeriod
+, Univ
+, SDisj
+, VariableName ( Just ( PlainName [] "zeroIsEven" ) ) PlainVar
+, SAscribe
+, VariableName ( Just ( PlainName [] "IsEven" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "zero" ) ) PlainVar
+, SDisj
+, VariableName ( Just ( PlainName [] "succsuccIsEven" ) ) PlainVar
+, SAscribe
+, SPi
+, Parens
+  [ VariableName ( Just ( PlainName [] "n" ) ) PlainVar
+  , SAscribe
+  , VariableName ( Just ( PlainName [] "Nat" ) ) PlainVar
+  ]
+, SPeriod
+, VariableName ( Just ( PlainName [] "Fun" ) ) PlainVar
+, Parens
+  [ VariableName ( Just ( PlainName [] "IsEven" ) ) PlainVar
+  , VariableName ( Just ( PlainName [] "n" ) ) PlainVar
+  ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "IsEven" ) ) PlainVar
+  , Parens
+    [ VariableName ( Just ( PlainName [] "succ" ) ) PlainVar
+    , Parens
+      [ VariableName ( Just ( PlainName [] "succ" ) ) PlainVar
+      , VariableName ( Just ( PlainName [] "n" ) ) PlainVar
+      ]
+    ]
+  ]
 , Command [] "define"
 , VariableName ( Just ( PlainName [] "Fun" ) ) PlainVar
 , SAssignL
 , SLambda
-, Parens [ VariableName ( Just ( PlainName [] "I" ) ) PlainVar, SAscribe, Univ ]
-, Parens [ VariableName ( Just ( PlainName [] "O" ) ) PlainVar, SAscribe, Univ ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "I" ) ) PlainVar
+  , SConj
+  , VariableName ( Just ( PlainName [] "O" ) ) PlainVar
+  , SAscribe
+  , Univ
+  ]
 , SPeriod
 , SPi
 , Parens
@@ -71,14 +127,13 @@
 , SDisj
 , VariableName ( Just ( PlainName [] "just" ) ) PlainVar
 , Parens [ VariableName ( Just ( PlainName [] "T" ) ) PlainVar, SAscribe, Univ ]
+, SAscribe
+, VariableName ( Just ( PlainName [] "Fun" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "T" ) ) PlainVar
 , Parens
-  [ VariableName ( Just ( PlainName [] "v" ) ) PlainVar
-  , SAscribe
+  [ VariableName ( Just ( PlainName [] "Maybe" ) ) PlainVar
   , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
   ]
-, SAscribe
-, VariableName ( Just ( PlainName [] "Maybe" ) ) PlainVar
-, VariableName ( Just ( PlainName [] "T" ) ) PlainVar
 , Command [] "data"
 , VariableName ( Just ( PlainName [] "IsJust" ) ) PlainVar
 , SAscribe
@@ -108,32 +163,95 @@
   , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
   , VariableName ( Just ( PlainName [] "v" ) ) PlainVar
   ]
+, Command [] "normalize"
+, VariableName ( Just ( PlainName [] "proveJust" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "Unit" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "unit" ) ) PlainVar
 , Command [] "data"
 , VariableName ( Just ( PlainName [] "Either" ) ) PlainVar
 , SAscribe
 , SPi
-, Parens [ VariableName ( Just ( PlainName [] "L" ) ) PlainVar, SAscribe, Univ ]
-, Parens [ VariableName ( Just ( PlainName [] "R" ) ) PlainVar, SAscribe, Univ ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "L" ) ) PlainVar
+  , SConj
+  , VariableName ( Just ( PlainName [] "R" ) ) PlainVar
+  , SAscribe
+  , Univ
+  ]
 , SPeriod
 , Univ
 , SDisj
 , VariableName ( Just ( PlainName [] "left" ) ) PlainVar
-, Parens [ VariableName ( Just ( PlainName [] "L" ) ) PlainVar, SAscribe, Univ ]
-, Parens [ VariableName ( Just ( PlainName [] "R" ) ) PlainVar, SAscribe, Univ ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "L" ) ) PlainVar
+  , SConj
+  , VariableName ( Just ( PlainName [] "R" ) ) PlainVar
+  , SAscribe
+  , Univ
+  ]
 , Parens
   [ VariableName ( Just ( PlainName [] "v" ) ) PlainVar
   , SAscribe
   , VariableName ( Just ( PlainName [] "L" ) ) PlainVar
   ]
+, SAscribe
+, VariableName ( Just ( PlainName [] "Either" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "L" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "R" ) ) PlainVar
 , SDisj
 , VariableName ( Just ( PlainName [] "right" ) ) PlainVar
-, Parens [ VariableName ( Just ( PlainName [] "L" ) ) PlainVar, SAscribe, Univ ]
-, Parens [ VariableName ( Just ( PlainName [] "R" ) ) PlainVar, SAscribe, Univ ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "L" ) ) PlainVar
+  , SConj
+  , VariableName ( Just ( PlainName [] "R" ) ) PlainVar
+  , SAscribe
+  , Univ
+  ]
 , Parens
   [ VariableName ( Just ( PlainName [] "v" ) ) PlainVar
   , SAscribe
   , VariableName ( Just ( PlainName [] "R" ) ) PlainVar
   ]
+, SAscribe
+, VariableName ( Just ( PlainName [] "Either" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "L" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "R" ) ) PlainVar
+, Command [] "data"
+, VariableName ( Just ( PlainName [] "Tuple" ) ) PlainVar
+, SAscribe
+, SPi
+, Parens
+  [ VariableName ( Just ( PlainName [] "L" ) ) PlainVar
+  , SConj
+  , VariableName ( Just ( PlainName [] "R" ) ) PlainVar
+  , SAscribe
+  , Univ
+  ]
+, SPeriod
+, Univ
+, SDisj
+, VariableName ( Just ( PlainName [] "tuple" ) ) PlainVar
+, Parens
+  [ VariableName ( Just ( PlainName [] "L" ) ) PlainVar
+  , SConj
+  , VariableName ( Just ( PlainName [] "R" ) ) PlainVar
+  , SAscribe
+  , Univ
+  ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "l" ) ) PlainVar
+  , SAscribe
+  , VariableName ( Just ( PlainName [] "L" ) ) PlainVar
+  ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "r" ) ) PlainVar
+  , SAscribe
+  , VariableName ( Just ( PlainName [] "R" ) ) PlainVar
+  ]
+, SAscribe
+, VariableName ( Just ( PlainName [] "Tuple" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "L" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "R" ) ) PlainVar
 , Command [] "data"
 , VariableName ( Just ( PlainName [] "Decide" ) ) PlainVar
 , Parens [ VariableName ( Just ( PlainName [] "P" ) ) PlainVar, SAscribe, Univ ]
@@ -166,12 +284,9 @@
 , SPi
 , Parens [ VariableName ( Just ( PlainName [] "T" ) ) PlainVar, SAscribe, Univ ]
 , Parens
-  [ VariableName ( Just ( PlainName [] "t1" ) ) PlainVar
-  , SAscribe
-  , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
-  ]
-, Parens
-  [ VariableName ( Just ( PlainName [] "t2" ) ) PlainVar
+  [ VariableName ( Just ( PlainName [] "t0" ) ) PlainVar
+  , SConj
+  , VariableName ( Just ( PlainName [] "t1" ) ) PlainVar
   , SAscribe
   , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
   ]
@@ -181,13 +296,13 @@
 , VariableName ( Just ( PlainName [] "refl" ) ) PlainVar
 , Parens [ VariableName ( Just ( PlainName [] "T" ) ) PlainVar, SAscribe, Univ ]
 , Parens
-  [ VariableName ( Just ( PlainName [] "y" ) ) PlainVar
+  [ VariableName ( Just ( PlainName [] "t" ) ) PlainVar
   , SAscribe
   , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
   ]
 , SAscribe
 , VariableName ( Just ( PlainName [] "Eq" ) ) PlainVar
 , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
-, VariableName ( Just ( PlainName [] "y" ) ) PlainVar
-, VariableName ( Just ( PlainName [] "y" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "t" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "t" ) ) PlainVar
 ]

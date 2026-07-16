@@ -14,7 +14,7 @@
 {-# LANGUAGE ApplicativeDo #-}
 module Pudding.Surface.Elaborator where
 
-import Prelude
+import Prelude hiding (exp)
 
 import Data.Functor ((<&>), void)
 import Data.Function ((&))
@@ -24,12 +24,12 @@ import Data.Text (Text)
 import Pudding.Types.Name (Name (..), internalize, NameTable, canonicalName)
 import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::))
 import Pudding.Types.Metadata
-import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), Index(Index), StackLike(size, Elem), pattern Nil, pattern (:>), StackFunctor (mapWithLevel), (@@?))
+import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), Index(Index), StackLike(size, Elem), pattern Nil, pattern (:>), StackFunctor (mapWithLevel), (@@?), stack)
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift))
-import Pudding.Core.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval (..), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase), globalsFrom, Ctx (ctxGlobals), GlobalTypeInfo (GlobalTypeInfo, typeParams, typeIndices), Closure, ConstructorInfo (ConstructorInfo), Globals (globalDefns))
+import Pudding.Core.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval (..), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase), globalsFrom, Ctx (ctxGlobals, ctxStack), GlobalTypeInfo (GlobalTypeInfo, typeParams, typeIndices), Closure, ConstructorInfo (ConstructorInfo, ctorIndices), Globals (globalDefns))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
-import Pudding.Surface.Parser (Decl (..), CST (..), CBinder, CBinderGroup)
+import Pudding.Surface.Parser (Decl (..), CST (..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize))
 import Data.Foldable (Foldable (fold), foldlM, for_)
 import Data.Functor.Compose (Compose (Compose))
 import Control.Monad.Reader.Class (MonadReader (local, ask), asks)
@@ -47,6 +47,17 @@ import Control.Monad.Trans.Cont (ContT(ContT, runContT), evalContT)
 import Data.Traversable (for)
 import qualified Data.Vector as Vector
 import Control.Monad (join, when)
+import GHC.Stack (HasCallStack)
+import qualified Data.List as List
+import Control.DeepSeq (force)
+import Data.Monoid (Any(Any))
+import Data.Coerce (coerce)
+import GHC.IO (evaluate)
+import qualified Debug.Trace as Dbg
+import qualified Pudding.Core.Printer as C.Print
+import Control.Lens (view, from)
+import qualified Data.Aeson as AE
+import Codec.Binary.UTF8.Generic (toString)
 
 class Applicative m => TwoPhase m where
   twoPhases :: m (m r) -> m r
@@ -133,7 +144,11 @@ type Scoping r = ContT r Scoped
 
 willInitGLM :: Text -> (Name -> Scoped GlobalInfo) -> GLM (Name, Scoped GlobalInfo)
 willInitGLM text creator = Compose $ mintName id text <&>
-  \name -> (name,) <$> willInit name (creator name)
+  -- TODO: better way than clearLocals?
+  \name -> (name,) <$> willInit name (clearLocals (creator name))
+
+clearLocals :: Scoped r -> Scoped r
+clearLocals = local \gl -> gl { glLocals = M.empty, glCtx = (glCtx gl) { ctxStack = Nil } }
 
 -- | For `@example`, for example
 willUseGLM :: Scoped r -> GLM r
@@ -149,41 +164,45 @@ joinScoped :: GLM (Scoped r) -> GLM r
 joinScoped (Compose stage0) = Compose $ stage0 <&>
   \(GGather outs ins) -> GGather outs $ join <$> ins
 
-eval :: Term -> Scoped Eval
+eval :: HasCallStack => Term -> Scoped Eval
 eval t = do
   c <- fmap snd <$> currentCtx
   pure $ E.eval c t
 
-quote :: Eval -> Scoped Term
+quote :: HasCallStack => Eval -> Scoped Term
 quote e = do
   c <- void <$> currentCtx
   pure $ E.quote c e
 
-reinfer :: Term -> Scoped Eval
+reinfer :: HasCallStack => Term -> Scoped Eval
 reinfer t = do
   c <- currentCtx
   pure $ U.quickTermType c t
 
-validate :: Term -> Scoped Eval
+validate :: HasCallStack => Term -> Scoped Eval
 validate t = do
   c <- currentCtx
   pure $! U.validate c t
 
-conversionCheck :: Eval -> Eval -> Scoped Bool
+conversionCheck :: HasCallStack => Eval -> Eval -> Scoped Bool
 conversionCheck e1 e2 = do
   c <- void <$> currentCtx
   pure $ U.conversionCheck c e1 e2
 
-globalEval :: Term -> Scoped GlobalTerm
+globalEval :: HasCallStack => Term -> Scoped GlobalTerm
 globalEval t = do
   e <- eval t
   pure $ GlobalTerm t e
 
-globalQuote :: Eval -> Scoped GlobalTerm
+globalQuote :: HasCallStack => Eval -> Scoped GlobalTerm
 globalQuote e = do
   t <- quote e
   pure $ GlobalTerm t e
 
+normalize :: HasCallStack => Bool -> Term -> Scoped Term
+normalize ridGlobals t = do
+  c <- fmap snd <$> currentCtx
+  pure $ (if ridGlobals then E.selfContained else E.normalizeCtx) c t
 
 
 runElabFull :: forall r. IORef NameTable -> GLM r -> IO (Map Name GlobalInfo, r)
@@ -226,6 +245,7 @@ currentCtx = do
   -- Here we want to gather all the things that have actually been defined
   initialized <- gets $ M.mapMaybe \case
     Initialized r -> Just r
+    Initializing (Just r) -> Just r
     _ -> Nothing
   let currentGlobals = U.bootGlobals $ globalsFrom initialized
   localCtx <- asks glCtx
@@ -238,18 +258,23 @@ intoClosure argTy clo cb = do
   local (const $ outer { glCtx = glCtx outer :> (BUnused, (argTy, ENeut neutral)) }) do
     cb $ E.instantiateClosure clo $ ENeut neutral
 
+parseAttributes :: [RawAttribute] -> Attributes
+parseAttributes = foldMap \case
+  RawAttribute [] "normalize" [] -> mempty { aNormalize = Any True }
+  _ -> mempty
+
 
 -- | Elaborate a top-level declaration. This tells the `GGather` layer about
 -- | the name and definition, which is then available in the `GInit` layer to
 -- | handle the graph of dependencies.
 elaborateDecl :: Decl -> GLM (Maybe Name, Scoped GlobalInfo)
 elaborateDecl = \case
-  DDefine (Just (PlainName [] text), PlainVar) mty tm ->
+  DDefine attrs (Just (PlainName [] text), PlainVar) mty tm ->
     first Just <$> willInitGLM text \_name -> DefnGlobal <$> do
-      elaborateDefn mty tm
+      elaborateDefn (parseAttributes attrs) mty tm
   -- An example, e.g. declared by `@example` or `@define _ := Type`
-  DDefine (Nothing, PlainVar) mty tm -> willUseGLM do
-    tm' <- elaborateDefn mty tm
+  DDefine attrs (Nothing, PlainVar) mty tm -> willUseGLM do
+    tm' <- elaborateDefn (parseAttributes attrs) mty tm
     pure (Nothing, pure $ DefnGlobal tm')
 
   -- Elaborating inductive types is by far the most complicated, it has
@@ -278,25 +303,28 @@ elaborateDecl = \case
 -- | Elaborate a type (optional) and a term of that type, into a "global"
 -- | definition which caches the term and type as both `Term` and `Eval`.
 -- | (The definition does not have to be global, just the wrapper is called that.)
-elaborateDefn :: Maybe CST -> CST -> Scoped GlobalDefn
-elaborateDefn mty tm = do
-  mty' <- for mty \ty -> do
-    tyT <- elabType ty
-    tyE <- eval tyT
-    pure (tyT, tyE)
-  tmT <- elab (snd <$> mty') tm
-  ty' <- case mty' of
-    Just (tyT, tyE) -> pure $ GlobalTerm tyT tyE
-    Nothing -> globalQuote =<< reinfer tmT
-  -- TODO: arity
-  GlobalDefn 0 ty' <$> globalEval tmT
+elaborateDefn :: Attributes -> Maybe CST -> CST -> Scoped GlobalDefn
+elaborateDefn attrs mty tm = do
+  -- lift . lift . evaluate . force =<< do
+    mty' <- for mty \ty -> do
+      tyT <- elabType ty
+      tyE <- eval tyT
+      pure (tyT, tyE)
+    tmT0 <- elab (snd <$> mty') tm
+    tmT <- if not $ coerce $ aNormalize attrs then pure tmT0 else
+      normalize True tmT0
+    ty' <- case mty' of
+      Just (tyT, tyE) -> pure $ GlobalTerm tyT tyE
+      Nothing -> globalQuote =<< reinfer tmT
+    -- TODO: arity
+    GlobalDefn 0 ty' <$> globalEval tmT
 
 
-elabType :: CST -> Scoped Term
+elabType :: HasCallStack => CST -> Scoped Term
 elabType = elab Nothing -- TODO: Type
 
 -- | Coerce a synthesized term to an expected type, if provided.
-synth :: Maybe ("expected type" @:: Eval) -> Term -> Scoped Term
+synth :: HasCallStack => Maybe ("expected type" @:: Eval) -> Term -> Scoped Term
 synth Nothing term = pure term
 synth (Just expE) term = do
   actE <- reinfer term
@@ -310,7 +338,7 @@ synth (Just expE) term = do
 
 -- | Generate a term coerced from actual type to expected type, or `Nothing` if
 -- | no coercion is necessary.
-coe :: Term -> ("actual type" @:: Eval, "expected type" @:: Eval) -> Scoped (Maybe Term)
+coe :: HasCallStack => Term -> ("actual type" @:: Eval, "expected type" @:: Eval) -> Scoped (Maybe Term)
 coe term = \case
   -- Both are lifted terms? operate inside the lifted value
   (ELift _ actE, ELift _ expE) -> do
@@ -328,7 +356,7 @@ coe term = \case
   coeMap outOf inTo tys = fmap @Maybe outOf <$> coe (inTo term) tys
 
 -- | Elaborate a piece of surface syntax against an expected type.
-elab :: Maybe ("expected type" @:: Eval) -> CST -> Scoped Term
+elab :: HasCallStack => Maybe ("expected type" @:: Eval) -> CST -> Scoped Term
 elab mexp = \case
   CApps fun args -> synth mexp =<< do
     funTmT <- elab Nothing fun
@@ -406,6 +434,13 @@ elab mexp = \case
     name <- mintName glNames field
     tm' <- elab Nothing tm
     pure $ TField mempty tm' name
+
+  CPair l r | Just exp@(ESigma _ _ _ lTy rTy) <- mexp -> do
+    lT <- elab (Just lTy) l
+    lE <- eval lT
+    rT <- elab (Just (E.instantiateClosure rTy lE)) r
+    expT <- quote exp
+    pure $ TPair mempty expT lT rT
 
   CAscribe tm ty -> do
     tyT <- elabType ty
@@ -503,13 +538,21 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
         error "Missing type for constructor argument"
       (implicitArguments, (params, indices)) <- do
         fromMaybe mempty <$> for resultType \r -> do
-          rE <- lift $ eval =<< elabType r
+          rT <- lift $ elabType r
+          rE <- lift $ eval rT
           peelToTyCtor rE
       for_ (zip [0..] (Vector.toList params)) \case
         (i, ENeut (Neutral (NVar _ (Level j)) Nil)) | i == j -> pure ()
+        (i, ENeut (Neutral (NVar _ (Level j)) Nil)) -> error $ "Bad constructor parameter " <> show ctor <> ": " <> show i <> " /= " <> show j
         _ -> error "Bad constructor parameter: must be a plain variable, in order"
-      let ctorArguments = Vector.fromList (explicitArguments <> implicitArguments)
+      let ctorArguments = Vector.fromList $ List.drop (Vector.length params) $ explicitArguments <> implicitArguments
       ctorIndices <- lift $ traverse quote indices
+      -- ctx <- asks glCtx
+      -- ctx' <- lift $ traverse (quote . snd . snd) $ ctxStack ctx
+      -- Dbg.traceM $ show $ C.Print.formatCoreFrom C.Print.Plain (size ctx) <$> view (from stack) ctx'
+      -- ctx'' <- lift $ traverse (quote . fst . snd) $ ctxStack ctx
+      -- Dbg.traceM $ show $ C.Print.formatCoreFrom C.Print.Plain (size ctx) <$> view (from stack) ctx''
+      -- Dbg.traceM $ show $ C.Print.formatCoreFrom C.Print.Plain (size ctx) <$> ctorIndices
       pure $ ConstructorInfo ctorArguments ctorIndices
   pure $ GlobalTypeInfo newParams newIndices (M.fromList constructors)
   where

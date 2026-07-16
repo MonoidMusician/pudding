@@ -22,13 +22,15 @@ import qualified Data.Vector as Vector
 import qualified Data.Aeson as AE
 import qualified Prettyprinter as Doc
 import Data.Text (Text)
+import GHC.Stack (HasCallStack)
+import qualified Control.Lens as Lens
 
 -- | Finite mapping of indices `i` to elements `Elem`
 class StackLike c where
   type Elem c
 
   infixr 8 @@
-  (@@) :: ToIndex i => c -> i -> Elem c
+  (@@) :: HasCallStack => ToIndex i => c -> i -> Elem c
 
   size :: c -> Int
 
@@ -91,7 +93,7 @@ newtype Index = Index Int
   deriving newtype (Pretty, NFData, AE.ToJSON, AE.FromJSON)
 
 class ToIndex i where
-  index :: StackLike c => c -> i -> Index
+  index :: HasCallStack => StackLike c => c -> i -> Index
 
 instance ToIndex Index where
   index c ix@(Index i) = assert (0 <= i && i < size c) ix
@@ -113,7 +115,7 @@ newtype Level = Level Int
   deriving newtype (Pretty, NFData, AE.ToJSON, AE.FromJSON)
 
 class ToLevel l where
-  level :: StackLike c => c -> l -> Level
+  level :: HasCallStack => StackLike c => c -> l -> Level
 
 instance ToLevel Level where
   level c lv@(Level l) = assert (0 <= l && l < size c) lv
@@ -133,6 +135,11 @@ instance ToLevel Index where
 -- | snoc semantics.
 data Stack a = Stack !Int !(RAList a)
   deriving (Functor, Generic, NFData)
+
+instance AE.ToJSON a => AE.ToJSON (Stack a) where
+  toJSON = AE.toJSON . Lens.view (Lens.from stack)
+instance AE.FromJSON a => AE.FromJSON (Stack a) where
+  parseJSON = fmap (Lens.view stack) . AE.parseJSON
 
 instance Foldable Stack where
   foldMap :: Monoid m => (a -> m) -> Stack a -> m

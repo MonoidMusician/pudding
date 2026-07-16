@@ -11,3 +11,6 @@ Not : (Π (_0 (Type0 0))
 Not := (λ (_0 (Type0 0)) 
   (Fun _0 ($Void)))
 
+_ : ($IsJust ($Unit) ($just ($Unit) ($unit)))
+_ := ($proveJust ($Unit) ($unit))
+

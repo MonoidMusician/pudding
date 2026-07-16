@@ -55,6 +55,8 @@
   - qualified `@Module'name` too
 - implicits
   - bind with `identity @{I} : I -> I`, apply with `identity @{Int}`, possibly named `identity @{I := Int}`
+  - binding: `@{I}` = `@{I : _}`, `@{I : Type}`, `@{I & O : Type}`, `@{(Name := Binder) : Ty}`
+  - instantiating: `@{Pun}`, `@{(Expr)}`, `@{I := Expr}`, `@{I & O := Expr}`
 - comments?? idk
   - `'' ` with a space? and `#!`
     - wanna leave `///` for a user operator

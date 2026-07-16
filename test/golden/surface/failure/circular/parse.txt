@@ -1,4 +1,5 @@
 [ DDefine
+  []
   ( Just ( PlainName [] "X" ), PlainVar )
   Nothing
   ( CPi
@@ -21,6 +22,7 @@
     )
   )
 , DDefine
+  []
   ( Just ( PlainName [] "Y" ), PlainVar )
   Nothing
   ( CPi

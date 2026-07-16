@@ -40,6 +40,9 @@ import qualified Data.Text as T
 import GHC.Stack (HasCallStack)
 import qualified Pudding.Types.Stack as Stack
 import Data.Conserve (Conserve (Altered), conserve')
+import qualified Debug.Trace as Dbg
+import qualified Data.Aeson as AE
+import Data.ByteString.Lazy.UTF8 (toString)
 
 eval :: EvalCtx -> Term -> Eval
 eval = flip evaling
@@ -80,6 +83,9 @@ normalizeNeutrals globals localTypes = normalizeCtx $
   mapCtx (\_ lvl _ty -> neutralVar lvl) $
     ctxOfList globals $ (BFresh,) <$> localTypes
 
+selfContained :: EvalCtx -> Term -> Term
+selfContained ctx = flip (eval2termWith True quotingClosure) (void ctx) . eval ctx
+
 ------------------------------
 -- Various helper functions --
 ------------------------------
@@ -93,7 +99,7 @@ doPrj (ELambda _ _ _ _ body) (NApp _ _ arg) = instantiateClosure body arg
 doPrj (ERecordTm _ fields) (NField _ name) = fields Map.! name
 doPrj (ETmCtor _meta (_tyName, ctorName) _params args) (NCase _ _ cases) =
   doApps (doField cases ctorName) (Stack.fromFoldable args)
-doPrj (EDeferred _ _ _ _ term) prj = doPrj term prj
+doPrj (EDeferred (Deferred _ _ _ _ term)) prj = doPrj term prj
 doPrj e prj = error $ mconcat
   [ "Type error in doPrj "
   , case prj of
@@ -294,7 +300,7 @@ evaling = \case
   TSplice meta tm -> doSplice meta <$> evaling tm
 
 undeferred :: ("deferred term" @:: Eval) -> Eval
-undeferred (EDeferred _ _ _ _ tm) = undeferred tm
+undeferred (EDeferred (Deferred _ _ _ _ tm)) = undeferred tm
 undeferred tm = tm
 
 doQuote :: Metadata -> Eval -> Eval
@@ -329,15 +335,14 @@ eval2termWith forceGlobals handleClosure = \case
           , Just (GlobalDefn _ _ (GlobalTerm term _)) <-
               Map.lookup name (globalDefns $ ctxGlobals ctx) -> term
         NGlobal _arity meta name -> TGlobal meta name
-      go (more :> prj) soFar = go more case prj of
+      assemble = foldl \soFar prj -> case prj of
         NApp meta plicit arg -> TApp meta plicit soFar (e2t arg ctx)
         NFst meta -> TFst meta soFar
         NSnd meta -> TSnd meta soFar
         NSplice meta -> TSplice meta soFar
         NCase meta motive cases -> TCase meta (e2t motive ctx) (e2t cases ctx) soFar
         NField meta field -> TField meta soFar field
-      go Nil result = result
-    in go prjs base
+    in assemble base prjs
   EUniv meta univ -> pure $ TUniv meta univ
   ELambda meta plicit binder ty body ->
     TLambda meta plicit binder <$> e2t ty <*> handleClosure body ty
@@ -353,7 +358,7 @@ eval2termWith forceGlobals handleClosure = \case
     TTmCtor meta name <$> traverse e2t params <*> traverse e2t args
   ERecordTy meta fields -> TRecordTy meta <$> traverse e2t fields
   ERecordTm meta fields -> TRecordTm meta <$> traverse e2t fields
-  EDeferred _ _ _ _ tm -> e2t tm
+  EDeferred (Deferred _ _ _ _ tm) -> e2t tm
   ELift meta ty -> TLift meta <$> e2t ty
   EQuote meta tm -> TQuote meta <$> e2t tm
   where
@@ -371,9 +376,16 @@ quotingClosure (Closure savedCtx bdr (Scoped savedBody)) _argTy ctx =
     (lvl, ctx') = push (bdr, ()) ctx
     -- This is the (only-ish) place that we create neutrals: when quoting.
     evalingArg = ENeut (Neutral (NVar mempty lvl) Nil)
-  in Scoped $ quoting ((evaling savedBody $ savedCtx :> (bdr, evalingArg)) :: Eval) ctx'
+    e = (evaling savedBody $ savedCtx :> (bdr, evalingArg)) :: Eval
+  in Scoped $ quoting e ctx'
 quotingClosure (ConstClosure ret) _ ctx =
   Scoped $ quoting ret (ctx :> (BUnused, ()))
+
+traceEval :: Eval -> Eval
+traceEval = id -- Dbg.traceWith (toString . AE.encode)
+
+traceTerm :: Term -> Term
+traceTerm = Dbg.traceWith (toString . AE.encode)
 
 -- If we don't want to fully normalize, we can turn `Eval` back into a `Term`
 -- in the simplest way: copying the `Term` out of the `Closure` without any

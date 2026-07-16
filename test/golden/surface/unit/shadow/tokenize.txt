@@ -5,6 +5,7 @@
 , Parens [ VariableName ( Just ( PlainName [] "T" ) ) PlainVar, SAscribe, Univ ]
 , Parens
   [ VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+  , SConj
   , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
   , SAscribe
   , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
@@ -12,6 +13,7 @@
 , Parens [ VariableName ( Just ( PlainName [] "T" ) ) PlainVar, SAscribe, Univ ]
 , Parens
   [ VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+  , SConj
   , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
   , SAscribe
   , VariableName ( Just ( PlainName [] "T" ) ) ( DBLevel 3 )

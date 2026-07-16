@@ -1,5 +1,6 @@
-[ DDefine ( Nothing, PlainVar ) Nothing ( CLift CUniv )
+[ DDefine [] ( Nothing, PlainVar ) Nothing ( CLift CUniv )
 , DDefine
+  []
   ( Just ( PlainName [] "Id" ), PlainVar )
   Nothing
   ( CLambda
@@ -14,6 +15,7 @@
   )
 , DDataType ( Just ( PlainName [] "Void" ), PlainVar ) [] [] Nothing []
 , DDefine
+  []
   ( Nothing, PlainVar )
   Nothing
   ( CLift
@@ -23,6 +25,7 @@
     )
   )
 , DDefine
+  []
   ( Nothing, PlainVar )
   Nothing
   ( CLambda
@@ -36,6 +39,7 @@
     ( CQuote ( CVar ( Just ( PlainName [] "void" ) ) PlainVar ) )
   )
 , DDefine
+  []
   ( Nothing, PlainVar )
   Nothing
   ( CLambda

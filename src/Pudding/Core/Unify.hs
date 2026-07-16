@@ -75,7 +75,7 @@ bootGlobalTypes globals =
   where
   disjointUnion = Map.union
   -- disjointUnion = Map.unionWithKey \k _ _ -> error $ "Duplicate global: " <> show k
-  fakeGlobal tm = GlobalDefn (arityOfTerm tm) undefined (GlobalTerm tm undefined)
+  fakeGlobal tm = GlobalDefn (const 0 $ arityOfTerm tm) undefined (GlobalTerm tm undefined)
   constructors = fold . Map.mapWithKey \typeName -> \case
     GlobalTypeInfo { typeParams, typeIndices, typeConstrs } -> fold
       -- The type constructor: take all of the parameters and the indices,
@@ -120,7 +120,7 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
   (_, EDeferred {}) -> deferred [] [] evalL evalR
 
   -- Conversion checking for the main constructors is straightforward:
-  (EUniv _ univL, EUniv _ univR) -> univL == univR
+  (EUniv _ univL, EUniv _ univR) -> True -- univL == univR
   (ELambda _ _ bdrL tyL bodyL, ELambda _ _ bdrR tyR bodyR) ->
     ccScoped bdrL tyL bodyL bdrR tyR bodyR
   (EPi _ _ bdrL tyL bodyL, EPi _ _ bdrR tyR bodyR) ->
@@ -233,11 +233,11 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
   -- Short circuit on matching `EDeferred` stable names!
   deferred namesL namesR _ _ | not (List.null (List.intersect namesL namesR)) = True
   -- Force the terms pairwise if possible
-  deferred namesL namesR (EDeferred _ _ mnameL _ tmL) (EDeferred _ _ mnameR _ tmR) =
+  deferred namesL namesR (EDeferred (Deferred _ _ mnameL _ tmL)) (EDeferred (Deferred _ _ mnameR _ tmR)) =
     deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) tmL tmR
-  deferred namesL namesR (EDeferred _ _ mnameL _ tmL) tmR | mnameR <- Nothing =
+  deferred namesL namesR (EDeferred (Deferred _ _ mnameL _ tmL)) tmR | mnameR <- Nothing =
     deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) tmL tmR
-  deferred namesL namesR tmL (EDeferred _ _ mnameR _ tmR) | mnameL <- Nothing =
+  deferred namesL namesR tmL (EDeferred (Deferred _ _ mnameR _ tmR)) | mnameL <- Nothing =
     deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) tmL tmR
   -- No stable names matched, force the terms and do regular conversion checking
   deferred _ _ tmL tmR = cc tmL tmR

@@ -22,6 +22,7 @@ import Pudding.Types.Base
 import Pudding.Types.Metadata
 import Pudding.Types.Stack
 import qualified Data.Aeson as AE
+import Data.Maybe (isJust)
 
 --------------------------------------------------------------------------------
 -- Main semantic types!                                                       --
@@ -256,10 +257,10 @@ data Eval
       ("args" @:: Vector Eval)
   | ERecordTy Metadata (Map Name Eval)
   | ERecordTm Metadata (Map Name Eval)
-  | EDeferred ("reason" @:: Meta Text) ("type" @:: Eval) !("sharing" @:: Maybe (StableName Eval)) Metadata ("deferred term" @:: Eval)
+  | EDeferred Deferred
   | ELift Metadata Eval
   | EQuote Metadata Eval
-  deriving (Generic, NFData)
+  deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 -- A Neutral is stuck on a variable (or hole), with some projections and eliminators applied to it.
 -- (This is the Normalization part of NbE: inserting variables to evaluate open terms.)
@@ -270,7 +271,7 @@ data Neutral = Neutral
     -- evaluating it once it is known.
     neutralSpine :: Stack NeutPrj
   }
-  deriving (Generic, NFData)
+  deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 data NeutFocus
   = NVar Metadata !Level
@@ -279,7 +280,7 @@ data NeutFocus
   -- arity of function arguments and they are not all neutrals, and it can
   -- also be evaluated during conversion checking
   | NGlobal !("arity" @:: Int) Metadata Name
-  deriving (Generic, NFData)
+  deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 data NeutPrj
   = NApp Metadata !Plicit ("arg" @:: Eval)
@@ -291,7 +292,7 @@ data NeutPrj
       ("motive" @:: Eval)
       !("cases" @:: Eval)
   | NField Metadata Name
-  deriving (Generic, NFData)
+  deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 data Side = Before | After
 neutSide :: NeutPrj -> Side
@@ -324,9 +325,23 @@ data Closure
       Binder
       ("body" @:: ScopedTerm)
   | ConstClosure Eval
-  deriving (Generic, NFData)
+  deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 data Telescope = Telescope Eval Closure
+
+data Deferred = Deferred
+  ("reason" @:: Meta Text) ("type" @:: Eval)
+  !("sharing" @:: Maybe (StableName Eval)) Metadata
+  ("deferred term" @:: Eval)
+  deriving (Generic, NFData)
+
+instance AE.ToJSON Deferred where
+  toJSON (Deferred why ty share meta tm) = AE.toJSON
+    (why, ty, isJust share, meta, tm)
+instance AE.FromJSON Deferred where
+  parseJSON v = do
+    (why, ty, (share :: Bool), meta, tm) <- AE.parseJSON v
+    pure $ Deferred why ty Nothing meta tm
 
 ----------------------------------
 -- Functions for the core types --
@@ -355,7 +370,7 @@ data Ctx t = Ctx
   { ctxGlobals :: Globals,
     ctxStack :: !(Stack (Binder, t))
   }
-  deriving (Functor, Generic, NFData)
+  deriving (Functor, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 instance StackLike (Ctx t) where
   type Elem (Ctx t) = (Binder, t)
@@ -532,8 +547,8 @@ instance HasMetadata Eval where
         <$> f old
         <.*> traverse (traverseMetadataDepth d (apply f)) params
         <.*> traverse (traverseMetadataDepth d (apply f)) args
-    EDeferred reason ty ref _ term ->
-      (\term' ty' -> EDeferred reason ty' ref (view metadata term') term')
+    EDeferred (Deferred reason ty ref _ term) ->
+      (\term' ty' -> EDeferred (Deferred reason ty' ref (view metadata term') term'))
         -- Traverse term first!
         <$> traverseMetadata1Depth d f term
         <.*> traverseMetadataDepth d (apply f) ty
@@ -672,7 +687,7 @@ summarize (Summarize { onEval, onNeutPrj, onNeutFocus, onTerm }) =
     EPair _ t l r -> summEval t <> summEval l <> summEval r
     ETyCtor _ _ params indices -> foldMap summEval params <> foldMap summEval indices
     ETmCtor _ _ params args -> foldMap summEval params <> foldMap summEval args
-    EDeferred _ ty _ _ term -> summEval term <> summEval ty -- TODO: revisit?
+    EDeferred (Deferred _ ty _ _ term) -> summEval term <> summEval ty -- TODO: revisit?
     ERecordTy _ fields -> foldMap summEval fields
     ERecordTm _ fields -> foldMap summEval fields
     ELift _ t -> summEval t

@@ -1,5 +1,6 @@
-[ DDefine ( Just ( PlainName [] "T" ), PlainVar ) Nothing CUniv
+[ DDefine [] ( Just ( PlainName [] "T" ), PlainVar ) Nothing CUniv
 , DDefine
+  []
   ( Just ( PlainName [] "Id" ), PlainVar )
   Nothing
   ( CLambda
@@ -13,6 +14,7 @@
     ( CVar ( Just ( PlainName [] "X" ) ) PlainVar )
   )
 , DDefine
+  []
   ( Just ( PlainName [] "id" ), PlainVar )
   Nothing
   ( CLambda
