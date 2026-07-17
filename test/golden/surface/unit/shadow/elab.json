@@ -1,5 +1,204 @@
 [
     [
+        "Pair",
+        {
+            "contents": {
+                "typeConstrs": {
+                    "pair": {
+                        "ctorArguments": [
+                            [
+                                "Explicit",
+                                {
+                                    "contents": {
+                                        "allNames": [
+                                            "l"
+                                        ],
+                                        "chosenName": "l"
+                                    },
+                                    "tag": "BVar"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        0
+                                    ],
+                                    "tag": "TVar"
+                                }
+                            ],
+                            [
+                                "Explicit",
+                                {
+                                    "contents": {
+                                        "allNames": [
+                                            "r"
+                                        ],
+                                        "chosenName": "r"
+                                    },
+                                    "tag": "BVar"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        1
+                                    ],
+                                    "tag": "TVar"
+                                }
+                            ]
+                        ],
+                        "ctorIndices": []
+                    }
+                },
+                "typeIndices": [],
+                "typeParams": [
+                    [
+                        "Explicit",
+                        {
+                            "contents": {
+                                "allNames": [
+                                    "T"
+                                ],
+                                "chosenName": "T"
+                            },
+                            "tag": "BVar"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": 0,
+                                    "tag": "UBase"
+                                }
+                            ],
+                            "tag": "TUniv"
+                        }
+                    ]
+                ]
+            },
+            "tag": "TypeGlobal"
+        }
+    ],
+    [
+        "Tuple",
+        {
+            "contents": {
+                "typeConstrs": {
+                    "tuple": {
+                        "ctorArguments": [
+                            [
+                                "Explicit",
+                                {
+                                    "contents": {
+                                        "allNames": [
+                                            "l"
+                                        ],
+                                        "chosenName": "l"
+                                    },
+                                    "tag": "BVar"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        1
+                                    ],
+                                    "tag": "TVar"
+                                }
+                            ],
+                            [
+                                "Explicit",
+                                {
+                                    "contents": {
+                                        "allNames": [
+                                            "r"
+                                        ],
+                                        "chosenName": "r"
+                                    },
+                                    "tag": "BVar"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        1
+                                    ],
+                                    "tag": "TVar"
+                                }
+                            ]
+                        ],
+                        "ctorIndices": []
+                    }
+                },
+                "typeIndices": [],
+                "typeParams": [
+                    [
+                        "Explicit",
+                        {
+                            "contents": {
+                                "allNames": [
+                                    "L"
+                                ],
+                                "chosenName": "L"
+                            },
+                            "tag": "BVar"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": 0,
+                                    "tag": "UBase"
+                                }
+                            ],
+                            "tag": "TUniv"
+                        }
+                    ],
+                    [
+                        "Explicit",
+                        {
+                            "contents": {
+                                "allNames": [
+                                    "R"
+                                ],
+                                "chosenName": "R"
+                            },
+                            "tag": "BVar"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": 0,
+                                    "tag": "UBase"
+                                }
+                            ],
+                            "tag": "TUniv"
+                        }
+                    ]
+                ]
+            },
+            "tag": "TypeGlobal"
+        }
+    ],
+    [
         "T",
         {
             "contents": [
@@ -172,9 +371,72 @@
                                                                             "metaVars": [],
                                                                             "sourcePos": []
                                                                         },
-                                                                        2
+                                                                        "Tuple",
+                                                                        [
+                                                                            {
+                                                                                "contents": [
+                                                                                    {
+                                                                                        "metaVars": [],
+                                                                                        "sourcePos": []
+                                                                                    },
+                                                                                    "Explicit",
+                                                                                    {
+                                                                                        "contents": [
+                                                                                            {
+                                                                                                "metaVars": [],
+                                                                                                "sourcePos": []
+                                                                                            },
+                                                                                            "Pair"
+                                                                                        ],
+                                                                                        "tag": "TGlobal"
+                                                                                    },
+                                                                                    {
+                                                                                        "contents": [
+                                                                                            {
+                                                                                                "metaVars": [],
+                                                                                                "sourcePos": []
+                                                                                            },
+                                                                                            5
+                                                                                        ],
+                                                                                        "tag": "TVar"
+                                                                                    }
+                                                                                ],
+                                                                                "tag": "TApp"
+                                                                            },
+                                                                            {
+                                                                                "contents": [
+                                                                                    {
+                                                                                        "metaVars": [],
+                                                                                        "sourcePos": []
+                                                                                    },
+                                                                                    "Explicit",
+                                                                                    {
+                                                                                        "contents": [
+                                                                                            {
+                                                                                                "metaVars": [],
+                                                                                                "sourcePos": []
+                                                                                            },
+                                                                                            "Pair"
+                                                                                        ],
+                                                                                        "tag": "TGlobal"
+                                                                                    },
+                                                                                    {
+                                                                                        "contents": [
+                                                                                            {
+                                                                                                "metaVars": [],
+                                                                                                "sourcePos": []
+                                                                                            },
+                                                                                            2
+                                                                                        ],
+                                                                                        "tag": "TVar"
+                                                                                    }
+                                                                                ],
+                                                                                "tag": "TApp"
+                                                                            }
+                                                                        ],
+                                                                        []
                                                                     ],
-                                                                    "tag": "TVar"
+                                                                    "tag": "TTyCtor"
                                                                 }
                                                             ],
                                                             "tag": "TPi"
@@ -362,9 +624,249 @@
                                                                             "metaVars": [],
                                                                             "sourcePos": []
                                                                         },
-                                                                        0
+                                                                        "Explicit",
+                                                                        {
+                                                                            "contents": [
+                                                                                {
+                                                                                    "metaVars": [],
+                                                                                    "sourcePos": []
+                                                                                },
+                                                                                "Explicit",
+                                                                                {
+                                                                                    "contents": [
+                                                                                        {
+                                                                                            "metaVars": [],
+                                                                                            "sourcePos": []
+                                                                                        },
+                                                                                        "Explicit",
+                                                                                        {
+                                                                                            "contents": [
+                                                                                                {
+                                                                                                    "metaVars": [],
+                                                                                                    "sourcePos": []
+                                                                                                },
+                                                                                                "Explicit",
+                                                                                                {
+                                                                                                    "contents": [
+                                                                                                        {
+                                                                                                            "metaVars": [],
+                                                                                                            "sourcePos": []
+                                                                                                        },
+                                                                                                        "tuple"
+                                                                                                    ],
+                                                                                                    "tag": "TGlobal"
+                                                                                                },
+                                                                                                {
+                                                                                                    "contents": [
+                                                                                                        {
+                                                                                                            "metaVars": [],
+                                                                                                            "sourcePos": []
+                                                                                                        },
+                                                                                                        "Explicit",
+                                                                                                        {
+                                                                                                            "contents": [
+                                                                                                                {
+                                                                                                                    "metaVars": [],
+                                                                                                                    "sourcePos": []
+                                                                                                                },
+                                                                                                                "Pair"
+                                                                                                            ],
+                                                                                                            "tag": "TGlobal"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "contents": [
+                                                                                                                {
+                                                                                                                    "metaVars": [],
+                                                                                                                    "sourcePos": []
+                                                                                                                },
+                                                                                                                5
+                                                                                                            ],
+                                                                                                            "tag": "TVar"
+                                                                                                        }
+                                                                                                    ],
+                                                                                                    "tag": "TApp"
+                                                                                                }
+                                                                                            ],
+                                                                                            "tag": "TApp"
+                                                                                        },
+                                                                                        {
+                                                                                            "contents": [
+                                                                                                {
+                                                                                                    "metaVars": [],
+                                                                                                    "sourcePos": []
+                                                                                                },
+                                                                                                "Explicit",
+                                                                                                {
+                                                                                                    "contents": [
+                                                                                                        {
+                                                                                                            "metaVars": [],
+                                                                                                            "sourcePos": []
+                                                                                                        },
+                                                                                                        "Pair"
+                                                                                                    ],
+                                                                                                    "tag": "TGlobal"
+                                                                                                },
+                                                                                                {
+                                                                                                    "contents": [
+                                                                                                        {
+                                                                                                            "metaVars": [],
+                                                                                                            "sourcePos": []
+                                                                                                        },
+                                                                                                        2
+                                                                                                    ],
+                                                                                                    "tag": "TVar"
+                                                                                                }
+                                                                                            ],
+                                                                                            "tag": "TApp"
+                                                                                        }
+                                                                                    ],
+                                                                                    "tag": "TApp"
+                                                                                },
+                                                                                {
+                                                                                    "contents": [
+                                                                                        {
+                                                                                            "metaVars": [],
+                                                                                            "sourcePos": []
+                                                                                        },
+                                                                                        "Explicit",
+                                                                                        {
+                                                                                            "contents": [
+                                                                                                {
+                                                                                                    "metaVars": [],
+                                                                                                    "sourcePos": []
+                                                                                                },
+                                                                                                "Explicit",
+                                                                                                {
+                                                                                                    "contents": [
+                                                                                                        {
+                                                                                                            "metaVars": [],
+                                                                                                            "sourcePos": []
+                                                                                                        },
+                                                                                                        "Explicit",
+                                                                                                        {
+                                                                                                            "contents": [
+                                                                                                                {
+                                                                                                                    "metaVars": [],
+                                                                                                                    "sourcePos": []
+                                                                                                                },
+                                                                                                                "pair"
+                                                                                                            ],
+                                                                                                            "tag": "TGlobal"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "contents": [
+                                                                                                                {
+                                                                                                                    "metaVars": [],
+                                                                                                                    "sourcePos": []
+                                                                                                                },
+                                                                                                                5
+                                                                                                            ],
+                                                                                                            "tag": "TVar"
+                                                                                                        }
+                                                                                                    ],
+                                                                                                    "tag": "TApp"
+                                                                                                },
+                                                                                                {
+                                                                                                    "contents": [
+                                                                                                        {
+                                                                                                            "metaVars": [],
+                                                                                                            "sourcePos": []
+                                                                                                        },
+                                                                                                        4
+                                                                                                    ],
+                                                                                                    "tag": "TVar"
+                                                                                                }
+                                                                                            ],
+                                                                                            "tag": "TApp"
+                                                                                        },
+                                                                                        {
+                                                                                            "contents": [
+                                                                                                {
+                                                                                                    "metaVars": [],
+                                                                                                    "sourcePos": []
+                                                                                                },
+                                                                                                3
+                                                                                            ],
+                                                                                            "tag": "TVar"
+                                                                                        }
+                                                                                    ],
+                                                                                    "tag": "TApp"
+                                                                                }
+                                                                            ],
+                                                                            "tag": "TApp"
+                                                                        },
+                                                                        {
+                                                                            "contents": [
+                                                                                {
+                                                                                    "metaVars": [],
+                                                                                    "sourcePos": []
+                                                                                },
+                                                                                "Explicit",
+                                                                                {
+                                                                                    "contents": [
+                                                                                        {
+                                                                                            "metaVars": [],
+                                                                                            "sourcePos": []
+                                                                                        },
+                                                                                        "Explicit",
+                                                                                        {
+                                                                                            "contents": [
+                                                                                                {
+                                                                                                    "metaVars": [],
+                                                                                                    "sourcePos": []
+                                                                                                },
+                                                                                                "Explicit",
+                                                                                                {
+                                                                                                    "contents": [
+                                                                                                        {
+                                                                                                            "metaVars": [],
+                                                                                                            "sourcePos": []
+                                                                                                        },
+                                                                                                        "pair"
+                                                                                                    ],
+                                                                                                    "tag": "TGlobal"
+                                                                                                },
+                                                                                                {
+                                                                                                    "contents": [
+                                                                                                        {
+                                                                                                            "metaVars": [],
+                                                                                                            "sourcePos": []
+                                                                                                        },
+                                                                                                        2
+                                                                                                    ],
+                                                                                                    "tag": "TVar"
+                                                                                                }
+                                                                                            ],
+                                                                                            "tag": "TApp"
+                                                                                        },
+                                                                                        {
+                                                                                            "contents": [
+                                                                                                {
+                                                                                                    "metaVars": [],
+                                                                                                    "sourcePos": []
+                                                                                                },
+                                                                                                1
+                                                                                            ],
+                                                                                            "tag": "TVar"
+                                                                                        }
+                                                                                    ],
+                                                                                    "tag": "TApp"
+                                                                                },
+                                                                                {
+                                                                                    "contents": [
+                                                                                        {
+                                                                                            "metaVars": [],
+                                                                                            "sourcePos": []
+                                                                                        },
+                                                                                        0
+                                                                                    ],
+                                                                                    "tag": "TVar"
+                                                                                }
+                                                                            ],
+                                                                            "tag": "TApp"
+                                                                        }
                                                                     ],
-                                                                    "tag": "TVar"
+                                                                    "tag": "TApp"
                                                                 }
                                                             ],
                                                             "tag": "TLambda"

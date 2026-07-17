@@ -1,1 +1,8 @@
-@define T := λ (T : Type) (T & T : T) (T : Type) (T & T : T@_3). T
+@data Pair (T : Type)
+| pair (T : Type) (l & r : T) : Pair T
+
+@data Tuple (L & R : Type)
+| tuple (L & R : Type) (l : L) (r : R) : Tuple L R
+
+@define T := λ (T : Type) (T & T : T) (T : Type) (T & T : T@_3).
+  tuple (Pair T@_0) (Pair T@_3) (pair T@_0 T@_1 T@_2) (pair T@_3 T@_4 T@_5)

@@ -30,6 +30,7 @@ import qualified Data.Show.Reshow as RS
 import qualified System.Directory as Dir
 import Control.Monad (join)
 import Data.Traversable (for)
+import Witherable (mapMaybe)
 import System.FilePath ((</>))
 import Data.Monoid (All (All))
 import GHC.Base (error)
@@ -40,6 +41,8 @@ import Control.Monad.Error.Class (tryError)
 import Control.DeepSeq (NFData, force)
 import qualified Data.Vector as Vector
 import Data.IORef (newIORef, modifyIORef', readIORef)
+import Pudding.Surface.Delaborator (delab, runDelab)
+import qualified Pudding.Surface.Delaborator as Delab
 
 data Formats = Formats
   { text :: Text
@@ -186,46 +189,80 @@ formatsModule modul = Formats
         maybe "_" nameText name <> " := " <> formatCore f tm <> "\n\n"
       _ -> mempty
 
+delabTerm :: Term -> Formats
+delabTerm term = Formats
+  { text = text
+  , html = xmlEscape text
+  , ansi = fmt Delab.Ansi
+  , json = AE.toJSON cst
+  }
+  where
+  cst = runDelab $ delab term
+  text = fmt Delab.Plain
+  fmt f = Delab.format f $ Delab.printCST cst Delab.atTop
 
+delabModule :: Vector.Vector (Maybe Name, GlobalInfo) -> Formats
+delabModule modul = Formats
+  { text = text
+  , html = xmlEscape text
+  , ansi = fmt Delab.Ansi
+  , json = AE.toJSON csts
+  }
+  where
+  defns = modul & mapMaybe \case
+    (name, DefnGlobal d) -> Just (name, d)
+    _ -> Nothing
+  bidelab (GlobalDefn _ (GlobalTerm ty _) (GlobalTerm tm _)) =
+    (runDelab $ delab ty, runDelab $ delab tm)
+  csts = fmap bidelab <$> defns
+  text = fmt Delab.Plain
+  formatCST f cst = Delab.format f $ Delab.printCST cst Delab.atTop
+  fmt f = csts & foldMap \(name, (ty, tm)) ->
+    maybe "_" nameText name <> " : " <> formatCST f ty <> "\n" <>
+    maybe "_" nameText name <> " := " <> formatCST f tm <> "\n\n"
 
 
 fullSurfaceProcess :: String -> Text -> IO Stages
 fullSurfaceProcess = startSurfaceProcess finishDecls finishExpr
 
 startSurfaceProcess ::
-  ([Decl] -> IO Stages) ->
-  (CST -> IO Stages) ->
+  ([LEXED] -> [Token] -> [Decl] -> IO Stages) ->
+  ([LEXED] -> [Token] -> CST -> IO Stages) ->
   String -> T.Text -> IO Stages
 startSurfaceProcess onDecls onExpr filename contents = do
   let prelexed = runIdentity (P.runPT (prelex <* P.eof) WHITESPACE filename contents)
   catching "prelex" case prelexed of
     Left err -> pure [stage1Fail err]
-    Right r -> (stage1Success r :) <$> do
-      let tokenized = runIdentity (P.runPT (tokenize <* P.eof) Nothing filename r)
+    Right lexemes -> (stage1Success lexemes :) <$> do
+      let tokenized = runIdentity (P.runPT (tokenize <* P.eof) Nothing filename lexemes)
       catching "tokenize" case tokenized of
         Left err -> pure [stage2Fail err]
-        Right ts -> (stage2Success ts :) <$> do
-          let parsed = (Happy.parseDecls ts, Happy.parseExprInParens ts)
+        Right tokens -> (stage2Success tokens :) <$> do
+          let parsed = (Happy.parseDecls tokens, Happy.parseExprInParens tokens)
           catching "parse" case parsed of
             (Left err, Left _) -> pure [stage3Fail err]
-            (Right decls, _) -> onDecls decls
-            (_, Right expr) -> onExpr expr
+            (Right decls, _) -> onDecls lexemes tokens decls
+            (_, Right expr) -> onExpr lexemes tokens expr
 
-finishExpr :: CST -> IO Stages
-finishExpr expr =
+finishExpr :: [LEXED] -> [Token] -> CST -> IO Stages
+finishExpr _ _ expr =
   (stage3ESuccess expr :) <$> do
     tbl <- initTable
     catching "elab" do
       term <- Elab.runElabScoped tbl (Elab.elab Nothing expr)
-      pure [stage4ESuccess term]
+      pure [stage4ESuccess term] <> sequence
+        [ pure ("delab", StageSuccess (delabTerm term) Nothing)
+        ]
 
-finishDecls :: [Decl] -> IO Stages
-finishDecls decls =
+finishDecls :: [LEXED] -> [Token] -> [Decl] -> IO Stages
+finishDecls _ _ decls =
   (stage3DSuccess decls :) <$> do
     tbl <- initTable
     catching "elab" do
       (_, modul) <- Elab.runElabFull tbl (Elab.elaborateModule decls)
-      pure [stage4DSuccess modul]
+      pure [stage4DSuccess modul] <> sequence
+        [ pure ("delab", StageSuccess (delabModule modul) Nothing)
+        ]
 
 
 

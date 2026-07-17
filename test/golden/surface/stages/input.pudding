@@ -9,3 +9,6 @@
 @example λ (void : Void). $q[ void ]
 
 @example λ (void : % Id Void). $s[ void ]
+
+@define ap := λ (I&O : % Type) (f : % Π(_ : $s[I]). $s[O]) (x : % $s[I]). $q[ $s[f] x ] : % $s[O]
+@define unap := λ (I&O : % Type) (f : Π(_ : % $s[I]). % $s[O]). $q[ λ(x : $s[I]). $s[f $q[x]] ] : % Π(_ : $s[I]). $s[O]

@@ -1,0 +1,733 @@
+[
+    [
+        "T",
+        [
+            {
+                "contents": [
+                    [
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "T"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "tag": "CUniv"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "tag": "CPlaceholder"
+                                }
+                            ],
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "tag": "CPlaceholder"
+                                }
+                            ],
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "contents": 0,
+                                        "tag": "DBLevel"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "T"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "tag": "CUniv"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "tag": "CPlaceholder"
+                                }
+                            ],
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "tag": "CPlaceholder"
+                                }
+                            ],
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "contents": 3,
+                                        "tag": "DBLevel"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            }
+                        ]
+                    ],
+                    {
+                        "contents": [
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "Tuple"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            },
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                {
+                                                    "contents": [
+                                                        [],
+                                                        "Pair"
+                                                    ],
+                                                    "tag": "PlainName"
+                                                },
+                                                {
+                                                    "tag": "PlainVar"
+                                                }
+                                            ],
+                                            "tag": "CVar"
+                                        },
+                                        [
+                                            {
+                                                "contents": [
+                                                    {
+                                                        "contents": [
+                                                            [],
+                                                            "T"
+                                                        ],
+                                                        "tag": "PlainName"
+                                                    },
+                                                    {
+                                                        "contents": 0,
+                                                        "tag": "DBLevel"
+                                                    }
+                                                ],
+                                                "tag": "CVar"
+                                            }
+                                        ]
+                                    ],
+                                    "tag": "CApps"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                {
+                                                    "contents": [
+                                                        [],
+                                                        "Pair"
+                                                    ],
+                                                    "tag": "PlainName"
+                                                },
+                                                {
+                                                    "tag": "PlainVar"
+                                                }
+                                            ],
+                                            "tag": "CVar"
+                                        },
+                                        [
+                                            {
+                                                "contents": [
+                                                    {
+                                                        "contents": [
+                                                            [],
+                                                            "T"
+                                                        ],
+                                                        "tag": "PlainName"
+                                                    },
+                                                    {
+                                                        "contents": 3,
+                                                        "tag": "DBLevel"
+                                                    }
+                                                ],
+                                                "tag": "CVar"
+                                            }
+                                        ]
+                                    ],
+                                    "tag": "CApps"
+                                }
+                            ]
+                        ],
+                        "tag": "CApps"
+                    }
+                ],
+                "tag": "CPi"
+            },
+            {
+                "contents": [
+                    [
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "T"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "tag": "CUniv"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "T"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "T"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "contents": 0,
+                                        "tag": "DBLevel"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "T"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "tag": "CUniv"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "T"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "T"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "T"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "contents": 3,
+                                        "tag": "DBLevel"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            }
+                        ]
+                    ],
+                    {
+                        "contents": [
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            {
+                                                "contents": [
+                                                    {
+                                                        "contents": [
+                                                            {
+                                                                "contents": [
+                                                                    [],
+                                                                    "tuple"
+                                                                ],
+                                                                "tag": "PlainName"
+                                                            },
+                                                            {
+                                                                "tag": "PlainVar"
+                                                            }
+                                                        ],
+                                                        "tag": "CVar"
+                                                    },
+                                                    [
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "contents": [
+                                                                                [],
+                                                                                "Pair"
+                                                                            ],
+                                                                            "tag": "PlainName"
+                                                                        },
+                                                                        {
+                                                                            "tag": "PlainVar"
+                                                                        }
+                                                                    ],
+                                                                    "tag": "CVar"
+                                                                },
+                                                                [
+                                                                    {
+                                                                        "contents": [
+                                                                            {
+                                                                                "contents": [
+                                                                                    [],
+                                                                                    "T"
+                                                                                ],
+                                                                                "tag": "PlainName"
+                                                                            },
+                                                                            {
+                                                                                "contents": 0,
+                                                                                "tag": "DBLevel"
+                                                                            }
+                                                                        ],
+                                                                        "tag": "CVar"
+                                                                    }
+                                                                ]
+                                                            ],
+                                                            "tag": "CApps"
+                                                        }
+                                                    ]
+                                                ],
+                                                "tag": "CApps"
+                                            },
+                                            [
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "contents": [
+                                                                        [],
+                                                                        "Pair"
+                                                                    ],
+                                                                    "tag": "PlainName"
+                                                                },
+                                                                {
+                                                                    "tag": "PlainVar"
+                                                                }
+                                                            ],
+                                                            "tag": "CVar"
+                                                        },
+                                                        [
+                                                            {
+                                                                "contents": [
+                                                                    {
+                                                                        "contents": [
+                                                                            [],
+                                                                            "T"
+                                                                        ],
+                                                                        "tag": "PlainName"
+                                                                    },
+                                                                    {
+                                                                        "contents": 3,
+                                                                        "tag": "DBLevel"
+                                                                    }
+                                                                ],
+                                                                "tag": "CVar"
+                                                            }
+                                                        ]
+                                                    ],
+                                                    "tag": "CApps"
+                                                }
+                                            ]
+                                        ],
+                                        "tag": "CApps"
+                                    },
+                                    [
+                                        {
+                                            "contents": [
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "contents": [
+                                                                                [],
+                                                                                "pair"
+                                                                            ],
+                                                                            "tag": "PlainName"
+                                                                        },
+                                                                        {
+                                                                            "tag": "PlainVar"
+                                                                        }
+                                                                    ],
+                                                                    "tag": "CVar"
+                                                                },
+                                                                [
+                                                                    {
+                                                                        "contents": [
+                                                                            {
+                                                                                "contents": [
+                                                                                    [],
+                                                                                    "T"
+                                                                                ],
+                                                                                "tag": "PlainName"
+                                                                            },
+                                                                            {
+                                                                                "contents": 0,
+                                                                                "tag": "DBLevel"
+                                                                            }
+                                                                        ],
+                                                                        "tag": "CVar"
+                                                                    }
+                                                                ]
+                                                            ],
+                                                            "tag": "CApps"
+                                                        },
+                                                        [
+                                                            {
+                                                                "contents": [
+                                                                    {
+                                                                        "contents": [
+                                                                            [],
+                                                                            "T"
+                                                                        ],
+                                                                        "tag": "PlainName"
+                                                                    },
+                                                                    {
+                                                                        "contents": 1,
+                                                                        "tag": "DBLevel"
+                                                                    }
+                                                                ],
+                                                                "tag": "CVar"
+                                                            }
+                                                        ]
+                                                    ],
+                                                    "tag": "CApps"
+                                                },
+                                                [
+                                                    {
+                                                        "contents": [
+                                                            {
+                                                                "contents": [
+                                                                    [],
+                                                                    "T"
+                                                                ],
+                                                                "tag": "PlainName"
+                                                            },
+                                                            {
+                                                                "contents": 2,
+                                                                "tag": "DBLevel"
+                                                            }
+                                                        ],
+                                                        "tag": "CVar"
+                                                    }
+                                                ]
+                                            ],
+                                            "tag": "CApps"
+                                        }
+                                    ]
+                                ],
+                                "tag": "CApps"
+                            },
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "contents": [
+                                                                        [],
+                                                                        "pair"
+                                                                    ],
+                                                                    "tag": "PlainName"
+                                                                },
+                                                                {
+                                                                    "tag": "PlainVar"
+                                                                }
+                                                            ],
+                                                            "tag": "CVar"
+                                                        },
+                                                        [
+                                                            {
+                                                                "contents": [
+                                                                    {
+                                                                        "contents": [
+                                                                            [],
+                                                                            "T"
+                                                                        ],
+                                                                        "tag": "PlainName"
+                                                                    },
+                                                                    {
+                                                                        "contents": 3,
+                                                                        "tag": "DBLevel"
+                                                                    }
+                                                                ],
+                                                                "tag": "CVar"
+                                                            }
+                                                        ]
+                                                    ],
+                                                    "tag": "CApps"
+                                                },
+                                                [
+                                                    {
+                                                        "contents": [
+                                                            {
+                                                                "contents": [
+                                                                    [],
+                                                                    "T"
+                                                                ],
+                                                                "tag": "PlainName"
+                                                            },
+                                                            {
+                                                                "contents": 4,
+                                                                "tag": "DBLevel"
+                                                            }
+                                                        ],
+                                                        "tag": "CVar"
+                                                    }
+                                                ]
+                                            ],
+                                            "tag": "CApps"
+                                        },
+                                        [
+                                            {
+                                                "contents": [
+                                                    {
+                                                        "contents": [
+                                                            [],
+                                                            "T"
+                                                        ],
+                                                        "tag": "PlainName"
+                                                    },
+                                                    {
+                                                        "tag": "PlainVar"
+                                                    }
+                                                ],
+                                                "tag": "CVar"
+                                            }
+                                        ]
+                                    ],
+                                    "tag": "CApps"
+                                }
+                            ]
+                        ],
+                        "tag": "CApps"
+                    }
+                ],
+                "tag": "CLambda"
+            }
+        ]
+    ]
+]

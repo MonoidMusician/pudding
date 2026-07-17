@@ -46,6 +46,7 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import Control.Applicative ((<|>))
 import Control.Applicative.Backwards (Backwards (forwards, Backwards))
+import qualified Data.Vector as Vector
 
 
 type Delab = RWS DelabR DelabW DelabS
@@ -194,17 +195,17 @@ delab = \case
     tyE <- evalD ty
     ty' <- delab ty
     withBinder binder tyE (delab body) \b' body' ->
-      CLambda (pure (p, pure $ fromMaybe CPlaceholder b', Just ty')) body'
+      coalesce $ CLambda (pure (p, pure $ fromMaybe CPlaceholder b', Just ty')) body'
   TPi _m p binder ty (Scoped body) -> do
     tyE <- evalD ty
     ty' <- delab ty
     withBinder binder tyE (delab body) \b' body' ->
-      CPi (pure (p, pure $ fromMaybe CPlaceholder b', Just ty')) body'
+      coalesce $ CPi (pure (p, pure $ fromMaybe CPlaceholder b', Just ty')) body'
   TSigma _m p binder ty (Scoped body) -> do
     tyE <- evalD ty
     ty' <- delab ty
     withBinder binder tyE (delab body) \b' body' ->
-      CSigma (pure (p, pure $ fromMaybe CPlaceholder b', Just ty')) body'
+      coalesce $ CSigma (pure (p, pure $ fromMaybe CPlaceholder b', Just ty')) body'
   -- TODO validate Plicit
   TApp _m p fun arg -> case p of
     Explicit -> CApps <$> delab fun <*> (pure <$> delab arg)
@@ -212,11 +213,15 @@ delab = \case
       fun' <- delab fun
       arg' <- delab arg
       pure $ Subexpr fun' :| [SImplicits [(Nothing, arg')]]
-  TPair _m _ty left right -> CArray <$> traverse delab [left, right]
+  TPair _m _ty left right -> CPair <$> delab left <*> delab right
   TFst _m term -> CField <$> delab term <*> pure "0"
   TSnd _m term -> CField <$> delab term <*> pure "1"
-  -- TTyCtor _m name params indices -> _
-  -- TTmCtor _m (tyname, name) params args -> _
+  TTyCtor _m name params indices -> apps (CVar (Just $ PlainName [] $ nameText name) PlainVar) <$>
+    traverse delab
+      (Vector.toList params <> Vector.toList indices)
+  TTmCtor _m (tyname, name) params args -> apps (CVar (Just $ PlainName [] $ nameText name) PlainVar) <$>
+    traverse delab
+      (Vector.toList params <> Vector.toList args)
   -- TCase _m motive cases scrutinee -> _
   -- TRecordTy _m fields -> _
   -- TRecordTm _m fields -> _
@@ -228,6 +233,16 @@ delab = \case
     c <- asks (size . ctx)
     error $ "Unsupported delab: " <> T.unpack (P.format P.Plain (P.printCore tm (P.PS 0 c)))
 
+apps :: CST -> [CST] -> CST
+apps t [] = t
+apps f (a : as) = CApps f (a :| as)
+
+coalesce :: CST -> CST
+coalesce (CLambda b1 (CLambda b2 t)) = coalesce (CLambda (b1 <> b2) t)
+coalesce (CPi     b1 (CPi     b2 t)) = coalesce (CPi     (b1 <> b2) t)
+coalesce (CSigma  b1 (CSigma  b2 t)) = coalesce (CSigma  (b1 <> b2) t)
+coalesce t = t
+
 
 
 type Print = Doc.Doc Ansi.AnsiStyle
@@ -236,7 +251,11 @@ type Printer = PrinterState -> Print
 data PrinterState = PS
   { psRainbow :: Int
   , psDepth :: Int
+  , psPrec :: Prec
   }
+
+atTop :: PrinterState
+atTop = PS 0 0 PrecMin
 
 data Style = Ansi | Plain
 
@@ -254,32 +273,86 @@ pretty = pure . Doc.pretty
 lit :: forall m ann. Applicative m => Text -> m (Doc.Doc ann)
 lit = pretty @Text
 
-spaced :: forall f m ann. Foldable f => Applicative m => f (m (Doc.Doc ann)) -> m (Doc.Doc ann)
+spaced :: forall f. Foldable f => f Printer -> Printer
 spaced = sepBy (pure Doc.softline)
 
-sepBy :: forall f m ann. Foldable f => Applicative m => m (Doc.Doc ann) -> f (m (Doc.Doc ann)) -> m (Doc.Doc ann)
+sepBy :: forall f. Foldable f => Printer -> f Printer -> Printer
 sepBy s ds0 = case toList ds0 of
   [] -> pure mempty
   (d : ds) -> getAp $ intercalateMap1 (Ap s) Ap (d :| ds)
 
-commas :: forall f m ann. Foldable f => Applicative m => f (m (Doc.Doc ann)) -> m (Doc.Doc ann)
+commas :: forall f. Foldable f => f Printer -> Printer
 commas = sepBy (pure Doc.comma)
 
-juxt :: forall f m ann. Foldable f => Applicative m => f (m (Doc.Doc ann)) -> m (Doc.Doc ann)
+juxt :: forall f. Foldable f => f Printer -> Printer
 juxt = sepBy (pure mempty)
 
-parens :: forall f m ann. Foldable f => Applicative m => f (m (Doc.Doc ann)) -> m (Doc.Doc ann)
-parens inner = juxt [ lit "(", spaced inner, lit ")" ]
+parens :: forall f. Foldable f => f Printer -> Printer
+parens = wrap "(" ")"
 
-braces :: forall f m ann. Foldable f => Applicative m => f (m (Doc.Doc ann)) -> m (Doc.Doc ann)
-braces inner = juxt [ lit "{", spaced inner, lit "}" ]
+braces :: forall f. Foldable f => f Printer -> Printer
+braces = wrap "{" "}"
 
-wrap :: (Semigroup (m (Doc.Doc ann)), Applicative m, Foldable f) => Text -> Text -> f (m (Doc.Doc ann)) -> m (Doc.Doc ann)
-wrap s e inner = juxt [ lit s, spaced inner, lit e ]
+wrap :: (Semigroup Printer, Foldable f) => Text -> Text -> f Printer -> Printer
+wrap s e inner = setPrec PrecMin $ juxt
+  [ lit s, spaced inner, lit e ]
+
+data Prec
+  = PrecMin
+  | PrecTrailing
+  | PrecAscribe
+  | PrecPair
+  | PrecLift
+  | PrecApp
+  | PrecMax
+  deriving (Eq, Ord, Enum, Generic, Show)
+
+data Assoc = AssocL | AssocN | AssocR
+
+assocOf :: Prec -> Assoc
+assocOf = \case
+  PrecMin -> AssocN
+  PrecAscribe -> AssocR
+  PrecLift -> AssocN
+  PrecTrailing -> AssocN
+  PrecApp -> AssocL
+  PrecPair -> AssocN
+  PrecMax -> AssocN
+
+
+withPrec :: Prec -> ([Printer] -> Printer) -> [Printer] -> Printer
+withPrec inner joiner contents s =
+  if inner >= psPrec s
+    then joiner (resetPrec inner contents) s
+    else parens [setPrec inner (joiner contents)] s
+
+setPrec :: Prec -> Printer -> Printer
+setPrec prec item s = item (s { psPrec = prec })
+
+bookends :: (Assoc -> x -> y) -> [x] -> [y]
+bookends _ [] = []
+bookends f [x] = [f AssocN x]
+bookends f (x0 : xs0) = f AssocL x0 : go xs0 where
+  go [] = []
+  go [x] = [f AssocR x]
+  go (x : xs) = f AssocN x : go xs
+
+resetPrec :: Prec -> [Printer] -> [Printer]
+resetPrec prec = bookends \position item s ->
+  case (assocOf prec, position) of
+    (AssocL, AssocL) -> item (s { psPrec = prec })
+    (AssocR, AssocR) -> item (s { psPrec = prec })
+    _ -> item (s { psPrec = succ prec })
+
+
+dbgPrec :: (CST -> Printer) -> (CST -> Printer)
+-- dbgPrec f = (\_ s -> Doc.pretty (show (psPrec s) <> "[")) <> (<> pure (lit "]")) f
+dbgPrec f = f
 
 printCST :: CST -> Printer
-printCST = \case
-  CApps f (a :| as) -> spaced (printCST f : fmap printCST (a : as))
+printCST = dbgPrec \case
+  CApps f (a :| as) -> withPrec PrecApp spaced
+    (printCST f : fmap printCST (a : as))
   CLambda binders body -> printBindingForm "λ" binders body
   CPi     binders body -> printBindingForm "Π" binders body
   CSigma  binders body -> printBindingForm "Σ" binders body
@@ -306,18 +379,20 @@ printCST = \case
   CHole _ -> error "Unsupported CHole"
   CPlaceholder -> lit "_"
 
+  CPair l r -> withPrec PrecPair spaced [printCST l <> lit ",", printCST r]
+
   CRecordTy [] -> printCST (CAscribe (CRecordTm []) CUniv)
   CRecordTy tys -> braces $ tys <&> \(n, t) -> juxt [ pretty n, lit ":", printCST t ]
   CRecordTm tms -> braces $ tms <&> \(n, t) -> juxt [ pretty n, lit ":=", printCST t ]
 
-  CLift l -> parens [lit "%", printCST l]
+  CLift l -> withPrec PrecLift spaced [lit "%", printCST l]
   CQuote e -> wrap "$q[" "]" [printCST e]
   CSplice e -> wrap "$s[" "]" [printCST e]
 
   -- CMatch ![CST] !("cases" @:: [("pats" @:: [CST], "body" @:: CST)])
   CMatch _ _ -> error "Unsupported CMatch"
   CField e n -> parens [printCST e <> lit "." <> pretty n]
-  CAscribe e t -> parens [printCST e, lit ":", printCST t]
+  CAscribe e t -> withPrec PrecAscribe spaced [printCST e, lit ":", printCST t]
   CAssign x y -> parens [printCST x, lit ":=", printCST y]
   CArray xs -> wrap "[" "]" [commas $ printCST <$> xs]
 
@@ -325,14 +400,14 @@ printCST = \case
 printBindingForm :: Text -> NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST) -> CST -> Printer
 printBindingForm intro binders body st =
   let bound = printBinders binders st in
-  parens [ pretty intro, pure bound <> lit ".", printCST body ] st
+  withPrec PrecTrailing spaced [ pretty intro, pure bound <> lit ".", printCST body . const (st { psPrec = PrecMin }) ] st
 
 printBinders :: NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST) -> Printer
 printBinders = intercalateMap1 (pure Doc.space) \(p, vars, ty) -> do
-  (if p == Implicit then braces else parens)
+  (if p == Implicit then pure (lit "@") <> braces else parens)
     [ spaced $ printBinder <$> vars
     , lit ":"
-    , printCST $ fromMaybe CPlaceholder ty
+    , setPrec PrecAscribe $ printCST $ fromMaybe CPlaceholder ty
     ]
 
 printBinder :: CBinder -> Printer

@@ -376,7 +376,8 @@ validateOrNot seqOrConst ctx = \case
   vv = validateOrNot seqOrConst ctx
   vvv = force . vv
 
-  force = (fromMaybe <*> forceGlobal ctx) . undeferred
+  -- FIXME: make sure globals are never deferred
+  force = withForced ctx id . undeferred
 
   checkFor _ True = ()
   checkFor err False = error err

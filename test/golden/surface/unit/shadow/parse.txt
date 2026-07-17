@@ -1,4 +1,74 @@
-[ DDefine
+[ DDataType
+  ( Just ( PlainName [] "Pair" ), PlainVar )
+  [ ( Explicit, CVar ( Just ( PlainName [] "T" ) ) PlainVar :| [], Just CUniv )
+  ]
+  []
+  Nothing
+  [ ( ( Just ( PlainName [] "pair" ), PlainVar )
+    , [ ( Explicit
+        , CVar ( Just ( PlainName [] "T" ) ) PlainVar :| []
+        , Just CUniv
+        )
+      , ( Explicit
+        , CVar
+          ( Just ( PlainName [] "l" ) )
+          PlainVar
+          :|
+          [ CVar ( Just ( PlainName [] "r" ) ) PlainVar ]
+        , Just ( CVar ( Just ( PlainName [] "T" ) ) PlainVar )
+        )
+      ]
+    , Just
+      ( CApps
+        ( CVar ( Just ( PlainName [] "Pair" ) ) PlainVar )
+        ( CVar ( Just ( PlainName [] "T" ) ) PlainVar :| [] )
+      )
+    )
+  ]
+, DDataType
+  ( Just ( PlainName [] "Tuple" ), PlainVar )
+  [ ( Explicit
+    , CVar
+      ( Just ( PlainName [] "L" ) )
+      PlainVar
+      :|
+      [ CVar ( Just ( PlainName [] "R" ) ) PlainVar ]
+    , Just CUniv
+    )
+  ]
+  []
+  Nothing
+  [ ( ( Just ( PlainName [] "tuple" ), PlainVar )
+    , [ ( Explicit
+        , CVar
+          ( Just ( PlainName [] "L" ) )
+          PlainVar
+          :|
+          [ CVar ( Just ( PlainName [] "R" ) ) PlainVar ]
+        , Just CUniv
+        )
+      , ( Explicit
+        , CVar ( Just ( PlainName [] "l" ) ) PlainVar :| []
+        , Just ( CVar ( Just ( PlainName [] "L" ) ) PlainVar )
+        )
+      , ( Explicit
+        , CVar ( Just ( PlainName [] "r" ) ) PlainVar :| []
+        , Just ( CVar ( Just ( PlainName [] "R" ) ) PlainVar )
+        )
+      ]
+    , Just
+      ( CApps
+        ( CVar ( Just ( PlainName [] "Tuple" ) ) PlainVar )
+        ( CVar
+          ( Just ( PlainName [] "L" ) )
+          PlainVar
+          :|
+          [ CVar ( Just ( PlainName [] "R" ) ) PlainVar ]
+        )
+      )
+    )
+  ]
+, DDefine
   []
   ( Just ( PlainName [] "T" ), PlainVar )
   Nothing
@@ -30,6 +100,37 @@
         )
       ]
     )
-    ( CVar ( Just ( PlainName [] "T" ) ) PlainVar )
+    ( CApps
+      ( CVar ( Just ( PlainName [] "tuple" ) ) PlainVar )
+      ( CApps
+        ( CVar ( Just ( PlainName [] "Pair" ) ) PlainVar )
+        ( CVar ( Just ( PlainName [] "T" ) ) ( DBLevel 0 ) :| [] )
+        :|
+        [ CApps
+          ( CVar ( Just ( PlainName [] "Pair" ) ) PlainVar )
+          ( CVar ( Just ( PlainName [] "T" ) ) ( DBLevel 3 ) :| [] )
+        , CApps
+          ( CVar ( Just ( PlainName [] "pair" ) ) PlainVar )
+          ( CVar
+            ( Just ( PlainName [] "T" ) )
+            ( DBLevel 0 )
+            :|
+            [ CVar ( Just ( PlainName [] "T" ) ) ( DBLevel 1 )
+            , CVar ( Just ( PlainName [] "T" ) ) ( DBLevel 2 )
+            ]
+          )
+        , CApps
+          ( CVar ( Just ( PlainName [] "pair" ) ) PlainVar )
+          ( CVar
+            ( Just ( PlainName [] "T" ) )
+            ( DBLevel 3 )
+            :|
+            [ CVar ( Just ( PlainName [] "T" ) ) ( DBLevel 4 )
+            , CVar ( Just ( PlainName [] "T" ) ) ( DBLevel 5 )
+            ]
+          )
+        ]
+      )
+    )
   )
 ]

@@ -15,6 +15,9 @@ import Prettyprinter (Pretty(pretty))
 import GHC.IO (evaluate, unsafePerformIO)
 import qualified Data.Aeson as AE
 import Data.Functor.Contravariant (Contravariant(contramap))
+import qualified Data.Text.Internal as TI
+import qualified Data.Text.Array as A
+import GHC.Base (sizeofByteArray#, Int (I#))
 
 data Name = Name { nameId :: !(StableName Text), nameText :: !Text }
 
@@ -55,13 +58,19 @@ globalTable = unsafePerformIO initTable
 newTable :: NameTable
 newTable = NameTable Map.empty
 
+{-# NOINLINE mayCopy #-}
+mayCopy :: Text -> Text
+mayCopy t@(TI.Text (A.ByteArray b) 0 slice)
+  | slice == I# (sizeofByteArray# b) = t
+mayCopy t = T.copy t
+
 internalize :: forall m. MonadIO m => IORef NameTable -> Text -> m Name
 internalize ref search = liftIO do
   NameTable names <- readIORef ref
   case Map.lookup search names of
     Just found -> pure found
     Nothing -> do
-      copied <- evaluate $ T.copy search
+      copied <- evaluate $ mayCopy search
       named <- makeStableName copied
       let made = Name named copied
       modifyIORef' ref $ coerce $ Map.insert copied made

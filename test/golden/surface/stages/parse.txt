@@ -58,4 +58,118 @@
     )
     ( CSplice ( CVar ( Just ( PlainName [] "void" ) ) PlainVar ) )
   )
+, DDefine
+  []
+  ( Just ( PlainName [] "ap" ), PlainVar )
+  Nothing
+  ( CLambda
+    ( ( Explicit
+      , CVar
+        ( Just ( PlainName [] "I" ) )
+        PlainVar
+        :|
+        [ CVar ( Just ( PlainName [] "O" ) ) PlainVar ]
+      , Just ( CLift CUniv )
+      )
+      :|
+      [ ( Explicit
+        , CVar ( Just ( PlainName [] "f" ) ) PlainVar :| []
+        , Just
+          ( CLift
+            ( CPi
+              ( ( Explicit
+                , CPlaceholder :| []
+                , Just
+                  ( CSplice ( CVar ( Just ( PlainName [] "I" ) ) PlainVar ) )
+                )
+                :|
+                []
+              )
+              ( CSplice ( CVar ( Just ( PlainName [] "O" ) ) PlainVar ) )
+            )
+          )
+        )
+      , ( Explicit
+        , CVar ( Just ( PlainName [] "x" ) ) PlainVar :| []
+        , Just
+          ( CLift ( CSplice ( CVar ( Just ( PlainName [] "I" ) ) PlainVar ) ) )
+        )
+      ]
+    )
+    ( CAscribe
+      ( CQuote
+        ( CApps
+          ( CSplice ( CVar ( Just ( PlainName [] "f" ) ) PlainVar ) )
+          ( CVar ( Just ( PlainName [] "x" ) ) PlainVar :| [] )
+        )
+      )
+      ( CLift ( CSplice ( CVar ( Just ( PlainName [] "O" ) ) PlainVar ) ) )
+    )
+  )
+, DDefine
+  []
+  ( Just ( PlainName [] "unap" ), PlainVar )
+  Nothing
+  ( CLambda
+    ( ( Explicit
+      , CVar
+        ( Just ( PlainName [] "I" ) )
+        PlainVar
+        :|
+        [ CVar ( Just ( PlainName [] "O" ) ) PlainVar ]
+      , Just ( CLift CUniv )
+      )
+      :|
+      [ ( Explicit
+        , CVar ( Just ( PlainName [] "f" ) ) PlainVar :| []
+        , Just
+          ( CPi
+            ( ( Explicit
+              , CPlaceholder :| []
+              , Just
+                ( CLift
+                  ( CSplice ( CVar ( Just ( PlainName [] "I" ) ) PlainVar ) )
+                )
+              )
+              :|
+              []
+            )
+            ( CLift ( CSplice ( CVar ( Just ( PlainName [] "O" ) ) PlainVar ) )
+            )
+          )
+        )
+      ]
+    )
+    ( CAscribe
+      ( CQuote
+        ( CLambda
+          ( ( Explicit
+            , CVar ( Just ( PlainName [] "x" ) ) PlainVar :| []
+            , Just ( CSplice ( CVar ( Just ( PlainName [] "I" ) ) PlainVar ) )
+            )
+            :|
+            []
+          )
+          ( CSplice
+            ( CApps
+              ( CVar ( Just ( PlainName [] "f" ) ) PlainVar )
+              ( CQuote ( CVar ( Just ( PlainName [] "x" ) ) PlainVar ) :| [] )
+            )
+          )
+        )
+      )
+      ( CLift
+        ( CPi
+          ( ( Explicit
+            , CPlaceholder :| []
+            , Just ( CSplice ( CVar ( Just ( PlainName [] "I" ) ) PlainVar ) )
+            )
+            :|
+            []
+          )
+          ( CSplice ( CVar ( Just ( PlainName [] "O" ) ) PlainVar ) )
+        )
+      )
+    )
+  )
 ]

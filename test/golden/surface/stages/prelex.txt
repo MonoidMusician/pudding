@@ -89,5 +89,201 @@
 , WHITESPACE
 , BUILTIN "]"
 , WHITESPACE
+, BUILTIN "@"
+, NAME "define"
+, WHITESPACE
+, NAME "ap"
+, WHITESPACE
+, BUILTIN ":="
+, WHITESPACE
+, BUILTIN "\955"
+, WHITESPACE
+, BUILTIN "("
+, NAME "I"
+, BUILTIN "&"
+, NAME "O"
+, WHITESPACE
+, BUILTIN ":"
+, WHITESPACE
+, OP "%"
+, WHITESPACE
+, NAME "Type"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, NAME "f"
+, WHITESPACE
+, BUILTIN ":"
+, WHITESPACE
+, OP "%"
+, WHITESPACE
+, BUILTIN "\928"
+, BUILTIN "("
+, BUILTIN "_"
+, WHITESPACE
+, BUILTIN ":"
+, WHITESPACE
+, OP "$"
+, NAME "s"
+, BUILTIN "["
+, NAME "I"
+, BUILTIN "]"
+, BUILTIN ")"
+, BUILTIN "."
+, WHITESPACE
+, OP "$"
+, NAME "s"
+, BUILTIN "["
+, NAME "O"
+, BUILTIN "]"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, NAME "x"
+, WHITESPACE
+, BUILTIN ":"
+, WHITESPACE
+, OP "%"
+, WHITESPACE
+, OP "$"
+, NAME "s"
+, BUILTIN "["
+, NAME "I"
+, BUILTIN "]"
+, BUILTIN ")"
+, BUILTIN "."
+, WHITESPACE
+, OP "$"
+, NAME "q"
+, BUILTIN "["
+, WHITESPACE
+, OP "$"
+, NAME "s"
+, BUILTIN "["
+, NAME "f"
+, BUILTIN "]"
+, WHITESPACE
+, NAME "x"
+, WHITESPACE
+, BUILTIN "]"
+, WHITESPACE
+, BUILTIN ":"
+, WHITESPACE
+, OP "%"
+, WHITESPACE
+, OP "$"
+, NAME "s"
+, BUILTIN "["
+, NAME "O"
+, BUILTIN "]"
+, WHITESPACE
+, BUILTIN "@"
+, NAME "define"
+, WHITESPACE
+, NAME "unap"
+, WHITESPACE
+, BUILTIN ":="
+, WHITESPACE
+, BUILTIN "\955"
+, WHITESPACE
+, BUILTIN "("
+, NAME "I"
+, BUILTIN "&"
+, NAME "O"
+, WHITESPACE
+, BUILTIN ":"
+, WHITESPACE
+, OP "%"
+, WHITESPACE
+, NAME "Type"
+, BUILTIN ")"
+, WHITESPACE
+, BUILTIN "("
+, NAME "f"
+, WHITESPACE
+, BUILTIN ":"
+, WHITESPACE
+, BUILTIN "\928"
+, BUILTIN "("
+, BUILTIN "_"
+, WHITESPACE
+, BUILTIN ":"
+, WHITESPACE
+, OP "%"
+, WHITESPACE
+, OP "$"
+, NAME "s"
+, BUILTIN "["
+, NAME "I"
+, BUILTIN "]"
+, BUILTIN ")"
+, BUILTIN "."
+, WHITESPACE
+, OP "%"
+, WHITESPACE
+, OP "$"
+, NAME "s"
+, BUILTIN "["
+, NAME "O"
+, BUILTIN "]"
+, BUILTIN ")"
+, BUILTIN "."
+, WHITESPACE
+, OP "$"
+, NAME "q"
+, BUILTIN "["
+, WHITESPACE
+, BUILTIN "\955"
+, BUILTIN "("
+, NAME "x"
+, WHITESPACE
+, BUILTIN ":"
+, WHITESPACE
+, OP "$"
+, NAME "s"
+, BUILTIN "["
+, NAME "I"
+, BUILTIN "]"
+, BUILTIN ")"
+, BUILTIN "."
+, WHITESPACE
+, OP "$"
+, NAME "s"
+, BUILTIN "["
+, NAME "f"
+, WHITESPACE
+, OP "$"
+, NAME "q"
+, BUILTIN "["
+, NAME "x"
+, BUILTIN "]"
+, BUILTIN "]"
+, WHITESPACE
+, BUILTIN "]"
+, WHITESPACE
+, BUILTIN ":"
+, WHITESPACE
+, OP "%"
+, WHITESPACE
+, BUILTIN "\928"
+, BUILTIN "("
+, BUILTIN "_"
+, WHITESPACE
+, BUILTIN ":"
+, WHITESPACE
+, OP "$"
+, NAME "s"
+, BUILTIN "["
+, NAME "I"
+, BUILTIN "]"
+, BUILTIN ")"
+, BUILTIN "."
+, WHITESPACE
+, OP "$"
+, NAME "s"
+, BUILTIN "["
+, NAME "O"
+, BUILTIN "]"
+, WHITESPACE
 , WHITESPACE
 ]

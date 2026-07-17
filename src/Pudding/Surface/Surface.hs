@@ -83,9 +83,9 @@ demoFile filename = do
                     -- TIO.putStrLn $ nameText name <> " : " <> formatCore Ansi ty
                     -- TIO.putStrLn $ nameText name <> " := " <> formatCore Ansi tm
                     TIO.putStrLn $ nameText name <> " : " <> do
-                      D.format D.Ansi $ D.printCST (D.runDelab $ D.delab tm) (D.PS 0 0)
+                      D.format D.Ansi $ D.printCST (D.runDelab $ D.delab tm) D.atTop
                     TIO.putStrLn $ nameText name <> " := " <> do
-                      D.format D.Ansi $ D.printCST (D.runDelab $ D.delab ty) (D.PS 0 0)
+                      D.format D.Ansi $ D.printCST (D.runDelab $ D.delab ty) D.atTop
                   _ -> pure ()
     \(err :: SomeException) -> TIO.putStrLn $ T.pack $ show err
 
@@ -117,8 +117,8 @@ demoREPL = do
                 tyE <- evaluate $ force $ U.validate Nil tm
                 let tyT = E.quote Nil tyE
                 TIO.putStrLn $ formatCore Ansi tyT
-                TIO.putStrLn $ D.format D.Ansi $ D.printCST (D.runDelab $ D.delab tm) (D.PS 0 0)
-                TIO.putStrLn $ D.format D.Ansi $ D.printCST (D.runDelab $ D.delab tyT) (D.PS 0 0)
+                TIO.putStrLn $ D.format D.Ansi $ D.printCST (D.runDelab $ D.delab tm) D.atTop
+                TIO.putStrLn $ D.format D.Ansi $ D.printCST (D.runDelab $ D.delab tyT) D.atTop
               (_, Right decl) -> do
                 TIO.putStrLn $ reshow decl
     \(err :: SomeException) -> TIO.putStrLn $ T.pack $ show err

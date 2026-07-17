@@ -875,5 +875,1883 @@
             },
             "tag": "Content"
         }
+    ],
+    [
+        [
+            [
+                13,
+                1,
+                13,
+                8
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "define"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                9,
+                13,
+                11
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "ap"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                12,
+                13,
+                14
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": "SAssignL",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                15,
+                13,
+                16
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": "SLambda",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                17,
+                13,
+                31
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                13,
+                                18,
+                                13,
+                                19
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "I"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                13,
+                                19,
+                                13,
+                                20
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": "SConj",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                13,
+                                20,
+                                13,
+                                21
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "O"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                13,
+                                22,
+                                13,
+                                24
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                13,
+                                24,
+                                13,
+                                25
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": {
+                                    "contents": [
+                                        [],
+                                        "%"
+                                    ],
+                                    "tag": "PlainOp"
+                                },
+                                "tag": "QualifiedOp"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                13,
+                                26,
+                                13,
+                                30
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                32,
+                13,
+                59
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                13,
+                                33,
+                                13,
+                                34
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "f"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                13,
+                                35,
+                                13,
+                                37
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                13,
+                                37,
+                                13,
+                                38
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": {
+                                    "contents": [
+                                        [],
+                                        "%"
+                                    ],
+                                    "tag": "PlainOp"
+                                },
+                                "tag": "QualifiedOp"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                13,
+                                39,
+                                13,
+                                40
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": "SPi",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                13,
+                                40,
+                                13,
+                                51
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    [
+                                        [
+                                            [
+                                                13,
+                                                41,
+                                                13,
+                                                42
+                                            ],
+                                            "./test/golden/surface/stages"
+                                        ],
+                                        {
+                                            "contents": "SPlaceholder",
+                                            "tag": "Syntax"
+                                        }
+                                    ],
+                                    [
+                                        [
+                                            [
+                                                13,
+                                                43,
+                                                13,
+                                                45
+                                            ],
+                                            "./test/golden/surface/stages"
+                                        ],
+                                        {
+                                            "contents": "SAscribe",
+                                            "tag": "Syntax"
+                                        }
+                                    ],
+                                    [
+                                        [
+                                            [
+                                                13,
+                                                45,
+                                                13,
+                                                50
+                                            ],
+                                            "./test/golden/surface/stages"
+                                        ],
+                                        {
+                                            "contents": {
+                                                "contents": [
+                                                    [],
+                                                    "s",
+                                                    [
+                                                        [
+                                                            [
+                                                                [
+                                                                    13,
+                                                                    48,
+                                                                    13,
+                                                                    49
+                                                                ],
+                                                                "./test/golden/surface/stages"
+                                                            ],
+                                                            {
+                                                                "contents": {
+                                                                    "contents": [
+                                                                        {
+                                                                            "contents": [
+                                                                                [],
+                                                                                "I"
+                                                                            ],
+                                                                            "tag": "PlainName"
+                                                                        },
+                                                                        {
+                                                                            "tag": "PlainVar"
+                                                                        }
+                                                                    ],
+                                                                    "tag": "VariableName"
+                                                                },
+                                                                "tag": "Content"
+                                                            }
+                                                        ]
+                                                    ]
+                                                ],
+                                                "tag": "Splote"
+                                            },
+                                            "tag": "Content"
+                                        }
+                                    ]
+                                ],
+                                "tag": "Parens"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                13,
+                                51,
+                                13,
+                                53
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": "SPeriod",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                13,
+                                53,
+                                13,
+                                58
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    [],
+                                    "s",
+                                    [
+                                        [
+                                            [
+                                                [
+                                                    13,
+                                                    56,
+                                                    13,
+                                                    57
+                                                ],
+                                                "./test/golden/surface/stages"
+                                            ],
+                                            {
+                                                "contents": {
+                                                    "contents": [
+                                                        {
+                                                            "contents": [
+                                                                [],
+                                                                "O"
+                                                            ],
+                                                            "tag": "PlainName"
+                                                        },
+                                                        {
+                                                            "tag": "PlainVar"
+                                                        }
+                                                    ],
+                                                    "tag": "VariableName"
+                                                },
+                                                "tag": "Content"
+                                            }
+                                        ]
+                                    ]
+                                ],
+                                "tag": "Splote"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                60,
+                13,
+                73
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                13,
+                                61,
+                                13,
+                                62
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "x"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                13,
+                                63,
+                                13,
+                                65
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                13,
+                                65,
+                                13,
+                                66
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": {
+                                    "contents": [
+                                        [],
+                                        "%"
+                                    ],
+                                    "tag": "PlainOp"
+                                },
+                                "tag": "QualifiedOp"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                13,
+                                67,
+                                13,
+                                72
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    [],
+                                    "s",
+                                    [
+                                        [
+                                            [
+                                                [
+                                                    13,
+                                                    70,
+                                                    13,
+                                                    71
+                                                ],
+                                                "./test/golden/surface/stages"
+                                            ],
+                                            {
+                                                "contents": {
+                                                    "contents": [
+                                                        {
+                                                            "contents": [
+                                                                [],
+                                                                "I"
+                                                            ],
+                                                            "tag": "PlainName"
+                                                        },
+                                                        {
+                                                            "tag": "PlainVar"
+                                                        }
+                                                    ],
+                                                    "tag": "VariableName"
+                                                },
+                                                "tag": "Content"
+                                            }
+                                        ]
+                                    ]
+                                ],
+                                "tag": "Splote"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                73,
+                13,
+                75
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                75,
+                13,
+                88
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "q",
+                    [
+                        [
+                            [
+                                [
+                                    13,
+                                    79,
+                                    13,
+                                    84
+                                ],
+                                "./test/golden/surface/stages"
+                            ],
+                            {
+                                "contents": {
+                                    "contents": [
+                                        [],
+                                        "s",
+                                        [
+                                            [
+                                                [
+                                                    [
+                                                        13,
+                                                        82,
+                                                        13,
+                                                        83
+                                                    ],
+                                                    "./test/golden/surface/stages"
+                                                ],
+                                                {
+                                                    "contents": {
+                                                        "contents": [
+                                                            {
+                                                                "contents": [
+                                                                    [],
+                                                                    "f"
+                                                                ],
+                                                                "tag": "PlainName"
+                                                            },
+                                                            {
+                                                                "tag": "PlainVar"
+                                                            }
+                                                        ],
+                                                        "tag": "VariableName"
+                                                    },
+                                                    "tag": "Content"
+                                                }
+                                            ]
+                                        ]
+                                    ],
+                                    "tag": "Splote"
+                                },
+                                "tag": "Content"
+                            }
+                        ],
+                        [
+                            [
+                                [
+                                    13,
+                                    85,
+                                    13,
+                                    86
+                                ],
+                                "./test/golden/surface/stages"
+                            ],
+                            {
+                                "contents": {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "x"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "VariableName"
+                                },
+                                "tag": "Content"
+                            }
+                        ]
+                    ]
+                ],
+                "tag": "Splote"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                89,
+                13,
+                91
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                91,
+                13,
+                92
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": {
+                "contents": {
+                    "contents": [
+                        [],
+                        "%"
+                    ],
+                    "tag": "PlainOp"
+                },
+                "tag": "QualifiedOp"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                13,
+                93,
+                13,
+                98
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "s",
+                    [
+                        [
+                            [
+                                [
+                                    13,
+                                    96,
+                                    13,
+                                    97
+                                ],
+                                "./test/golden/surface/stages"
+                            ],
+                            {
+                                "contents": {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "O"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "VariableName"
+                                },
+                                "tag": "Content"
+                            }
+                        ]
+                    ]
+                ],
+                "tag": "Splote"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                1,
+                14,
+                8
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "define"
+                ],
+                "tag": "Command"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                9,
+                14,
+                13
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    {
+                        "contents": [
+                            [],
+                            "unap"
+                        ],
+                        "tag": "PlainName"
+                    },
+                    {
+                        "tag": "PlainVar"
+                    }
+                ],
+                "tag": "VariableName"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                14,
+                14,
+                16
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": "SAssignL",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                17,
+                14,
+                18
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": "SLambda",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                19,
+                14,
+                33
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                14,
+                                20,
+                                14,
+                                21
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "I"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                14,
+                                21,
+                                14,
+                                22
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": "SConj",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                14,
+                                22,
+                                14,
+                                23
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "O"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                14,
+                                24,
+                                14,
+                                26
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                14,
+                                26,
+                                14,
+                                27
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": {
+                                    "contents": [
+                                        [],
+                                        "%"
+                                    ],
+                                    "tag": "PlainOp"
+                                },
+                                "tag": "QualifiedOp"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                14,
+                                28,
+                                14,
+                                32
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "tag": "Univ"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                34,
+                14,
+                63
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                14,
+                                35,
+                                14,
+                                36
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "f"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "VariableName"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                14,
+                                37,
+                                14,
+                                39
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                14,
+                                39,
+                                14,
+                                40
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": "SPi",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                14,
+                                40,
+                                14,
+                                53
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    [
+                                        [
+                                            [
+                                                14,
+                                                41,
+                                                14,
+                                                42
+                                            ],
+                                            "./test/golden/surface/stages"
+                                        ],
+                                        {
+                                            "contents": "SPlaceholder",
+                                            "tag": "Syntax"
+                                        }
+                                    ],
+                                    [
+                                        [
+                                            [
+                                                14,
+                                                43,
+                                                14,
+                                                45
+                                            ],
+                                            "./test/golden/surface/stages"
+                                        ],
+                                        {
+                                            "contents": "SAscribe",
+                                            "tag": "Syntax"
+                                        }
+                                    ],
+                                    [
+                                        [
+                                            [
+                                                14,
+                                                45,
+                                                14,
+                                                46
+                                            ],
+                                            "./test/golden/surface/stages"
+                                        ],
+                                        {
+                                            "contents": {
+                                                "contents": {
+                                                    "contents": [
+                                                        [],
+                                                        "%"
+                                                    ],
+                                                    "tag": "PlainOp"
+                                                },
+                                                "tag": "QualifiedOp"
+                                            },
+                                            "tag": "Content"
+                                        }
+                                    ],
+                                    [
+                                        [
+                                            [
+                                                14,
+                                                47,
+                                                14,
+                                                52
+                                            ],
+                                            "./test/golden/surface/stages"
+                                        ],
+                                        {
+                                            "contents": {
+                                                "contents": [
+                                                    [],
+                                                    "s",
+                                                    [
+                                                        [
+                                                            [
+                                                                [
+                                                                    14,
+                                                                    50,
+                                                                    14,
+                                                                    51
+                                                                ],
+                                                                "./test/golden/surface/stages"
+                                                            ],
+                                                            {
+                                                                "contents": {
+                                                                    "contents": [
+                                                                        {
+                                                                            "contents": [
+                                                                                [],
+                                                                                "I"
+                                                                            ],
+                                                                            "tag": "PlainName"
+                                                                        },
+                                                                        {
+                                                                            "tag": "PlainVar"
+                                                                        }
+                                                                    ],
+                                                                    "tag": "VariableName"
+                                                                },
+                                                                "tag": "Content"
+                                                            }
+                                                        ]
+                                                    ]
+                                                ],
+                                                "tag": "Splote"
+                                            },
+                                            "tag": "Content"
+                                        }
+                                    ]
+                                ],
+                                "tag": "Parens"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                14,
+                                53,
+                                14,
+                                55
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": "SPeriod",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                14,
+                                55,
+                                14,
+                                56
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": {
+                                    "contents": [
+                                        [],
+                                        "%"
+                                    ],
+                                    "tag": "PlainOp"
+                                },
+                                "tag": "QualifiedOp"
+                            },
+                            "tag": "Content"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                14,
+                                57,
+                                14,
+                                62
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    [],
+                                    "s",
+                                    [
+                                        [
+                                            [
+                                                [
+                                                    14,
+                                                    60,
+                                                    14,
+                                                    61
+                                                ],
+                                                "./test/golden/surface/stages"
+                                            ],
+                                            {
+                                                "contents": {
+                                                    "contents": [
+                                                        {
+                                                            "contents": [
+                                                                [],
+                                                                "O"
+                                                            ],
+                                                            "tag": "PlainName"
+                                                        },
+                                                        {
+                                                            "tag": "PlainVar"
+                                                        }
+                                                    ],
+                                                    "tag": "VariableName"
+                                                },
+                                                "tag": "Content"
+                                            }
+                                        ]
+                                    ]
+                                ],
+                                "tag": "Splote"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                63,
+                14,
+                65
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                65,
+                14,
+                96
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "q",
+                    [
+                        [
+                            [
+                                [
+                                    14,
+                                    69,
+                                    14,
+                                    70
+                                ],
+                                "./test/golden/surface/stages"
+                            ],
+                            {
+                                "contents": "SLambda",
+                                "tag": "Syntax"
+                            }
+                        ],
+                        [
+                            [
+                                [
+                                    14,
+                                    70,
+                                    14,
+                                    81
+                                ],
+                                "./test/golden/surface/stages"
+                            ],
+                            {
+                                "contents": {
+                                    "contents": [
+                                        [
+                                            [
+                                                [
+                                                    14,
+                                                    71,
+                                                    14,
+                                                    72
+                                                ],
+                                                "./test/golden/surface/stages"
+                                            ],
+                                            {
+                                                "contents": {
+                                                    "contents": [
+                                                        {
+                                                            "contents": [
+                                                                [],
+                                                                "x"
+                                                            ],
+                                                            "tag": "PlainName"
+                                                        },
+                                                        {
+                                                            "tag": "PlainVar"
+                                                        }
+                                                    ],
+                                                    "tag": "VariableName"
+                                                },
+                                                "tag": "Content"
+                                            }
+                                        ],
+                                        [
+                                            [
+                                                [
+                                                    14,
+                                                    73,
+                                                    14,
+                                                    75
+                                                ],
+                                                "./test/golden/surface/stages"
+                                            ],
+                                            {
+                                                "contents": "SAscribe",
+                                                "tag": "Syntax"
+                                            }
+                                        ],
+                                        [
+                                            [
+                                                [
+                                                    14,
+                                                    75,
+                                                    14,
+                                                    80
+                                                ],
+                                                "./test/golden/surface/stages"
+                                            ],
+                                            {
+                                                "contents": {
+                                                    "contents": [
+                                                        [],
+                                                        "s",
+                                                        [
+                                                            [
+                                                                [
+                                                                    [
+                                                                        14,
+                                                                        78,
+                                                                        14,
+                                                                        79
+                                                                    ],
+                                                                    "./test/golden/surface/stages"
+                                                                ],
+                                                                {
+                                                                    "contents": {
+                                                                        "contents": [
+                                                                            {
+                                                                                "contents": [
+                                                                                    [],
+                                                                                    "I"
+                                                                                ],
+                                                                                "tag": "PlainName"
+                                                                            },
+                                                                            {
+                                                                                "tag": "PlainVar"
+                                                                            }
+                                                                        ],
+                                                                        "tag": "VariableName"
+                                                                    },
+                                                                    "tag": "Content"
+                                                                }
+                                                            ]
+                                                        ]
+                                                    ],
+                                                    "tag": "Splote"
+                                                },
+                                                "tag": "Content"
+                                            }
+                                        ]
+                                    ],
+                                    "tag": "Parens"
+                                },
+                                "tag": "Content"
+                            }
+                        ],
+                        [
+                            [
+                                [
+                                    14,
+                                    81,
+                                    14,
+                                    83
+                                ],
+                                "./test/golden/surface/stages"
+                            ],
+                            {
+                                "contents": "SPeriod",
+                                "tag": "Syntax"
+                            }
+                        ],
+                        [
+                            [
+                                [
+                                    14,
+                                    83,
+                                    14,
+                                    94
+                                ],
+                                "./test/golden/surface/stages"
+                            ],
+                            {
+                                "contents": {
+                                    "contents": [
+                                        [],
+                                        "s",
+                                        [
+                                            [
+                                                [
+                                                    [
+                                                        14,
+                                                        86,
+                                                        14,
+                                                        87
+                                                    ],
+                                                    "./test/golden/surface/stages"
+                                                ],
+                                                {
+                                                    "contents": {
+                                                        "contents": [
+                                                            {
+                                                                "contents": [
+                                                                    [],
+                                                                    "f"
+                                                                ],
+                                                                "tag": "PlainName"
+                                                            },
+                                                            {
+                                                                "tag": "PlainVar"
+                                                            }
+                                                        ],
+                                                        "tag": "VariableName"
+                                                    },
+                                                    "tag": "Content"
+                                                }
+                                            ],
+                                            [
+                                                [
+                                                    [
+                                                        14,
+                                                        88,
+                                                        14,
+                                                        93
+                                                    ],
+                                                    "./test/golden/surface/stages"
+                                                ],
+                                                {
+                                                    "contents": {
+                                                        "contents": [
+                                                            [],
+                                                            "q",
+                                                            [
+                                                                [
+                                                                    [
+                                                                        [
+                                                                            14,
+                                                                            91,
+                                                                            14,
+                                                                            92
+                                                                        ],
+                                                                        "./test/golden/surface/stages"
+                                                                    ],
+                                                                    {
+                                                                        "contents": {
+                                                                            "contents": [
+                                                                                {
+                                                                                    "contents": [
+                                                                                        [],
+                                                                                        "x"
+                                                                                    ],
+                                                                                    "tag": "PlainName"
+                                                                                },
+                                                                                {
+                                                                                    "tag": "PlainVar"
+                                                                                }
+                                                                            ],
+                                                                            "tag": "VariableName"
+                                                                        },
+                                                                        "tag": "Content"
+                                                                    }
+                                                                ]
+                                                            ]
+                                                        ],
+                                                        "tag": "Splote"
+                                                    },
+                                                    "tag": "Content"
+                                                }
+                                            ]
+                                        ]
+                                    ],
+                                    "tag": "Splote"
+                                },
+                                "tag": "Content"
+                            }
+                        ]
+                    ]
+                ],
+                "tag": "Splote"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                97,
+                14,
+                99
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": "SAscribe",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                99,
+                14,
+                100
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": {
+                "contents": {
+                    "contents": [
+                        [],
+                        "%"
+                    ],
+                    "tag": "PlainOp"
+                },
+                "tag": "QualifiedOp"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                101,
+                14,
+                102
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": "SPi",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                102,
+                14,
+                113
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [
+                        [
+                            [
+                                14,
+                                103,
+                                14,
+                                104
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": "SPlaceholder",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                14,
+                                105,
+                                14,
+                                107
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": "SAscribe",
+                            "tag": "Syntax"
+                        }
+                    ],
+                    [
+                        [
+                            [
+                                14,
+                                107,
+                                14,
+                                112
+                            ],
+                            "./test/golden/surface/stages"
+                        ],
+                        {
+                            "contents": {
+                                "contents": [
+                                    [],
+                                    "s",
+                                    [
+                                        [
+                                            [
+                                                [
+                                                    14,
+                                                    110,
+                                                    14,
+                                                    111
+                                                ],
+                                                "./test/golden/surface/stages"
+                                            ],
+                                            {
+                                                "contents": {
+                                                    "contents": [
+                                                        {
+                                                            "contents": [
+                                                                [],
+                                                                "I"
+                                                            ],
+                                                            "tag": "PlainName"
+                                                        },
+                                                        {
+                                                            "tag": "PlainVar"
+                                                        }
+                                                    ],
+                                                    "tag": "VariableName"
+                                                },
+                                                "tag": "Content"
+                                            }
+                                        ]
+                                    ]
+                                ],
+                                "tag": "Splote"
+                            },
+                            "tag": "Content"
+                        }
+                    ]
+                ],
+                "tag": "Parens"
+            },
+            "tag": "Content"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                113,
+                14,
+                115
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": "SPeriod",
+            "tag": "Syntax"
+        }
+    ],
+    [
+        [
+            [
+                14,
+                115,
+                14,
+                120
+            ],
+            "./test/golden/surface/stages"
+        ],
+        {
+            "contents": {
+                "contents": [
+                    [],
+                    "s",
+                    [
+                        [
+                            [
+                                [
+                                    14,
+                                    118,
+                                    14,
+                                    119
+                                ],
+                                "./test/golden/surface/stages"
+                            ],
+                            {
+                                "contents": {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "O"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "VariableName"
+                                },
+                                "tag": "Content"
+                            }
+                        ]
+                    ]
+                ],
+                "tag": "Splote"
+            },
+            "tag": "Content"
+        }
     ]
 ]

@@ -35,4 +35,99 @@
   ]
 , SPeriod
 , Splote [] "s" [ VariableName ( Just ( PlainName [] "void" ) ) PlainVar ]
+, Command [] "define"
+, VariableName ( Just ( PlainName [] "ap" ) ) PlainVar
+, SAssignL
+, SLambda
+, Parens
+  [ VariableName ( Just ( PlainName [] "I" ) ) PlainVar
+  , SConj
+  , VariableName ( Just ( PlainName [] "O" ) ) PlainVar
+  , SAscribe
+  , QualifiedOp ( PlainOp [] "%" )
+  , Univ
+  ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "f" ) ) PlainVar
+  , SAscribe
+  , QualifiedOp ( PlainOp [] "%" )
+  , SPi
+  , Parens
+    [ SPlaceholder
+    , SAscribe
+    , Splote [] "s" [ VariableName ( Just ( PlainName [] "I" ) ) PlainVar ]
+    ]
+  , SPeriod
+  , Splote [] "s" [ VariableName ( Just ( PlainName [] "O" ) ) PlainVar ]
+  ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "x" ) ) PlainVar
+  , SAscribe
+  , QualifiedOp ( PlainOp [] "%" )
+  , Splote [] "s" [ VariableName ( Just ( PlainName [] "I" ) ) PlainVar ]
+  ]
+, SPeriod
+, Splote
+  []
+  "q"
+  [ Splote [] "s" [ VariableName ( Just ( PlainName [] "f" ) ) PlainVar ]
+  , VariableName ( Just ( PlainName [] "x" ) ) PlainVar
+  ]
+, SAscribe
+, QualifiedOp ( PlainOp [] "%" )
+, Splote [] "s" [ VariableName ( Just ( PlainName [] "O" ) ) PlainVar ]
+, Command [] "define"
+, VariableName ( Just ( PlainName [] "unap" ) ) PlainVar
+, SAssignL
+, SLambda
+, Parens
+  [ VariableName ( Just ( PlainName [] "I" ) ) PlainVar
+  , SConj
+  , VariableName ( Just ( PlainName [] "O" ) ) PlainVar
+  , SAscribe
+  , QualifiedOp ( PlainOp [] "%" )
+  , Univ
+  ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "f" ) ) PlainVar
+  , SAscribe
+  , SPi
+  , Parens
+    [ SPlaceholder
+    , SAscribe
+    , QualifiedOp ( PlainOp [] "%" )
+    , Splote [] "s" [ VariableName ( Just ( PlainName [] "I" ) ) PlainVar ]
+    ]
+  , SPeriod
+  , QualifiedOp ( PlainOp [] "%" )
+  , Splote [] "s" [ VariableName ( Just ( PlainName [] "O" ) ) PlainVar ]
+  ]
+, SPeriod
+, Splote
+  []
+  "q"
+  [ SLambda
+  , Parens
+    [ VariableName ( Just ( PlainName [] "x" ) ) PlainVar
+    , SAscribe
+    , Splote [] "s" [ VariableName ( Just ( PlainName [] "I" ) ) PlainVar ]
+    ]
+  , SPeriod
+  , Splote
+    []
+    "s"
+    [ VariableName ( Just ( PlainName [] "f" ) ) PlainVar
+    , Splote [] "q" [ VariableName ( Just ( PlainName [] "x" ) ) PlainVar ]
+    ]
+  ]
+, SAscribe
+, QualifiedOp ( PlainOp [] "%" )
+, SPi
+, Parens
+  [ SPlaceholder
+  , SAscribe
+  , Splote [] "s" [ VariableName ( Just ( PlainName [] "I" ) ) PlainVar ]
+  ]
+, SPeriod
+, Splote [] "s" [ VariableName ( Just ( PlainName [] "O" ) ) PlainVar ]
 ]

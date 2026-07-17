@@ -1,4 +1,52 @@
-[ Command [] "define"
+[ Command [] "data"
+, VariableName ( Just ( PlainName [] "Pair" ) ) PlainVar
+, Parens [ VariableName ( Just ( PlainName [] "T" ) ) PlainVar, SAscribe, Univ ]
+, SDisj
+, VariableName ( Just ( PlainName [] "pair" ) ) PlainVar
+, Parens [ VariableName ( Just ( PlainName [] "T" ) ) PlainVar, SAscribe, Univ ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "l" ) ) PlainVar
+  , SConj
+  , VariableName ( Just ( PlainName [] "r" ) ) PlainVar
+  , SAscribe
+  , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+  ]
+, SAscribe
+, VariableName ( Just ( PlainName [] "Pair" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+, Command [] "data"
+, VariableName ( Just ( PlainName [] "Tuple" ) ) PlainVar
+, Parens
+  [ VariableName ( Just ( PlainName [] "L" ) ) PlainVar
+  , SConj
+  , VariableName ( Just ( PlainName [] "R" ) ) PlainVar
+  , SAscribe
+  , Univ
+  ]
+, SDisj
+, VariableName ( Just ( PlainName [] "tuple" ) ) PlainVar
+, Parens
+  [ VariableName ( Just ( PlainName [] "L" ) ) PlainVar
+  , SConj
+  , VariableName ( Just ( PlainName [] "R" ) ) PlainVar
+  , SAscribe
+  , Univ
+  ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "l" ) ) PlainVar
+  , SAscribe
+  , VariableName ( Just ( PlainName [] "L" ) ) PlainVar
+  ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "r" ) ) PlainVar
+  , SAscribe
+  , VariableName ( Just ( PlainName [] "R" ) ) PlainVar
+  ]
+, SAscribe
+, VariableName ( Just ( PlainName [] "Tuple" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "L" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "R" ) ) PlainVar
+, Command [] "define"
 , VariableName ( Just ( PlainName [] "T" ) ) PlainVar
 , SAssignL
 , SLambda
@@ -19,5 +67,25 @@
   , VariableName ( Just ( PlainName [] "T" ) ) ( DBLevel 3 )
   ]
 , SPeriod
-, VariableName ( Just ( PlainName [] "T" ) ) PlainVar
+, VariableName ( Just ( PlainName [] "tuple" ) ) PlainVar
+, Parens
+  [ VariableName ( Just ( PlainName [] "Pair" ) ) PlainVar
+  , VariableName ( Just ( PlainName [] "T" ) ) ( DBLevel 0 )
+  ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "Pair" ) ) PlainVar
+  , VariableName ( Just ( PlainName [] "T" ) ) ( DBLevel 3 )
+  ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "pair" ) ) PlainVar
+  , VariableName ( Just ( PlainName [] "T" ) ) ( DBLevel 0 )
+  , VariableName ( Just ( PlainName [] "T" ) ) ( DBLevel 1 )
+  , VariableName ( Just ( PlainName [] "T" ) ) ( DBLevel 2 )
+  ]
+, Parens
+  [ VariableName ( Just ( PlainName [] "pair" ) ) PlainVar
+  , VariableName ( Just ( PlainName [] "T" ) ) ( DBLevel 3 )
+  , VariableName ( Just ( PlainName [] "T" ) ) ( DBLevel 4 )
+  , VariableName ( Just ( PlainName [] "T" ) ) ( DBLevel 5 )
+  ]
 ]

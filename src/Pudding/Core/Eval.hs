@@ -171,6 +171,9 @@ forceGlobal ctx (ENeut (Neutral (NGlobal _ _ name) prjs)) =
     _ -> Nothing
 forceGlobal _ _ = Nothing
 
+withForced :: forall t r. Ctx t -> (Eval -> r) -> Eval -> r
+withForced c f e = f $ fromMaybe e $ forceGlobal c e
+
 -- Capture a closure during evaluation
 captureClosure :: Binder -> ScopedTerm -> EvalCtx -> Closure
 captureClosure binder body ctx = Closure ctx binder body

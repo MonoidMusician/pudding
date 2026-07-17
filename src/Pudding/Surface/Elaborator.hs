@@ -25,11 +25,11 @@ import Pudding.Types.Name (Name (..), internalize, NameTable, canonicalName)
 import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), Index(Index), StackLike(size, Elem), pattern Nil, pattern (:>), StackFunctor (mapWithLevel), (@@?), stack)
-import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift))
+import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift), MonadState)
 import Pudding.Core.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval (..), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase), globalsFrom, Ctx (ctxGlobals, ctxStack), GlobalTypeInfo (GlobalTypeInfo, typeParams, typeIndices), Closure, ConstructorInfo (ConstructorInfo, ctorIndices), Globals (globalDefns))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
-import Pudding.Surface.Parser (Decl (..), CST (..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize))
+import Pudding.Surface.Parser (Decl (..), CST (..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize, Attributes))
 import Data.Foldable (Foldable (fold), foldlM, for_)
 import Data.Functor.Compose (Compose (Compose))
 import Control.Monad.Reader.Class (MonadReader (local, ask), asks)
@@ -58,6 +58,7 @@ import qualified Pudding.Core.Printer as C.Print
 import Control.Lens (view, from)
 import qualified Data.Aeson as AE
 import Codec.Binary.UTF8.Generic (toString)
+import qualified Data.Foldable as F
 
 class Applicative m => TwoPhase m where
   twoPhases :: m (m r) -> m r
@@ -141,6 +142,11 @@ type GLM = Compose (ReaderT (IORef NameTable) IO) (GGather Scoped)
 type Scoped = GInit (ReaderT GLScope IO)
 -- | Continuation monad, so `traverse` can adjust locals
 type Scoping r = ContT r Scoped
+-- | Abstract over both
+type ScopeLike m =
+  (MonadState (Map Name (Initializing GlobalInfo)) m, MonadReader GLScope m)
+
+
 
 willInitGLM :: Text -> (Name -> Scoped GlobalInfo) -> GLM (Name, Scoped GlobalInfo)
 willInitGLM text creator = Compose $ mintName id text <&>
@@ -204,6 +210,11 @@ normalize ridGlobals t = do
   c <- fmap snd <$> currentCtx
   pure $ (if ridGlobals then E.selfContained else E.normalizeCtx) c t
 
+withForced :: forall m r. ScopeLike m => HasCallStack => (Eval -> m r) -> Eval -> m r
+withForced f e = do
+  c <- currentCtx
+  E.withForced c f $ E.undeferred e
+
 
 runElabFull :: forall r. IORef NameTable -> GLM r -> IO (Map Name GlobalInfo, r)
 runElabFull tbl (Compose stage0) = do
@@ -240,7 +251,7 @@ elaborateModule decls = joinScoped do
     pure $ Vector.fromList loaded
 
 -- TODO: memoize
-currentCtx :: Scoped EvalTypeCtx
+currentCtx :: forall m. ScopeLike m => m EvalTypeCtx
 currentCtx = do
   -- Here we want to gather all the things that have actually been defined
   initialized <- gets $ M.mapMaybe \case
@@ -262,6 +273,10 @@ parseAttributes :: [RawAttribute] -> Attributes
 parseAttributes = foldMap \case
   RawAttribute [] "normalize" [] -> mempty { aNormalize = Any True }
   _ -> mempty
+
+mayNormalize :: Attributes -> Term -> Scoped Term
+mayNormalize (Attributes { aNormalize = Any True }) = normalize True
+mayNormalize _ = pure
 
 
 -- | Elaborate a top-level declaration. This tells the `GGather` layer about
@@ -311,8 +326,7 @@ elaborateDefn attrs mty tm = do
       tyE <- eval tyT
       pure (tyT, tyE)
     tmT0 <- elab (snd <$> mty') tm
-    tmT <- if not $ coerce $ aNormalize attrs then pure tmT0 else
-      normalize True tmT0
+    tmT <- mayNormalize attrs tmT0
     ty' <- case mty' of
       Just (tyT, tyE) -> pure $ GlobalTerm tyT tyE
       Nothing -> globalQuote =<< reinfer tmT
@@ -368,8 +382,20 @@ elab mexp = \case
         argE <- eval argT
         pure (TApp mempty Explicit funT argT, E.instantiateClosure clo argE)
       thingy _ _ = error "not a function/overapplied"
+
+      -- TODO: have metadata to indicate a constructor, so this is cheap
+      peel :: Stack Term -> (Term, Term) -> Maybe Term
+      peel as (TLambda _ _ _ _ (Scoped b), TApp _ _ f a) = peel (as :> a) (b, f)
+      peel as (TTyCtor meta name xs _, _) = Just $
+        uncurry (TTyCtor meta name) (Vector.splitAt (Vector.length xs) $ Vector.fromList $ F.toList as)
+      peel as (TTmCtor meta name xs _, _) = Just $
+        uncurry (TTmCtor meta name) (Vector.splitAt (Vector.length xs) $ Vector.fromList $ F.toList as)
+      peel _ _ = Nothing
+
+      inlineConstructor appliedT =
+        fromMaybe appliedT $ peel Nil (funTmT, appliedT)
     -- TODO: stash type?
-    fst <$> foldlM thingy (funTmT, funTyE) args
+    inlineConstructor . fst <$> foldlM thingy (funTmT, funTyE) args
   CUniv -> synth mexp $ TUniv mempty (UBase 0)
 
   CLambda binders body -> elabBinders (TLambda mempty) binders body
@@ -385,17 +411,8 @@ elab mexp = \case
       Just (_ :> e) -> quote e
       _ -> asks (M.lookup name . glGlobals) >>= \case
         Just getter -> getter <&> \case
-          TypeGlobal (GlobalTypeInfo { typeParams, typeIndices }) ->
-            let
-              abstract ((p, b, paramType) : more) focus =
-                TLambda mempty p b paramType $ Scoped $ abstract more focus
-              abstract [] focus = focus
-
-              toVars :: forall i. Int -> Vector.Vector i -> Vector.Vector Term
-              toVars skipped = mapWithLevel \(_, Index idx) _ ->
-                TVar mempty $ Index $ idx + skipped
-            in abstract (Vector.toList typeParams <> Vector.toList typeIndices) $
-              TTyCtor mempty name (toVars (Vector.length typeIndices) typeParams) (toVars 0 typeIndices)
+          TypeGlobal (GlobalTypeInfo _ _ _) ->
+            TGlobal mempty name
           DefnGlobal (GlobalDefn _ _ _) -> TGlobal mempty name
         _ -> error $ "Missing name: " <> show name
   CVar Nothing idxOrLvl -> synth mexp =<< case idxOrLvl of
@@ -569,7 +586,7 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
       tyE <- lift $ eval tyT
       multiCons plicit <$> elabMultiBinderCont tyE binder <*> pure tyT
   peelToUniv :: Eval -> Scoped ([(Plicit, Binder, Term)], ULevel)
-  peelToUniv = \case
+  peelToUniv = withForced \case
     EPi _ plicit binder indexTy inner -> do
       idx <- quote indexTy
       first ((plicit, binder, idx) :) <$>
@@ -577,7 +594,7 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
     EUniv _ univ -> pure ([], univ)
     _ -> error "Bad annotation for datatype"
   peelToTyCtor :: forall c. Eval -> Scoping c ([(Plicit, Binder, Term)], ("params" @:: Vector.Vector Eval, "indices" @:: Vector.Vector Eval))
-  peelToTyCtor = \case
+  peelToTyCtor = withForced \case
     EPi _ plicit binder indexTy inner -> do
       idx <- lift $ quote indexTy
       peeled <- ContT $ intoClosure indexTy inner

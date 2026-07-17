@@ -1,0 +1,5 @@
+T : Π (T : Type) (_ : T) (_ : T@_0) (T : Type) (_ : T) (_ : T@_3). Tuple (Pair T@_0)
+(Pair T@_3)
+T := λ (T : Type) (T : T) (T : T@_0) (T : Type) (T : T) (T : T@_3). tuple (Pair T@_0)
+(Pair T@_3) (pair T@_0 T@_1 T@_2) (pair T@_3 T@_4 T)
+
