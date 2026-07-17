@@ -20,7 +20,7 @@ nextFresh (Fresh i) = Fresh (i + 1)
 
 -- decl: Π (T : Type). T -> T
 -- surface syntax usage: f Nat 42
--- decl: Π {T : Type}. T -> T
+-- decl: Π @{T : Type}. T -> T
 -- surface syntax usage: f 42 = f @{T := Nat} 42
 data Plicit = Explicit | Implicit
   deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)

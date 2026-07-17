@@ -13,7 +13,6 @@ import Data.Functor.Apply ((<.*>))
 import Data.Function ((&))
 import Data.Map (Map)
 import Data.Map qualified as M
-import Data.Text (Text)
 import Data.Vector (Vector)
 import GHC.Generics (Generic)
 import GHC.StableName (StableName)
@@ -132,7 +131,11 @@ data Term
     TUniv Metadata ULevel
   | -- Global variables
     TGlobal Metadata !Name
-  | -- | TLet Metadata Binder ("value" @:: Term) ("body" @:: Term)
+  | -- Type ascription, turned into a deferred node during evaluation
+    TAscribe Metadata ("term" @:: Term) ("type" @:: Term)
+  | -- Let binding, also generated a deferred node
+    TLet Metadata Binder ("type" @:: Term) ("value" @:: Term) ("body" @:: ScopedTerm)
+  | -- Lambda (anonymous function)
     TLambda
       -- Metadata: not relevant to equality/unification
       -- Every argument is explicit in the core and every core binder only binds
@@ -329,19 +332,31 @@ data Closure
 
 data Telescope = Telescope Eval Closure
 
-data Deferred = Deferred
-  ("reason" @:: Meta Text) ("type" @:: Eval)
-  !("sharing" @:: Maybe (StableName Eval)) Metadata
+data Deferred = Deferred Metadata
+  ("reason" @:: Meta DeferralReason) ("type" @:: Eval)
+  !("sharing" @:: Maybe (StableName Eval))
   ("deferred term" @:: Eval)
   deriving (Generic, NFData)
 
+data DeferralReason
+  -- | A let binding is deferred so it can be shared and recognized instantly.
+  -- | A really smart delaborator could detect this sharing.
+  = DeferBcLetBound Binder
+  -- | Defer `(tm : Ty)`, mostly to store the type explicitly.
+  -- | This could be picked up in the quoter and delaborator.
+  | DeferBcAscribed
+  -- | Hide proof terms, eventually. `@(proof)`?
+  | DeferBcProof
+  deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
+
+
 instance AE.ToJSON Deferred where
-  toJSON (Deferred why ty share meta tm) = AE.toJSON
-    (why, ty, isJust share, meta, tm)
+  toJSON (Deferred meta why ty share tm) = AE.toJSON
+    (meta, why, ty, isJust share, tm)
 instance AE.FromJSON Deferred where
   parseJSON v = do
-    (why, ty, (share :: Bool), meta, tm) <- AE.parseJSON v
-    pure $ Deferred why ty Nothing meta tm
+    (meta, why, ty, (share :: Bool), tm) <- AE.parseJSON v
+    pure $ Deferred meta why ty Nothing tm
 
 ----------------------------------
 -- Functions for the core types --
@@ -450,6 +465,17 @@ instance HasMetadata Term where
     THole old hole -> (\new -> THole new hole) <$> f old
     TUniv old univ -> (\new -> TUniv new univ) <$> f old
     TGlobal old name -> (\new -> TGlobal new name) <$> f old
+    TAscribe old tm ty ->
+      TAscribe
+        <$> f old
+        <.*> traverseMetadataDepth d (apply f) tm
+        <.*> traverseMetadataDepth d (apply f) ty
+    TLet old b ty val body ->
+      (\new -> TLet new b)
+        <$> f old
+        <.*> traverseMetadataDepth d (apply f) ty
+        <.*> traverseMetadataDepth d (apply f) val
+        <.*> traverseMetadataDepth d (apply f) body
     TLambda old p b ty body ->
       (\new -> TLambda new p b)
         <$> f old
@@ -547,8 +573,8 @@ instance HasMetadata Eval where
         <$> f old
         <.*> traverse (traverseMetadataDepth d (apply f)) params
         <.*> traverse (traverseMetadataDepth d (apply f)) args
-    EDeferred (Deferred reason ty ref _ term) ->
-      (\term' ty' -> EDeferred (Deferred reason ty' ref (view metadata term') term'))
+    EDeferred (Deferred _ reason ty ref term) ->
+      (\term' ty' -> EDeferred (Deferred (view metadata term') reason ty' ref term'))
         -- Traverse term first!
         <$> traverseMetadata1Depth d f term
         <.*> traverseMetadataDepth d (apply f) ty
@@ -641,6 +667,8 @@ summarize (Summarize { onEval, onNeutPrj, onNeutFocus, onTerm }) =
     THole _ _ -> mempty
     TUniv _ _ -> mempty
     TGlobal _ _ -> mempty
+    TAscribe _ tm ty -> summTerm tm <> summTerm ty
+    TLet _ b ty val body -> summTerm ty <> summTerm val <> summScoped body
     TLambda _ p b ty body -> summTerm ty <> summScoped body
     TPi _ p b ty body -> summTerm ty <> summScoped body
     TApp _ _ fun arg -> summTerm fun <> summTerm arg
@@ -687,7 +715,7 @@ summarize (Summarize { onEval, onNeutPrj, onNeutFocus, onTerm }) =
     EPair _ t l r -> summEval t <> summEval l <> summEval r
     ETyCtor _ _ params indices -> foldMap summEval params <> foldMap summEval indices
     ETmCtor _ _ params args -> foldMap summEval params <> foldMap summEval args
-    EDeferred (Deferred _ ty _ _ term) -> summEval term <> summEval ty -- TODO: revisit?
+    EDeferred (Deferred _ _ ty _ term) -> summEval term <> summEval ty -- TODO: revisit?
     ERecordTy _ fields -> foldMap summEval fields
     ERecordTm _ fields -> foldMap summEval fields
     ELift _ t -> summEval t

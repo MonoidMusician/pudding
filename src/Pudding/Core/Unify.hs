@@ -233,11 +233,11 @@ conversionCheck ctx evalL evalR = case (evalL, evalR) of
   -- Short circuit on matching `EDeferred` stable names!
   deferred namesL namesR _ _ | not (List.null (List.intersect namesL namesR)) = True
   -- Force the terms pairwise if possible
-  deferred namesL namesR (EDeferred (Deferred _ _ mnameL _ tmL)) (EDeferred (Deferred _ _ mnameR _ tmR)) =
+  deferred namesL namesR (EDeferred (Deferred _ _ _ mnameL tmL)) (EDeferred (Deferred _ _ _ mnameR tmR)) =
     deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) tmL tmR
-  deferred namesL namesR (EDeferred (Deferred _ _ mnameL _ tmL)) tmR | mnameR <- Nothing =
+  deferred namesL namesR (EDeferred (Deferred _ _ _ mnameL tmL)) tmR | mnameR <- Nothing =
     deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) tmL tmR
-  deferred namesL namesR tmL (EDeferred (Deferred _ _ mnameR _ tmR)) | mnameL <- Nothing =
+  deferred namesL namesR tmL (EDeferred (Deferred _ _ _ mnameR tmR)) | mnameL <- Nothing =
     deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) tmL tmR
   -- No stable names matched, force the terms and do regular conversion checking
   deferred _ _ tmL tmR = cc tmL tmR
@@ -276,6 +276,20 @@ validateOrNot seqOrConst ctx = \case
     UMeta lvl -> UMeta (lvl + 1)
     -- This is why `UVar` has an `Int`: increment to get the typeof
     UVar fresh incr -> UVar fresh (incr + 1)
+  TAscribe _ tm ty ->
+    let
+      tyAct = vv tm
+      tyExp = ee ty
+    in cc "Bad ascription" tyExp tyAct
+  TLet _ b ty tm (Scoped body) ->
+    let
+      tyAct = vv tm
+      tyExp = ee ty
+      val = evalHere tm
+    in
+    cc "Bad let ascription" tyExp tyAct
+      `seqOrConst`
+    validateOrNot seqOrConst (ctx :> (b, (tyExp, val))) body
   TLambda meta p b ty body ->
     case validateScoped b ty body of
       (argTy, bodyTy) ->

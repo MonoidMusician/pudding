@@ -43,6 +43,8 @@ import Data.Conserve (Conserve (Altered), conserve')
 import qualified Debug.Trace as Dbg
 import qualified Data.Aeson as AE
 import Data.ByteString.Lazy.UTF8 (toString)
+import GHC.StableName (StableName, makeStableName)
+import GHC.IO.Unsafe (unsafePerformIO)
 
 eval :: EvalCtx -> Term -> Eval
 eval = flip evaling
@@ -281,6 +283,15 @@ evaling = \case
       ENeut (Neutral focus prjs) ->
         checkGlobal ctx $ ENeut (Neutral focus (prjs :> NSnd meta))
       _ -> error "Type error: cannot project from non-sigma"
+  TAscribe meta tm ty -> \ctx ->
+    let value = evaling tm ctx in
+    mkdeferred value $ Deferred meta (Meta DeferBcAscribed) (evaling ty ctx) . Just
+  TLet meta binder ty defn (Scoped body) -> \ctx ->
+    let
+      value = evaling defn ctx
+      shared = mkdeferred value $ Deferred meta
+        (Meta (DeferBcLetBound binder)) (evaling ty ctx) . Just
+    in evaling body (ctx :> (binder, shared))
   TUniv meta univ -> pure $ EUniv meta univ
   -- A hole is a neutral: we do not know its value yet. Thus we have to block
   -- on it and record its arguments or projections. This is contrary to the
@@ -301,6 +312,11 @@ evaling = \case
   TLift meta ty -> ELift meta <$> evaling ty
   TQuote meta tm -> doQuote meta <$> evaling tm
   TSplice meta tm -> doSplice meta <$> evaling tm
+
+{-# NOINLINE mkdeferred #-}
+mkdeferred :: Eval -> (StableName Eval -> Eval -> Deferred) -> Eval
+mkdeferred value f = unsafePerformIO do
+  EDeferred . (\n -> f n value) <$> makeStableName value
 
 undeferred :: ("deferred term" @:: Eval) -> Eval
 undeferred (EDeferred (Deferred _ _ _ _ tm)) = undeferred tm
@@ -420,6 +436,8 @@ shiftFrom base delta = \case
   TGlobal meta name -> TGlobal meta name
   THole meta fresh -> THole meta fresh
   TUniv meta univ -> TUniv meta univ
+  TAscribe meta tm ty -> TAscribe meta (go tm) (go ty)
+  TLet meta b ty defn (Scoped body) -> TLet meta b (go ty) (go defn) (Scoped (into body))
   TLambda meta p b ty (Scoped body) ->
     TLambda meta p b (go ty) (Scoped (into body))
   TPi meta p b ty (Scoped body) ->
@@ -454,6 +472,8 @@ shiftFrom' base delta t = conserve' t \case
   TGlobal _ _ -> pure t
   THole   _ _ -> pure t
   TUniv   _ _ -> pure t
+  TAscribe meta tm ty -> TAscribe meta <$> go tm <*> go ty
+  TLet meta b ty defn body -> TLet meta b <$> go ty <*> go defn <*> into body
   TLambda meta p b ty body -> TLambda meta p b <$> go ty <*> into body
   TPi     meta p b ty body -> TPi     meta p b <$> go ty <*> into body
   TSigma  meta p b ty body -> TSigma  meta p b <$> go ty <*> into body

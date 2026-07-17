@@ -6,7 +6,7 @@ import Pudding.Surface.Lexer hiding (demo)
 import qualified Pudding.Surface.Happy as Happy
 
 import qualified Data.Text as T
-import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Globals (globalDefns), globalsFrom, Name (nameText), Term, GlobalInfo (DefnGlobal))
+import Pudding.Core.Types (initTable, GlobalDefn(..), GlobalTerm(..), Name(..), GlobalInfo(..))
 import Pudding.Types.Stack (pattern Nil)
 import qualified Text.Parsec as P
 import qualified Data.Text.IO.Utf8 as TIO
@@ -21,7 +21,6 @@ import qualified Pudding.Core.Eval as E
 import Control.DeepSeq (force)
 import qualified Pudding.Surface.Delaborator as D
 import System.Environment (getArgs)
-import qualified Data.Map.Strict as Map
 import Data.Foldable (for_)
 
 surfaceToCore :: String -> T.Text -> IO (Either T.Text T.Text)
