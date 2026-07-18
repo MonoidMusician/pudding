@@ -294,7 +294,7 @@ checkAndRelate (Fresh v1, rel, Fresh v2) solver@(Solver { ctr, vars }) =
         solver
           { ctr = ctr + 1
           , points = IntMap.insert ctr (Set.singleton 0) (points solver)
-          , vars = IntMap.insert v1 (ctr @! 0) $ IntMap.insert v2 (ctr @! 0) vars
+          , vars = let pos = ctr @! 0 in IntMap.insert v1 pos $ IntMap.insert v2 pos vars
           }
       _ -> _apartIfRel rel v1 v2 $ newVarBelow v1 (ctr @! 0) $ newVar v2 solver
     (Nothing, Just upper) -> Just $ (Just rel,) $ case rel of

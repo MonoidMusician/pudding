@@ -1,0 +1,1277 @@
+[
+    [
+        null,
+        [
+            {
+                "tag": "CUniv"
+            },
+            {
+                "contents": {
+                    "tag": "CUniv"
+                },
+                "tag": "CLift"
+            }
+        ]
+    ],
+    [
+        "Id",
+        [
+            {
+                "contents": [
+                    [
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "tag": "CPlaceholder"
+                                }
+                            ],
+                            {
+                                "tag": "CUniv"
+                            }
+                        ]
+                    ],
+                    {
+                        "tag": "CUniv"
+                    }
+                ],
+                "tag": "CPi"
+            },
+            {
+                "contents": [
+                    [
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "T"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "tag": "CUniv"
+                            }
+                        ]
+                    ],
+                    {
+                        "contents": [
+                            {
+                                "contents": [
+                                    [],
+                                    "T"
+                                ],
+                                "tag": "PlainName"
+                            },
+                            {
+                                "tag": "PlainVar"
+                            }
+                        ],
+                        "tag": "CVar"
+                    }
+                ],
+                "tag": "CLambda"
+            }
+        ]
+    ],
+    [
+        null,
+        [
+            {
+                "tag": "CUniv"
+            },
+            {
+                "contents": {
+                    "contents": [
+                        {
+                            "contents": [
+                                {
+                                    "contents": [
+                                        [],
+                                        "Id"
+                                    ],
+                                    "tag": "PlainName"
+                                },
+                                {
+                                    "tag": "PlainVar"
+                                }
+                            ],
+                            "tag": "CVar"
+                        },
+                        [
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "Void"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            }
+                        ]
+                    ],
+                    "tag": "CApps"
+                },
+                "tag": "CLift"
+            }
+        ]
+    ],
+    [
+        null,
+        [
+            {
+                "contents": [
+                    [
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "tag": "CPlaceholder"
+                                }
+                            ],
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "Void"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            }
+                        ]
+                    ],
+                    {
+                        "contents": {
+                            "contents": [
+                                {
+                                    "contents": [
+                                        [],
+                                        "Void"
+                                    ],
+                                    "tag": "PlainName"
+                                },
+                                {
+                                    "tag": "PlainVar"
+                                }
+                            ],
+                            "tag": "CVar"
+                        },
+                        "tag": "CLift"
+                    }
+                ],
+                "tag": "CPi"
+            },
+            {
+                "contents": [
+                    [
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "void"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "Void"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            }
+                        ]
+                    ],
+                    {
+                        "contents": {
+                            "contents": [
+                                {
+                                    "contents": [
+                                        [],
+                                        "void"
+                                    ],
+                                    "tag": "PlainName"
+                                },
+                                {
+                                    "tag": "PlainVar"
+                                }
+                            ],
+                            "tag": "CVar"
+                        },
+                        "tag": "CQuote"
+                    }
+                ],
+                "tag": "CLambda"
+            }
+        ]
+    ],
+    [
+        null,
+        [
+            {
+                "contents": [
+                    [
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "tag": "CPlaceholder"
+                                }
+                            ],
+                            {
+                                "contents": {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "Void"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                },
+                                "tag": "CLift"
+                            }
+                        ]
+                    ],
+                    {
+                        "contents": [
+                            {
+                                "contents": [
+                                    [],
+                                    "Void"
+                                ],
+                                "tag": "PlainName"
+                            },
+                            {
+                                "tag": "PlainVar"
+                            }
+                        ],
+                        "tag": "CVar"
+                    }
+                ],
+                "tag": "CPi"
+            },
+            {
+                "contents": [
+                    [
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "void"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                {
+                                                    "contents": [
+                                                        [],
+                                                        "Id"
+                                                    ],
+                                                    "tag": "PlainName"
+                                                },
+                                                {
+                                                    "tag": "PlainVar"
+                                                }
+                                            ],
+                                            "tag": "CVar"
+                                        },
+                                        [
+                                            {
+                                                "contents": [
+                                                    {
+                                                        "contents": [
+                                                            [],
+                                                            "Void"
+                                                        ],
+                                                        "tag": "PlainName"
+                                                    },
+                                                    {
+                                                        "tag": "PlainVar"
+                                                    }
+                                                ],
+                                                "tag": "CVar"
+                                            }
+                                        ]
+                                    ],
+                                    "tag": "CApps"
+                                },
+                                "tag": "CLift"
+                            }
+                        ]
+                    ],
+                    {
+                        "contents": {
+                            "contents": [
+                                {
+                                    "contents": [
+                                        [],
+                                        "void"
+                                    ],
+                                    "tag": "PlainName"
+                                },
+                                {
+                                    "tag": "PlainVar"
+                                }
+                            ],
+                            "tag": "CVar"
+                        },
+                        "tag": "CSplice"
+                    }
+                ],
+                "tag": "CLambda"
+            }
+        ]
+    ],
+    [
+        "ap",
+        [
+            {
+                "contents": [
+                    [
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "I"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": {
+                                    "tag": "CUniv"
+                                },
+                                "tag": "CLift"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "O"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": {
+                                    "tag": "CUniv"
+                                },
+                                "tag": "CLift"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "tag": "CPlaceholder"
+                                }
+                            ],
+                            {
+                                "contents": {
+                                    "contents": [
+                                        [
+                                            [
+                                                "Explicit",
+                                                [
+                                                    {
+                                                        "tag": "CPlaceholder"
+                                                    }
+                                                ],
+                                                {
+                                                    "contents": {
+                                                        "contents": [
+                                                            {
+                                                                "contents": [
+                                                                    [],
+                                                                    "I"
+                                                                ],
+                                                                "tag": "PlainName"
+                                                            },
+                                                            {
+                                                                "tag": "PlainVar"
+                                                            }
+                                                        ],
+                                                        "tag": "CVar"
+                                                    },
+                                                    "tag": "CSplice"
+                                                }
+                                            ]
+                                        ],
+                                        {
+                                            "contents": {
+                                                "contents": [
+                                                    {
+                                                        "contents": [
+                                                            [],
+                                                            "O"
+                                                        ],
+                                                        "tag": "PlainName"
+                                                    },
+                                                    {
+                                                        "tag": "PlainVar"
+                                                    }
+                                                ],
+                                                "tag": "CVar"
+                                            },
+                                            "tag": "CSplice"
+                                        }
+                                    ],
+                                    "tag": "CPi"
+                                },
+                                "tag": "CLift"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "tag": "CPlaceholder"
+                                }
+                            ],
+                            {
+                                "contents": {
+                                    "contents": {
+                                        "contents": [
+                                            {
+                                                "contents": [
+                                                    [],
+                                                    "I"
+                                                ],
+                                                "tag": "PlainName"
+                                            },
+                                            {
+                                                "tag": "PlainVar"
+                                            }
+                                        ],
+                                        "tag": "CVar"
+                                    },
+                                    "tag": "CSplice"
+                                },
+                                "tag": "CLift"
+                            }
+                        ]
+                    ],
+                    {
+                        "contents": {
+                            "contents": {
+                                "contents": [
+                                    {
+                                        "contents": [
+                                            [],
+                                            "O"
+                                        ],
+                                        "tag": "PlainName"
+                                    },
+                                    {
+                                        "tag": "PlainVar"
+                                    }
+                                ],
+                                "tag": "CVar"
+                            },
+                            "tag": "CSplice"
+                        },
+                        "tag": "CLift"
+                    }
+                ],
+                "tag": "CPi"
+            },
+            {
+                "contents": [
+                    [
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "I"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": {
+                                    "tag": "CUniv"
+                                },
+                                "tag": "CLift"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "O"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": {
+                                    "tag": "CUniv"
+                                },
+                                "tag": "CLift"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "f"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": {
+                                    "contents": [
+                                        [
+                                            [
+                                                "Explicit",
+                                                [
+                                                    {
+                                                        "tag": "CPlaceholder"
+                                                    }
+                                                ],
+                                                {
+                                                    "contents": {
+                                                        "contents": [
+                                                            {
+                                                                "contents": [
+                                                                    [],
+                                                                    "I"
+                                                                ],
+                                                                "tag": "PlainName"
+                                                            },
+                                                            {
+                                                                "tag": "PlainVar"
+                                                            }
+                                                        ],
+                                                        "tag": "CVar"
+                                                    },
+                                                    "tag": "CSplice"
+                                                }
+                                            ]
+                                        ],
+                                        {
+                                            "contents": {
+                                                "contents": [
+                                                    {
+                                                        "contents": [
+                                                            [],
+                                                            "O"
+                                                        ],
+                                                        "tag": "PlainName"
+                                                    },
+                                                    {
+                                                        "tag": "PlainVar"
+                                                    }
+                                                ],
+                                                "tag": "CVar"
+                                            },
+                                            "tag": "CSplice"
+                                        }
+                                    ],
+                                    "tag": "CPi"
+                                },
+                                "tag": "CLift"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "x"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": {
+                                    "contents": {
+                                        "contents": [
+                                            {
+                                                "contents": [
+                                                    [],
+                                                    "I"
+                                                ],
+                                                "tag": "PlainName"
+                                            },
+                                            {
+                                                "tag": "PlainVar"
+                                            }
+                                        ],
+                                        "tag": "CVar"
+                                    },
+                                    "tag": "CSplice"
+                                },
+                                "tag": "CLift"
+                            }
+                        ]
+                    ],
+                    {
+                        "contents": [
+                            {
+                                "contents": {
+                                    "contents": [
+                                        {
+                                            "contents": {
+                                                "contents": [
+                                                    {
+                                                        "contents": [
+                                                            [],
+                                                            "f"
+                                                        ],
+                                                        "tag": "PlainName"
+                                                    },
+                                                    {
+                                                        "tag": "PlainVar"
+                                                    }
+                                                ],
+                                                "tag": "CVar"
+                                            },
+                                            "tag": "CSplice"
+                                        },
+                                        [
+                                            {
+                                                "contents": {
+                                                    "contents": [
+                                                        {
+                                                            "contents": [
+                                                                [],
+                                                                "x"
+                                                            ],
+                                                            "tag": "PlainName"
+                                                        },
+                                                        {
+                                                            "tag": "PlainVar"
+                                                        }
+                                                    ],
+                                                    "tag": "CVar"
+                                                },
+                                                "tag": "CSplice"
+                                            }
+                                        ]
+                                    ],
+                                    "tag": "CApps"
+                                },
+                                "tag": "CQuote"
+                            },
+                            {
+                                "contents": {
+                                    "contents": {
+                                        "contents": [
+                                            {
+                                                "contents": [
+                                                    [],
+                                                    "O"
+                                                ],
+                                                "tag": "PlainName"
+                                            },
+                                            {
+                                                "tag": "PlainVar"
+                                            }
+                                        ],
+                                        "tag": "CVar"
+                                    },
+                                    "tag": "CSplice"
+                                },
+                                "tag": "CLift"
+                            }
+                        ],
+                        "tag": "CAscribe"
+                    }
+                ],
+                "tag": "CLambda"
+            }
+        ]
+    ],
+    [
+        "unap",
+        [
+            {
+                "contents": [
+                    [
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "I"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": {
+                                    "tag": "CUniv"
+                                },
+                                "tag": "CLift"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "O"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": {
+                                    "tag": "CUniv"
+                                },
+                                "tag": "CLift"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "tag": "CPlaceholder"
+                                }
+                            ],
+                            {
+                                "contents": [
+                                    [
+                                        [
+                                            "Explicit",
+                                            [
+                                                {
+                                                    "tag": "CPlaceholder"
+                                                }
+                                            ],
+                                            {
+                                                "contents": {
+                                                    "contents": {
+                                                        "contents": [
+                                                            {
+                                                                "contents": [
+                                                                    [],
+                                                                    "I"
+                                                                ],
+                                                                "tag": "PlainName"
+                                                            },
+                                                            {
+                                                                "tag": "PlainVar"
+                                                            }
+                                                        ],
+                                                        "tag": "CVar"
+                                                    },
+                                                    "tag": "CSplice"
+                                                },
+                                                "tag": "CLift"
+                                            }
+                                        ]
+                                    ],
+                                    {
+                                        "contents": {
+                                            "contents": {
+                                                "contents": [
+                                                    {
+                                                        "contents": [
+                                                            [],
+                                                            "O"
+                                                        ],
+                                                        "tag": "PlainName"
+                                                    },
+                                                    {
+                                                        "tag": "PlainVar"
+                                                    }
+                                                ],
+                                                "tag": "CVar"
+                                            },
+                                            "tag": "CSplice"
+                                        },
+                                        "tag": "CLift"
+                                    }
+                                ],
+                                "tag": "CPi"
+                            }
+                        ]
+                    ],
+                    {
+                        "contents": {
+                            "contents": [
+                                [
+                                    [
+                                        "Explicit",
+                                        [
+                                            {
+                                                "tag": "CPlaceholder"
+                                            }
+                                        ],
+                                        {
+                                            "contents": {
+                                                "contents": [
+                                                    {
+                                                        "contents": [
+                                                            [],
+                                                            "I"
+                                                        ],
+                                                        "tag": "PlainName"
+                                                    },
+                                                    {
+                                                        "tag": "PlainVar"
+                                                    }
+                                                ],
+                                                "tag": "CVar"
+                                            },
+                                            "tag": "CSplice"
+                                        }
+                                    ]
+                                ],
+                                {
+                                    "contents": {
+                                        "contents": [
+                                            {
+                                                "contents": [
+                                                    [],
+                                                    "O"
+                                                ],
+                                                "tag": "PlainName"
+                                            },
+                                            {
+                                                "tag": "PlainVar"
+                                            }
+                                        ],
+                                        "tag": "CVar"
+                                    },
+                                    "tag": "CSplice"
+                                }
+                            ],
+                            "tag": "CPi"
+                        },
+                        "tag": "CLift"
+                    }
+                ],
+                "tag": "CPi"
+            },
+            {
+                "contents": [
+                    [
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "I"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": {
+                                    "tag": "CUniv"
+                                },
+                                "tag": "CLift"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "O"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": {
+                                    "tag": "CUniv"
+                                },
+                                "tag": "CLift"
+                            }
+                        ],
+                        [
+                            "Explicit",
+                            [
+                                {
+                                    "contents": [
+                                        {
+                                            "contents": [
+                                                [],
+                                                "f"
+                                            ],
+                                            "tag": "PlainName"
+                                        },
+                                        {
+                                            "tag": "PlainVar"
+                                        }
+                                    ],
+                                    "tag": "CVar"
+                                }
+                            ],
+                            {
+                                "contents": [
+                                    [
+                                        [
+                                            "Explicit",
+                                            [
+                                                {
+                                                    "tag": "CPlaceholder"
+                                                }
+                                            ],
+                                            {
+                                                "contents": {
+                                                    "contents": {
+                                                        "contents": [
+                                                            {
+                                                                "contents": [
+                                                                    [],
+                                                                    "I"
+                                                                ],
+                                                                "tag": "PlainName"
+                                                            },
+                                                            {
+                                                                "tag": "PlainVar"
+                                                            }
+                                                        ],
+                                                        "tag": "CVar"
+                                                    },
+                                                    "tag": "CSplice"
+                                                },
+                                                "tag": "CLift"
+                                            }
+                                        ]
+                                    ],
+                                    {
+                                        "contents": {
+                                            "contents": {
+                                                "contents": [
+                                                    {
+                                                        "contents": [
+                                                            [],
+                                                            "O"
+                                                        ],
+                                                        "tag": "PlainName"
+                                                    },
+                                                    {
+                                                        "tag": "PlainVar"
+                                                    }
+                                                ],
+                                                "tag": "CVar"
+                                            },
+                                            "tag": "CSplice"
+                                        },
+                                        "tag": "CLift"
+                                    }
+                                ],
+                                "tag": "CPi"
+                            }
+                        ]
+                    ],
+                    {
+                        "contents": [
+                            {
+                                "contents": {
+                                    "contents": [
+                                        [
+                                            [
+                                                "Explicit",
+                                                [
+                                                    {
+                                                        "contents": [
+                                                            {
+                                                                "contents": [
+                                                                    [],
+                                                                    "x"
+                                                                ],
+                                                                "tag": "PlainName"
+                                                            },
+                                                            {
+                                                                "tag": "PlainVar"
+                                                            }
+                                                        ],
+                                                        "tag": "CVar"
+                                                    }
+                                                ],
+                                                {
+                                                    "contents": {
+                                                        "contents": [
+                                                            {
+                                                                "contents": [
+                                                                    [],
+                                                                    "I"
+                                                                ],
+                                                                "tag": "PlainName"
+                                                            },
+                                                            {
+                                                                "tag": "PlainVar"
+                                                            }
+                                                        ],
+                                                        "tag": "CVar"
+                                                    },
+                                                    "tag": "CSplice"
+                                                }
+                                            ]
+                                        ],
+                                        {
+                                            "contents": {
+                                                "contents": [
+                                                    {
+                                                        "contents": [
+                                                            {
+                                                                "contents": [
+                                                                    [],
+                                                                    "f"
+                                                                ],
+                                                                "tag": "PlainName"
+                                                            },
+                                                            {
+                                                                "tag": "PlainVar"
+                                                            }
+                                                        ],
+                                                        "tag": "CVar"
+                                                    },
+                                                    [
+                                                        {
+                                                            "contents": {
+                                                                "contents": [
+                                                                    {
+                                                                        "contents": [
+                                                                            [],
+                                                                            "x"
+                                                                        ],
+                                                                        "tag": "PlainName"
+                                                                    },
+                                                                    {
+                                                                        "tag": "PlainVar"
+                                                                    }
+                                                                ],
+                                                                "tag": "CVar"
+                                                            },
+                                                            "tag": "CQuote"
+                                                        }
+                                                    ]
+                                                ],
+                                                "tag": "CApps"
+                                            },
+                                            "tag": "CSplice"
+                                        }
+                                    ],
+                                    "tag": "CLambda"
+                                },
+                                "tag": "CQuote"
+                            },
+                            {
+                                "contents": {
+                                    "contents": [
+                                        [
+                                            [
+                                                "Explicit",
+                                                [
+                                                    {
+                                                        "tag": "CPlaceholder"
+                                                    }
+                                                ],
+                                                {
+                                                    "contents": {
+                                                        "contents": [
+                                                            {
+                                                                "contents": [
+                                                                    [],
+                                                                    "I"
+                                                                ],
+                                                                "tag": "PlainName"
+                                                            },
+                                                            {
+                                                                "tag": "PlainVar"
+                                                            }
+                                                        ],
+                                                        "tag": "CVar"
+                                                    },
+                                                    "tag": "CSplice"
+                                                }
+                                            ]
+                                        ],
+                                        {
+                                            "contents": {
+                                                "contents": [
+                                                    {
+                                                        "contents": [
+                                                            [],
+                                                            "O"
+                                                        ],
+                                                        "tag": "PlainName"
+                                                    },
+                                                    {
+                                                        "tag": "PlainVar"
+                                                    }
+                                                ],
+                                                "tag": "CVar"
+                                            },
+                                            "tag": "CSplice"
+                                        }
+                                    ],
+                                    "tag": "CPi"
+                                },
+                                "tag": "CLift"
+                            }
+                        ],
+                        "tag": "CAscribe"
+                    }
+                ],
+                "tag": "CLambda"
+            }
+        ]
+    ]
+]

@@ -13,7 +13,7 @@ import qualified Data.Text.IO.Utf8 as TIO
 import Control.Monad.Identity (Identity (runIdentity))
 import Data.Show.Reshow (reshow)
 import qualified Pudding.Surface.Elaborator as Elab
-import Pudding.Core.Printer (Style (..), formatCore)
+import Pudding.Core.Printer (Style(..), formatCore)
 import GHC.IO (catch, evaluate)
 import GHC.Exception (SomeException)
 import qualified Pudding.Core.Unify as U

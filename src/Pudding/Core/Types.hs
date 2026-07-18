@@ -16,7 +16,7 @@ import Data.Map qualified as M
 import Data.Vector (Vector)
 import GHC.Generics (Generic)
 import GHC.StableName (StableName)
-import Pudding.Types.Name (CanonicalName (..), Name (..), initTable, internalize, newTable)
+import Pudding.Types.Name (CanonicalName(..), Name(..), initTable, internalize, newTable)
 import Pudding.Types.Base
 import Pudding.Types.Metadata
 import Pudding.Types.Stack

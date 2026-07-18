@@ -4,6 +4,7 @@
 -- |
 -- | Currently it does not have any features for unification: that needs
 -- | some monad design first.
+{-# OPTIONS_GHC -Werror=incomplete-patterns #-}
 module Pudding.Core.Unify where
 
 import Pudding.Core.Types
@@ -24,7 +25,6 @@ import Debug.Trace (traceWith)
 import qualified Data.Text as T
 import qualified Pudding.Core.Printer as P
 import Data.Align (Semialign(alignWith))
-import Data.Monoid (Any)
 import GHC.Generics (Generic)
 import Control.DeepSeq (NFData)
 import GHC.Base (reallyUnsafePtrEquality)
@@ -64,11 +64,11 @@ bootGlobalDefns globals = newGlobals
   globalTerm :: Term -> GlobalTerm
   globalTerm tm = GlobalTerm tm (evalGlobal tm)
   evalGlobal :: Term -> Eval
-  evalGlobal = eval ctx
+  evalGlobal = undeferred . eval ctx
   typeofGlobal :: Term -> GlobalTerm
   typeofGlobal tm =
     let !ty = validate ctx tm in
-    GlobalTerm (quote (void ctx) ty) ty
+    GlobalTerm (quote (void ctx) ty) (undeferred ty)
 
 bootGlobalTypes globals =
   globals { globalDefns = globalDefns globals `disjointUnion` constructors (globalTypes globals) }

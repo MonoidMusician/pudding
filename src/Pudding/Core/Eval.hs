@@ -28,6 +28,7 @@
 -- | efficiency of evaluation, avoiding ballooning complexity from repeatedly
 -- | shifting and substituting in `Term`s. Sometimes these properties are in
 -- | conflict with their usage, so `shift` is provided as an escape hatch.
+{-# OPTIONS_GHC -Werror=incomplete-patterns #-}
 module Pudding.Core.Eval where
 
 import Pudding.Core.Types

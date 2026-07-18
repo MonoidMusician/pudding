@@ -7,6 +7,7 @@
 -- |
 -- | Delaborating binders has a bit of tricky monad business to bracket the
 -- | work for each binder in a composable way.
+{-# OPTIONS_GHC -Werror=incomplete-patterns #-}
 {-# LANGUAGE ApplicativeDo #-}
 module Pudding.Surface.Delaborator where
 
@@ -23,19 +24,19 @@ import Data.Map (Map)
 import Data.Map qualified as M
 import Data.Text (Text)
 import GHC.Generics (Generic, Generically(..))
-import Pudding.Types.Name (CanonicalName (..), Name (..))
+import Pudding.Types.Name (CanonicalName(..), Name (..))
 import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::), Fresh (Fresh))
-import Pudding.Types.Metadata
-import Pudding.Types.Stack
+import Pudding.Types.Metadata (Meta(..))
+import Pudding.Types.Stack (VariableDB(..), Stack, Level(..), Index(Index), StackLike(size, (@@)), pattern Nil, pattern (:>))
 import Control.Monad.State.Strict (State, gets, modify', MonadState (state), runState)
-import Pudding.Core.Types (Term (..), Binder(..), ScopedTerm (Scoped), Eval(..), Neutral(..), NeutFocus(..), NeutPrj(..), Ctx)
-import Pudding.Surface.Parser (CST (..), CBinder, PartOfSpeech(..))
+import Pudding.Core.Types (Term(..), Binder(..), ScopedTerm (Scoped), Eval(..), Neutral(..), NeutFocus(..), NeutPrj(..), Ctx)
+import Pudding.Surface.Parser (CST(..), CBinder, PartOfSpeech(..))
 import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.Traversable (for)
 import Control.Monad.Reader.Class (MonadReader (local, ask), asks)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Pudding.Core.Eval as E
-import Pudding.Surface.Lexer (VariableDB(..), NameForm (..))
+import Pudding.Surface.Lexer (NameForm (..))
 import Data.Maybe (fromMaybe)
 import qualified Pudding.Core.Printer as P
 import qualified Data.Text as T
@@ -191,6 +192,13 @@ delab = \case
     CVar (Just $ PlainName [] $ nameText name) PlainVar
   THole _m fresh -> pure $ CHole (Just $ T.pack $ show fresh)
   TUniv _m univ -> pure CUniv
+  TAscribe _m tm ty -> flip CAscribe <$> delab ty <*> delab tm
+  TLet _ binder ty tm (Scoped body) -> do
+    tyE <- evalD ty
+    ty' <- delab ty
+    tm' <- delab tm
+    withBinder binder tyE (delab body) \b' body' ->
+      coalesce $ CLet (pure (fromMaybe CPlaceholder b', Just ty', tm')) body'
   TLambda _m p binder ty (Scoped body) -> do
     tyE <- evalD ty
     ty' <- delab ty
@@ -238,6 +246,7 @@ apps t [] = t
 apps f (a : as) = CApps f (a :| as)
 
 coalesce :: CST -> CST
+coalesce (CLet    b1 (CLet    b2 t)) = coalesce (CLet    (b1 <> b2) t)
 coalesce (CLambda b1 (CLambda b2 t)) = coalesce (CLambda (b1 <> b2) t)
 coalesce (CPi     b1 (CPi     b2 t)) = coalesce (CPi     (b1 <> b2) t)
 coalesce (CSigma  b1 (CSigma  b2 t)) = coalesce (CSigma  (b1 <> b2) t)
@@ -407,7 +416,7 @@ printBinders = intercalateMap1 (pure Doc.space) \(p, vars, ty) -> do
   (if p == Implicit then pure (lit "@") <> braces else parens)
     [ spaced $ printBinder <$> vars
     , lit ":"
-    , setPrec PrecAscribe $ printCST $ fromMaybe CPlaceholder ty
+    , setPrec PrecMin $ printCST $ fromMaybe CPlaceholder ty
     ]
 
 printBinder :: CBinder -> Printer

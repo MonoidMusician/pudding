@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Werror=incomplete-patterns #-}
 module Pudding.Core.Printer where
 
 import Prettyprinter qualified as Doc
@@ -131,6 +132,15 @@ printCore = \case
       , printCore <$> Vector.toList params
       , printCore <$> Vector.toList args
       ]
+  TAscribe _m tm ty ->
+    sexp [ printCore tm, pure ":", printCore ty ]
+  TLet _m binder ty defn body -> sexp
+    [ pure "let"
+    , \(PS _ ctx) -> "_" <> Doc.pretty ctx
+    , pure ":", printCore ty
+    , pure ":=", printCore defn
+    , pure "in", bound binder printCore body
+    ]
   TCase _m motive cases scrutinee ->
     sexp
       [ pure "case"

@@ -1,0 +1,25 @@
+_ : Type
+_ := % Type
+
+Id : Π (_ : Type). Type
+Id := λ (T : Type). T
+
+_ : Type
+_ := % Id Void
+
+_ : Π (_ : Void). % Void
+_ := λ (void : Void). $q[void]
+
+_ : Π (_ : % Void). Void
+_ := λ (void : % Id Void). $s[void]
+
+ap : Π (I : % Type) (O : % Type) (_ : % (Π (_ : $s[I]). $s[O])) (_ : % $s[I]). %
+$s[O]
+ap := λ (I : % Type) (O : % Type) (f : % (Π (_ : $s[I]). $s[O])) (x : % $s[I]).
+$q[$s[f] $s[x]] : % $s[O]
+
+unap : Π (I : % Type) (O : % Type) (_ : Π (_ : % $s[I]). % $s[O]). % (Π (_ : $s[I]).
+$s[O])
+unap := λ (I : % Type) (O : % Type) (f : Π (_ : % $s[I]). % $s[O]). $q[λ (x : $s[I]).
+$s[f $q[x]]] : % (Π (_ : $s[I]). $s[O])
+

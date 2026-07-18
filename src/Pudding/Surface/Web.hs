@@ -13,7 +13,7 @@ import qualified Data.Text.IO.Utf8 as TIO
 import Control.Monad.Identity (Identity (runIdentity))
 import Data.Show.Reshow (reshowAs)
 import qualified Pudding.Surface.Elaborator as Elab
-import Pudding.Core.Printer (Style (..), formatCore)
+import Pudding.Core.Printer (Style(..), formatCore)
 import GHC.IO (catch, evaluate, catchAny)
 import GHC.Exception (SomeException)
 import qualified Data.Map.Strict as Map
@@ -221,6 +221,10 @@ delabModule modul = Formats
     maybe "_" nameText name <> " : " <> formatCST f ty <> "\n" <>
     maybe "_" nameText name <> " := " <> formatCST f tm <> "\n\n"
 
+extra :: Text -> IO Stage -> IO [(Text, Stage)]
+extra name produce = catching name $ pure . (name,) <$> produce
+
+
 
 fullSurfaceProcess :: String -> Text -> IO Stages
 fullSurfaceProcess = startSurfaceProcess finishDecls finishExpr
@@ -250,8 +254,8 @@ finishExpr _ _ expr =
     tbl <- initTable
     catching "elab" do
       term <- Elab.runElabScoped tbl (Elab.elab Nothing expr)
-      pure [stage4ESuccess term] <> sequence
-        [ pure ("delab", StageSuccess (delabTerm term) Nothing)
+      pure [stage4ESuccess term] <> fold
+        [ extra "delab" $ pure $ StageSuccess (delabTerm term) Nothing
         ]
 
 finishDecls :: [LEXED] -> [Token] -> [Decl] -> IO Stages
@@ -260,8 +264,8 @@ finishDecls _ _ decls =
     tbl <- initTable
     catching "elab" do
       (_, modul) <- Elab.runElabFull tbl (Elab.elaborateModule decls)
-      pure [stage4DSuccess modul] <> sequence
-        [ pure ("delab", StageSuccess (delabModule modul) Nothing)
+      pure [stage4DSuccess modul] <> fold
+        [ extra "delab" $ pure $ StageSuccess (delabModule modul) Nothing
         ]
 
 
@@ -291,7 +295,7 @@ saveTestIn iodir contents selection = do
 deleteTest :: FilePath -> IO ()
 deleteTest iodir = do
   _ <- tryError $ Dir.removeFile (iodir </> "input.pudding")
-  for_ ["prelex", "tokenize", "parse", "elab"] \stage -> do
+  for_ ["prelex", "tokenize", "parse", "elab", "delab"] \stage -> do
     for_ ["txt", "json"] \ext -> do
       tryError $ Dir.removeFile (iodir </> stage <> "." <> ext)
   _ <- tryError $ Dir.removeDirectory iodir
@@ -361,12 +365,15 @@ saveTestOutput iodir selection = foldMap \(status, (name, stage)) -> do
     ]
 
 data StageStatus = StageNew | StageUnchanged | StageChanged
+  deriving (Eq, Ord, Show, Generic, NFData)
 
 checkStage :: Stage -> Maybe Text -> Maybe AE.Value -> IO (StageStatus, Stage)
 checkStage stage Nothing Nothing = pure (StageNew, stage)
 checkStage stage mt mj = evaluate
   case (all (== text format) mt, all (== json format) mj) of
-    (True, True) -> (StageUnchanged, stage)
+    (True, True)
+      | Just _ <- mt, Just _ <- mj -> (StageUnchanged, stage)
+      | otherwise -> (StageNew, stage) -- TODO: underapproximation
     (_, _) -> (StageChanged, StageDiff Nothing [aggregated, format] aux)
   where
   format = case stage of

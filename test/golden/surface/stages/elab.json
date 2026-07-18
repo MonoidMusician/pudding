@@ -1,0 +1,1581 @@
+[
+    [
+        null,
+        {
+            "contents": [
+                0,
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        {
+                            "contents": 1,
+                            "tag": "UMeta"
+                        }
+                    ],
+                    "tag": "TUniv"
+                },
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": 0,
+                                    "tag": "UBase"
+                                }
+                            ],
+                            "tag": "TUniv"
+                        }
+                    ],
+                    "tag": "TLift"
+                }
+            ],
+            "tag": "DefnGlobal"
+        }
+    ],
+    [
+        "Id",
+        {
+            "contents": [
+                0,
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        "Explicit",
+                        {
+                            "contents": {
+                                "allNames": [
+                                    "T"
+                                ],
+                                "chosenName": "T"
+                            },
+                            "tag": "BVar"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": 0,
+                                    "tag": "UBase"
+                                }
+                            ],
+                            "tag": "TUniv"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": 0,
+                                    "tag": "UBase"
+                                }
+                            ],
+                            "tag": "TUniv"
+                        }
+                    ],
+                    "tag": "TPi"
+                },
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        "Explicit",
+                        {
+                            "contents": {
+                                "allNames": [
+                                    "T"
+                                ],
+                                "chosenName": "T"
+                            },
+                            "tag": "BVar"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": 0,
+                                    "tag": "UBase"
+                                }
+                            ],
+                            "tag": "TUniv"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                0
+                            ],
+                            "tag": "TVar"
+                        }
+                    ],
+                    "tag": "TLambda"
+                }
+            ],
+            "tag": "DefnGlobal"
+        }
+    ],
+    [
+        "Void",
+        {
+            "contents": {
+                "typeConstrs": {},
+                "typeIndices": [],
+                "typeParams": []
+            },
+            "tag": "TypeGlobal"
+        }
+    ],
+    [
+        null,
+        {
+            "contents": [
+                0,
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        {
+                            "contents": 0,
+                            "tag": "UMeta"
+                        }
+                    ],
+                    "tag": "TUniv"
+                },
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                "Explicit",
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        "Id"
+                                    ],
+                                    "tag": "TGlobal"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        "Void"
+                                    ],
+                                    "tag": "TGlobal"
+                                }
+                            ],
+                            "tag": "TApp"
+                        }
+                    ],
+                    "tag": "TLift"
+                }
+            ],
+            "tag": "DefnGlobal"
+        }
+    ],
+    [
+        null,
+        {
+            "contents": [
+                0,
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        "Explicit",
+                        {
+                            "contents": {
+                                "allNames": [
+                                    "void"
+                                ],
+                                "chosenName": "void"
+                            },
+                            "tag": "BVar"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                "Void",
+                                [],
+                                []
+                            ],
+                            "tag": "TTyCtor"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        "Void",
+                                        [],
+                                        []
+                                    ],
+                                    "tag": "TTyCtor"
+                                }
+                            ],
+                            "tag": "TLift"
+                        }
+                    ],
+                    "tag": "TPi"
+                },
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        "Explicit",
+                        {
+                            "contents": {
+                                "allNames": [
+                                    "void"
+                                ],
+                                "chosenName": "void"
+                            },
+                            "tag": "BVar"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                "Void"
+                            ],
+                            "tag": "TGlobal"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        0
+                                    ],
+                                    "tag": "TVar"
+                                }
+                            ],
+                            "tag": "TQuote"
+                        }
+                    ],
+                    "tag": "TLambda"
+                }
+            ],
+            "tag": "DefnGlobal"
+        }
+    ],
+    [
+        null,
+        {
+            "contents": [
+                0,
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        "Explicit",
+                        {
+                            "contents": {
+                                "allNames": [
+                                    "void"
+                                ],
+                                "chosenName": "void"
+                            },
+                            "tag": "BVar"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        "Void",
+                                        [],
+                                        []
+                                    ],
+                                    "tag": "TTyCtor"
+                                }
+                            ],
+                            "tag": "TLift"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                "Void",
+                                [],
+                                []
+                            ],
+                            "tag": "TTyCtor"
+                        }
+                    ],
+                    "tag": "TPi"
+                },
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        "Explicit",
+                        {
+                            "contents": {
+                                "allNames": [
+                                    "void"
+                                ],
+                                "chosenName": "void"
+                            },
+                            "tag": "BVar"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        "Explicit",
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                "Id"
+                                            ],
+                                            "tag": "TGlobal"
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                "Void"
+                                            ],
+                                            "tag": "TGlobal"
+                                        }
+                                    ],
+                                    "tag": "TApp"
+                                }
+                            ],
+                            "tag": "TLift"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        0
+                                    ],
+                                    "tag": "TVar"
+                                }
+                            ],
+                            "tag": "TSplice"
+                        }
+                    ],
+                    "tag": "TLambda"
+                }
+            ],
+            "tag": "DefnGlobal"
+        }
+    ],
+    [
+        "ap",
+        {
+            "contents": [
+                0,
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        "Explicit",
+                        {
+                            "contents": {
+                                "allNames": [
+                                    "I"
+                                ],
+                                "chosenName": "I"
+                            },
+                            "tag": "BVar"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        {
+                                            "contents": 0,
+                                            "tag": "UBase"
+                                        }
+                                    ],
+                                    "tag": "TUniv"
+                                }
+                            ],
+                            "tag": "TLift"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                "Explicit",
+                                {
+                                    "contents": {
+                                        "allNames": [
+                                            "O"
+                                        ],
+                                        "chosenName": "O"
+                                    },
+                                    "tag": "BVar"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                {
+                                                    "contents": 0,
+                                                    "tag": "UBase"
+                                                }
+                                            ],
+                                            "tag": "TUniv"
+                                        }
+                                    ],
+                                    "tag": "TLift"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        "Explicit",
+                                        {
+                                            "contents": {
+                                                "allNames": [
+                                                    "f"
+                                                ],
+                                                "chosenName": "f"
+                                            },
+                                            "tag": "BVar"
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        "Explicit",
+                                                        {
+                                                            "tag": "BUnused"
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        1
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                }
+                                                            ],
+                                                            "tag": "TSplice"
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        1
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                }
+                                                            ],
+                                                            "tag": "TSplice"
+                                                        }
+                                                    ],
+                                                    "tag": "TPi"
+                                                }
+                                            ],
+                                            "tag": "TLift"
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                "Explicit",
+                                                {
+                                                    "contents": {
+                                                        "allNames": [
+                                                            "x"
+                                                        ],
+                                                        "chosenName": "x"
+                                                    },
+                                                    "tag": "BVar"
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        2
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                }
+                                                            ],
+                                                            "tag": "TSplice"
+                                                        }
+                                                    ],
+                                                    "tag": "TLift"
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        2
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                }
+                                                            ],
+                                                            "tag": "TSplice"
+                                                        }
+                                                    ],
+                                                    "tag": "TLift"
+                                                }
+                                            ],
+                                            "tag": "TPi"
+                                        }
+                                    ],
+                                    "tag": "TPi"
+                                }
+                            ],
+                            "tag": "TPi"
+                        }
+                    ],
+                    "tag": "TPi"
+                },
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        "Explicit",
+                        {
+                            "contents": {
+                                "allNames": [
+                                    "I"
+                                ],
+                                "chosenName": "I"
+                            },
+                            "tag": "BVar"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        {
+                                            "contents": 0,
+                                            "tag": "UBase"
+                                        }
+                                    ],
+                                    "tag": "TUniv"
+                                }
+                            ],
+                            "tag": "TLift"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                "Explicit",
+                                {
+                                    "contents": {
+                                        "allNames": [
+                                            "O"
+                                        ],
+                                        "chosenName": "O"
+                                    },
+                                    "tag": "BVar"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                {
+                                                    "contents": 0,
+                                                    "tag": "UBase"
+                                                }
+                                            ],
+                                            "tag": "TUniv"
+                                        }
+                                    ],
+                                    "tag": "TLift"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        "Explicit",
+                                        {
+                                            "contents": {
+                                                "allNames": [
+                                                    "f"
+                                                ],
+                                                "chosenName": "f"
+                                            },
+                                            "tag": "BVar"
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        "Explicit",
+                                                        {
+                                                            "tag": "BUnused"
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        1
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                }
+                                                            ],
+                                                            "tag": "TSplice"
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        1
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                }
+                                                            ],
+                                                            "tag": "TSplice"
+                                                        }
+                                                    ],
+                                                    "tag": "TPi"
+                                                }
+                                            ],
+                                            "tag": "TLift"
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                "Explicit",
+                                                {
+                                                    "contents": {
+                                                        "allNames": [
+                                                            "x"
+                                                        ],
+                                                        "chosenName": "x"
+                                                    },
+                                                    "tag": "BVar"
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        2
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                }
+                                                            ],
+                                                            "tag": "TSplice"
+                                                        }
+                                                    ],
+                                                    "tag": "TLift"
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        "Explicit",
+                                                                        {
+                                                                            "contents": [
+                                                                                {
+                                                                                    "metaVars": [],
+                                                                                    "sourcePos": []
+                                                                                },
+                                                                                {
+                                                                                    "contents": [
+                                                                                        {
+                                                                                            "metaVars": [],
+                                                                                            "sourcePos": []
+                                                                                        },
+                                                                                        1
+                                                                                    ],
+                                                                                    "tag": "TVar"
+                                                                                }
+                                                                            ],
+                                                                            "tag": "TSplice"
+                                                                        },
+                                                                        {
+                                                                            "contents": [
+                                                                                {
+                                                                                    "metaVars": [],
+                                                                                    "sourcePos": []
+                                                                                },
+                                                                                {
+                                                                                    "contents": [
+                                                                                        {
+                                                                                            "metaVars": [],
+                                                                                            "sourcePos": []
+                                                                                        },
+                                                                                        0
+                                                                                    ],
+                                                                                    "tag": "TVar"
+                                                                                }
+                                                                            ],
+                                                                            "tag": "TSplice"
+                                                                        }
+                                                                    ],
+                                                                    "tag": "TApp"
+                                                                }
+                                                            ],
+                                                            "tag": "TQuote"
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        {
+                                                                            "contents": [
+                                                                                {
+                                                                                    "metaVars": [],
+                                                                                    "sourcePos": []
+                                                                                },
+                                                                                2
+                                                                            ],
+                                                                            "tag": "TVar"
+                                                                        }
+                                                                    ],
+                                                                    "tag": "TSplice"
+                                                                }
+                                                            ],
+                                                            "tag": "TLift"
+                                                        }
+                                                    ],
+                                                    "tag": "TAscribe"
+                                                }
+                                            ],
+                                            "tag": "TLambda"
+                                        }
+                                    ],
+                                    "tag": "TLambda"
+                                }
+                            ],
+                            "tag": "TLambda"
+                        }
+                    ],
+                    "tag": "TLambda"
+                }
+            ],
+            "tag": "DefnGlobal"
+        }
+    ],
+    [
+        "unap",
+        {
+            "contents": [
+                0,
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        "Explicit",
+                        {
+                            "contents": {
+                                "allNames": [
+                                    "I"
+                                ],
+                                "chosenName": "I"
+                            },
+                            "tag": "BVar"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        {
+                                            "contents": 0,
+                                            "tag": "UBase"
+                                        }
+                                    ],
+                                    "tag": "TUniv"
+                                }
+                            ],
+                            "tag": "TLift"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                "Explicit",
+                                {
+                                    "contents": {
+                                        "allNames": [
+                                            "O"
+                                        ],
+                                        "chosenName": "O"
+                                    },
+                                    "tag": "BVar"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                {
+                                                    "contents": 0,
+                                                    "tag": "UBase"
+                                                }
+                                            ],
+                                            "tag": "TUniv"
+                                        }
+                                    ],
+                                    "tag": "TLift"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        "Explicit",
+                                        {
+                                            "contents": {
+                                                "allNames": [
+                                                    "f"
+                                                ],
+                                                "chosenName": "f"
+                                            },
+                                            "tag": "BVar"
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                "Explicit",
+                                                {
+                                                    "tag": "BUnused"
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        1
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                }
+                                                            ],
+                                                            "tag": "TSplice"
+                                                        }
+                                                    ],
+                                                    "tag": "TLift"
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        1
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                }
+                                                            ],
+                                                            "tag": "TSplice"
+                                                        }
+                                                    ],
+                                                    "tag": "TLift"
+                                                }
+                                            ],
+                                            "tag": "TPi"
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        "Explicit",
+                                                        {
+                                                            "tag": "BUnused"
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        2
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                }
+                                                            ],
+                                                            "tag": "TSplice"
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        2
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                }
+                                                            ],
+                                                            "tag": "TSplice"
+                                                        }
+                                                    ],
+                                                    "tag": "TPi"
+                                                }
+                                            ],
+                                            "tag": "TLift"
+                                        }
+                                    ],
+                                    "tag": "TPi"
+                                }
+                            ],
+                            "tag": "TPi"
+                        }
+                    ],
+                    "tag": "TPi"
+                },
+                {
+                    "contents": [
+                        {
+                            "metaVars": [],
+                            "sourcePos": []
+                        },
+                        "Explicit",
+                        {
+                            "contents": {
+                                "allNames": [
+                                    "I"
+                                ],
+                                "chosenName": "I"
+                            },
+                            "tag": "BVar"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        {
+                                            "contents": 0,
+                                            "tag": "UBase"
+                                        }
+                                    ],
+                                    "tag": "TUniv"
+                                }
+                            ],
+                            "tag": "TLift"
+                        },
+                        {
+                            "contents": [
+                                {
+                                    "metaVars": [],
+                                    "sourcePos": []
+                                },
+                                "Explicit",
+                                {
+                                    "contents": {
+                                        "allNames": [
+                                            "O"
+                                        ],
+                                        "chosenName": "O"
+                                    },
+                                    "tag": "BVar"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                {
+                                                    "contents": 0,
+                                                    "tag": "UBase"
+                                                }
+                                            ],
+                                            "tag": "TUniv"
+                                        }
+                                    ],
+                                    "tag": "TLift"
+                                },
+                                {
+                                    "contents": [
+                                        {
+                                            "metaVars": [],
+                                            "sourcePos": []
+                                        },
+                                        "Explicit",
+                                        {
+                                            "contents": {
+                                                "allNames": [
+                                                    "f"
+                                                ],
+                                                "chosenName": "f"
+                                            },
+                                            "tag": "BVar"
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                "Explicit",
+                                                {
+                                                    "tag": "BUnused"
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        1
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                }
+                                                            ],
+                                                            "tag": "TSplice"
+                                                        }
+                                                    ],
+                                                    "tag": "TLift"
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        1
+                                                                    ],
+                                                                    "tag": "TVar"
+                                                                }
+                                                            ],
+                                                            "tag": "TSplice"
+                                                        }
+                                                    ],
+                                                    "tag": "TLift"
+                                                }
+                                            ],
+                                            "tag": "TPi"
+                                        },
+                                        {
+                                            "contents": [
+                                                {
+                                                    "metaVars": [],
+                                                    "sourcePos": []
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                "Explicit",
+                                                                {
+                                                                    "contents": {
+                                                                        "allNames": [
+                                                                            "x"
+                                                                        ],
+                                                                        "chosenName": "x"
+                                                                    },
+                                                                    "tag": "BVar"
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        {
+                                                                            "contents": [
+                                                                                {
+                                                                                    "metaVars": [],
+                                                                                    "sourcePos": []
+                                                                                },
+                                                                                2
+                                                                            ],
+                                                                            "tag": "TVar"
+                                                                        }
+                                                                    ],
+                                                                    "tag": "TSplice"
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        {
+                                                                            "contents": [
+                                                                                {
+                                                                                    "metaVars": [],
+                                                                                    "sourcePos": []
+                                                                                },
+                                                                                "Explicit",
+                                                                                {
+                                                                                    "contents": [
+                                                                                        {
+                                                                                            "metaVars": [],
+                                                                                            "sourcePos": []
+                                                                                        },
+                                                                                        1
+                                                                                    ],
+                                                                                    "tag": "TVar"
+                                                                                },
+                                                                                {
+                                                                                    "contents": [
+                                                                                        {
+                                                                                            "metaVars": [],
+                                                                                            "sourcePos": []
+                                                                                        },
+                                                                                        {
+                                                                                            "contents": [
+                                                                                                {
+                                                                                                    "metaVars": [],
+                                                                                                    "sourcePos": []
+                                                                                                },
+                                                                                                0
+                                                                                            ],
+                                                                                            "tag": "TVar"
+                                                                                        }
+                                                                                    ],
+                                                                                    "tag": "TQuote"
+                                                                                }
+                                                                            ],
+                                                                            "tag": "TApp"
+                                                                        }
+                                                                    ],
+                                                                    "tag": "TSplice"
+                                                                }
+                                                            ],
+                                                            "tag": "TLambda"
+                                                        }
+                                                    ],
+                                                    "tag": "TQuote"
+                                                },
+                                                {
+                                                    "contents": [
+                                                        {
+                                                            "metaVars": [],
+                                                            "sourcePos": []
+                                                        },
+                                                        {
+                                                            "contents": [
+                                                                {
+                                                                    "metaVars": [],
+                                                                    "sourcePos": []
+                                                                },
+                                                                "Explicit",
+                                                                {
+                                                                    "tag": "BUnused"
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        {
+                                                                            "contents": [
+                                                                                {
+                                                                                    "metaVars": [],
+                                                                                    "sourcePos": []
+                                                                                },
+                                                                                2
+                                                                            ],
+                                                                            "tag": "TVar"
+                                                                        }
+                                                                    ],
+                                                                    "tag": "TSplice"
+                                                                },
+                                                                {
+                                                                    "contents": [
+                                                                        {
+                                                                            "metaVars": [],
+                                                                            "sourcePos": []
+                                                                        },
+                                                                        {
+                                                                            "contents": [
+                                                                                {
+                                                                                    "metaVars": [],
+                                                                                    "sourcePos": []
+                                                                                },
+                                                                                2
+                                                                            ],
+                                                                            "tag": "TVar"
+                                                                        }
+                                                                    ],
+                                                                    "tag": "TSplice"
+                                                                }
+                                                            ],
+                                                            "tag": "TPi"
+                                                        }
+                                                    ],
+                                                    "tag": "TLift"
+                                                }
+                                            ],
+                                            "tag": "TAscribe"
+                                        }
+                                    ],
+                                    "tag": "TLambda"
+                                }
+                            ],
+                            "tag": "TLambda"
+                        }
+                    ],
+                    "tag": "TLambda"
+                }
+            ],
+            "tag": "DefnGlobal"
+        }
+    ]
+]

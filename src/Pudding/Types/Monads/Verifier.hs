@@ -18,5 +18,24 @@ import qualified Pudding.Semantics.Universes.Fused as Universes
 import Pudding.Core.Eval (EvalTypeCtx)
 import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as IntMap
+import Control.Monad.Error.Class (MonadError (throwError))
+import Data.Functor.Identity (Identity)
 
+
+class Monad m => MayCheck e m where
+  mayCheck :: forall r. (MonadError e m => m r) -> m (Maybe r)
+
+instance MayCheck e Identity where
+  mayCheck _ = pure Nothing
+
+instance MayCheck e (Either e) where
+  mayCheck m = Just <$> m
+
+
+thingy :: forall m. MayCheck String m => m ()
+thingy = do
+  void $ mayCheck do
+    throwError ("test" :: String)
+  thingy
+  pure ()
 

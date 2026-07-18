@@ -21,15 +21,15 @@ import Data.Function ((&))
 import Data.Map (Map)
 import Data.Map qualified as M
 import Data.Text (Text)
-import Pudding.Types.Name (Name (..), internalize, NameTable, canonicalName)
+import Pudding.Types.Name (Name(..), internalize, NameTable, canonicalName)
 import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), Index(Index), StackLike(size, Elem), pattern Nil, pattern (:>), StackFunctor (mapWithLevel), (@@?), stack)
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift), MonadState)
-import Pudding.Core.Types (GlobalInfo (..), Term (..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval (..), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase), globalsFrom, Ctx (ctxGlobals, ctxStack), GlobalTypeInfo (GlobalTypeInfo, typeParams, typeIndices), Closure, ConstructorInfo (ConstructorInfo, ctorIndices), Globals (globalDefns))
+import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase), globalsFrom, Ctx (ctxGlobals, ctxStack), GlobalTypeInfo (GlobalTypeInfo, typeParams, typeIndices), Closure, ConstructorInfo (ConstructorInfo, ctorIndices), Globals (globalDefns))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
-import Pudding.Surface.Parser (Decl (..), CST (..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize, Attributes))
+import Pudding.Surface.Parser (Decl(..), CST(..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize, Attributes))
 import Data.Foldable (Foldable (fold), foldlM, for_)
 import Data.Functor.Compose (Compose (Compose))
 import Control.Monad.Reader.Class (MonadReader (local, ask), asks)
@@ -37,7 +37,7 @@ import Data.List.NonEmpty (NonEmpty(..))
 import Pudding.Core.Eval (EvalTypeCtx)
 import qualified Pudding.Core.Unify as U
 import qualified Pudding.Core.Eval as E
-import Pudding.Surface.Lexer (VariableDB(..), NameForm (..), VariableName)
+import Pudding.Surface.Lexer (VariableDB(..), NameForm(..), VariableName)
 import Data.Maybe (fromMaybe, catMaybes)
 import qualified Pudding.Core.Printer as P
 import qualified Data.Text as T
@@ -465,7 +465,7 @@ elab mexp = \case
     tmT <- elab (Just tyE) tm
     tmtyE <- validate tmT
     conversionCheck tyE tmtyE >>= \case
-      True -> pure tmT
+      True -> pure (TAscribe mempty tmT tyT)
       False -> do
         tyN <- quote tyE
         tmtyT <- quote tmtyE
