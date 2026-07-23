@@ -81,6 +81,7 @@ common defaults
         criterion-measurement >=0.2.3.0 && <0.2.4,
         data-ordlist >=0.4.7.0 && <0.5,
         deepseq >=1.5.1.0 && <1.6,
+        distributive,
         directory,
         filepath,
         lens >=5.3.4 && <5.4,
@@ -145,6 +146,7 @@ library
         Pudding.Surface.Web,
         Data.FastEq,
         Data.Show.Reshow,
+        Data.Pair,
         Data.Conserve,
 
     -- Modules included in this library but not exported.

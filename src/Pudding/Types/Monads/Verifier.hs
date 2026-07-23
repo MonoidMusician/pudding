@@ -2,7 +2,7 @@
 module Pudding.Types.Monads.Verifier where
 
 import Pudding.Types.Monads
-import Pudding.Types.Base (Fresh(..), UnifyMode, type (@::), nextFresh)
+import Pudding.Types.Base (Fresh(..), type (@::), nextFresh)
 import Pudding.Types.Stack (Stack, pattern (:>), pattern Nil)
 import Pudding.Core.Types (Eval, Term, Name, Ctx, NeutPrj)
 import Pudding.Core.Unify as U

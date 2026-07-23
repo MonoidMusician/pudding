@@ -420,11 +420,6 @@ traceTerm = Dbg.traceWith (toString . AE.encode)
 type TypeCtx = Ctx Term
 type EvalTypeCtx = Ctx ("type" @:: Eval, "value" @:: Eval)
 
-umax :: ULevel -> ULevel -> ULevel
-umax (UBase l1) (UBase l2) = UBase (max l1 l2)
-umax (UMeta l1) (UMeta l2) = UMeta (max l1 l2)
-umax _ _ = error "Bad umax / unimplemented"
-
 
 shift :: Int -> Term -> Term
 shift = shiftFrom 0

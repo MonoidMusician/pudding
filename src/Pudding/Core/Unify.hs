@@ -13,6 +13,7 @@ import qualified Data.Map as Map
 import Data.Foldable (fold, foldl')
 import Data.Function ((&))
 import Data.Functor ((<&>), void)
+import Data.Functor.Classes (Eq1(liftEq))
 import GHC.StableName (StableName)
 import qualified Data.List as List
 import qualified Data.Vector as Vector
@@ -27,7 +28,21 @@ import qualified Pudding.Core.Printer as P
 import Data.Align (Semialign(alignWith))
 import GHC.Generics (Generic)
 import Control.DeepSeq (NFData)
-import GHC.Base (reallyUnsafePtrEquality)
+import GHC.Base (reallyUnsafePtrEquality, isTrue#)
+import Pudding.Types.Monads (Proving, bindNeut, Constraining (constrainULevel))
+import Control.Lens (view)
+import Data.Pair (Pair(..))
+import qualified Pudding.Types.Monads as M
+import Data.Traversable (for)
+import Control.Monad.Error.Class (MonadError(throwError))
+import Control.Arrow (Arrow(first))
+import Data.Distributive (Distributive(distribute))
+
+
+
+-- validate :: "term" @:: Term -> "type" @:: Eval
+
+
 
 -- Validate the type of a term, as an evaluated type
 validate :: HasCallStack => EvalTypeCtx -> "term" @:: Term -> "type" @:: Eval
@@ -75,7 +90,7 @@ bootGlobalTypes globals =
   where
   disjointUnion = Map.union
   -- disjointUnion = Map.unionWithKey \k _ _ -> error $ "Duplicate global: " <> show k
-  fakeGlobal tm = GlobalDefn (const 0 $ arityOfTerm tm) undefined (GlobalTerm tm undefined)
+  fakeGlobal tm = GlobalDefn (arityOfTerm tm) undefined (GlobalTerm tm undefined)
   constructors = fold . Map.mapWithKey \typeName -> \case
     GlobalTypeInfo { typeParams, typeIndices, typeConstrs } -> fold
       -- The type constructor: take all of the parameters and the indices,
@@ -102,6 +117,166 @@ bootGlobalTypes globals =
 --------------------------------------------------------------------------------
 -- Conversion checking: the algorithm for definitional equality / unification --
 --------------------------------------------------------------------------------
+
+-- | One-implementation-fits-all function for unification, subsumption,
+-- | conversion checking, et cetera.
+-- |
+-- | Precondition: the types are already unified.
+-- |
+-- | Subsumption is, strictly speaking, only relevant to types and universes.
+-- | During elaboration, a meaningful coercion between types may be inserted,
+-- | and this coercion can be compositional through the types. Otherwise,
+-- | the coercion must be the identity term in the sense of Core. It may still
+-- | mediate between universe levels: that is not visible to the core, since
+-- | everything is strongly parametric over universe level and hopefully
+-- | polymorphic over levels too. However, subsumption could be considered
+-- | for terms of other types serving in specific roles: for example,
+-- | the `n` in `Fin n` could be considered for subsumption in the category
+-- | `n <= m` in order to help generate coercions from monotonocity:
+-- | `(n <= m) -> Fin n -> Fin m`.
+subsume :: forall m r. Proving m => UnifyMode r -> Pair Eval -> m ("unified" @:: Pair Eval, "coercion" @:: Maybe r)
+subsume _ (!evalL :# !evalR) | isTrue# (reallyUnsafePtrEquality evalL evalR) = pure (evalL :# evalR, Nothing)
+subsume mode (!evalL :# !evalR) = case evalL :# evalR of
+  -- We unravel `EDeferred` slowly, to check if any names match up, before
+  -- continuing with the main cases.
+  EDeferred {} :# _ -> deferred [] [] (evalL :# evalR) (evalL :# evalR, Nothing) (subsume mode)
+  _ :# EDeferred {} -> deferred [] [] (evalL :# evalR) (evalL :# evalR, Nothing) (subsume mode)
+
+  -- Conversion checking for the main constructors is straightforward:
+  EUniv _ univL :# EUniv _ univR -> do
+    constrainULevel (unifyDir mode) (univL :# univR)
+    pure $ bified (EUniv mU univL :# EUniv mU univR)
+  ELambda _ pL bdrL tyL bodyL :# ELambda _ pR bdrR tyR bodyR -> do
+    (ty@tyL' :# tyR') <- cc (tyL :# tyR)
+    let bdrU = unifyBdr bdrL bdrR
+    (bodyL' :# bodyR') <- ccClo bdrU ty (bodyL :# bodyR)
+    pure $ bified (ELambda mU pL bdrU tyL' bodyL' :# ELambda mU pR bdrU tyR' bodyR')
+  EPi _ pL bdrL tyL bodyL :# EPi _ pR bdrR tyR bodyR -> do
+    (ty@tyL' :# tyR') <- cc (tyL :# tyR)
+    let bdrU = unifyBdr bdrL bdrR
+    (bodyL' :# bodyR') <- ccClo bdrU ty (bodyL :# bodyR)
+    pure (EPi mU pL bdrU tyL' bodyL' :# EPi mU pR bdrU tyR' bodyR', Nothing)
+
+    -- |- h : I2 -> I1
+    -- h |- f x : O1[h x] -> O2[x]
+    -- g : Π (y : I1). O1[y]
+    --   |- f x (g (h x)) : Π (x : I2). O2[x]
+
+    -- -- Check with contravariance
+    -- ((tyL', tyR'), mcoeI) <- subsume modeContra tyL tyR
+    -- -- Take the smaller type
+    -- ty <- case unifyDir modeContra of
+    --   LSubsumesR -> pure tyR'
+    --   _ -> pure tyL'
+    -- let bdrU = unifyBdr bdrL bdrR
+    -- bindNeut mempty bdrU ty do
+    --   ((bodyL', bodyR'), mcoeO) <- subsume mode bodyL bodyR
+    --   mcoe <- case (mcoeI, mcoeO) of
+    --     (Nothing, Nothing) -> pure Nothing
+    --     _ -> pure $ Just $ _
+    --   pure ((EPi mU pL bdrU tyL' bodyL', EPi mU pR bdrU tyR' bodyR'), mcoe)
+
+  ESigma _ pL bdrL tyL bodyL :# ESigma _ pR bdrR tyR bodyR -> do
+    (ty@tyL' :# tyR') <- cc (tyL :# tyR)
+    let bdrU = unifyBdr bdrL bdrR
+    (bodyL' :# bodyR') <- ccClo bdrU ty (bodyL :# bodyR)
+    pure (ESigma mU pL bdrU tyL' bodyL' :# ESigma mU pR bdrU tyR' bodyR', Nothing)
+
+    -- |- f : I1 -> I2
+    -- f |- h x : O1[x] -> O2[f x]
+    -- (x, p) : Σ (x : I1). O1[x]
+    --   |- (f x, h x p) : Σ (y : I2). O2[y]
+
+  EPair _ tyL leftL rightL :# EPair _ tyR leftR rightR -> do
+    (leftL' :# leftR') <- cc (leftL :# leftR)
+    (rightL' :# rightR') <- cc (rightL :# rightR)
+    pure (EPair mU tyL leftL' rightL' :# EPair mU tyR leftR' rightR', Nothing)
+
+  ETyCtor _ nameL paramsL indicesL :# ETyCtor _ nameR paramsR indicesR -> do
+    check $ nameL == nameR
+    check $ List.length paramsL == List.length paramsR
+    check $ List.length indicesL == List.length indicesR
+    (paramsL' :# paramsR') <- distribute <$> alignCC (paramsL :# paramsR)
+    (indicesL' :# indicesR') <- distribute <$> alignCC (indicesL :# indicesR)
+    pure (ETyCtor mU nameL paramsL' indicesL' :# ETyCtor mU nameL paramsR' indicesR', Nothing)
+  ETmCtor _ nameL paramsL argsL :# ETmCtor _ nameR paramsR argsR -> do
+    check $ nameL == nameR
+    check $ List.length paramsL == List.length paramsR
+    check $ List.length argsL == List.length argsR
+    (paramsL' :# paramsR') <- distribute <$> alignCC (paramsL :# paramsR)
+    (argsL' :# argsR') <- distribute <$> alignCC (argsL :# argsR)
+    pure (ETmCtor mU nameL paramsL' argsL' :# ETmCtor mU nameL paramsR' argsR', Nothing)
+  ERecordTy _ fieldsL :# ERecordTy _ fieldsR -> do
+    check $ Map.keys fieldsL == Map.keys fieldsR
+    (fieldsL' :# fieldsR') <- distribute <$> alignCC (fieldsL :# fieldsR)
+    pure (ERecordTy mU fieldsL' :# ERecordTy mU fieldsR', Nothing)
+  ERecordTm _ fieldsL :# ERecordTm _ fieldsR -> do
+    check $ Map.keys fieldsL == Map.keys fieldsR
+    (fieldsL' :# fieldsR') <- distribute <$> alignCC (fieldsL :# fieldsR)
+    pure (ERecordTy mU fieldsL' :# ERecordTy mU fieldsR', Nothing)
+  ELift _ tyL :# ELift _ tyR -> cc (tyL :# tyR)
+  EQuote _ tmL :# EQuote _ tmR -> cc (tmL :# tmR) -- TODO: what about staging??
+
+  _ -> error "Oops"
+
+  where
+  -- Concatenate metadata (this is what the monoid instance is designed for!)
+  mU = view metadata evalL <> view metadata evalR
+
+  -- The mode for recursing in conversion checking mode
+  -- under an injective constructor
+  modeCC = UnifyMode Invariant IdentitySubsumption (stillInjective mode)
+  -- Contravariant mode, just flip the relation of left and right
+  modeContra = case unifyDir mode of
+    LSubsumesR -> UnifyMode RSubsumesL (shouldSubsume mode) (stillInjective mode)
+    RSubsumesL -> UnifyMode LSubsumesR (shouldSubsume mode) (stillInjective mode)
+    Invariant  -> UnifyMode Invariant  (shouldSubsume mode) (stillInjective mode)
+
+  cc :: Pair Eval -> m (Pair Eval)
+  cc pair = fst <$> subsume modeCC pair
+
+  ccClo :: Binder -> "type" @:: Eval -> Pair Closure -> m (Pair Closure)
+  ccClo bdrU ty (bodyL :# bodyR) = do
+    bodys' <- bindNeut mempty bdrU ty \_ var -> do
+      bodys' <- cc $ instantiateClosure <$> (bodyL :# bodyR) <*> pure var
+      traverse M.quote bodys'
+    saved <- M.askEvalCtx
+    pure $ bodys' <&> Closure saved bdrU . Scoped
+
+  check :: Bool -> m ()
+  check False = ccFailed
+  check _ = pure ()
+
+  ccFailed :: forall any. m any
+  ccFailed = throwError "Conversion check failed"
+
+  alignCC :: forall f. Eq1 f => Semialign f => Foldable f => Pair (f Eval) -> m (f (Pair Eval))
+  alignCC (itemsL :# itemsR) | not (liftEq (\_ _ -> True) itemsL itemsR) = ccFailed
+  alignCC (itemsL :# itemsR) = sequence (alignWith aligned itemsL itemsR)
+    where
+    aligned = \case
+      This _ -> ccFailed
+      That _ -> ccFailed
+      These x y -> cc (x :# y)
+
+  -- Helpers for results
+  unified e = ((e, e), Nothing)
+  bified es = (es, Nothing)
+  unifyBdr bdrL bdrR = bdrL
+
+  deferred :: forall ret. [StableName Eval] -> [StableName Eval] -> Pair Eval -> ret -> (Pair Eval -> m ret) -> m ret
+  -- Short circuit on matching `EDeferred` stable names!
+  deferred namesL namesR _ match _ | not (List.null (List.intersect namesL namesR)) = pure match
+  -- Force the terms pairwise if possible
+  deferred namesL namesR (EDeferred (Deferred _ _ _ mnameL tmL) :# EDeferred (Deferred _ _ _ mnameR tmR)) match nomatch =
+    deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) (tmL :# tmR) match nomatch
+  deferred namesL namesR (EDeferred (Deferred _ _ _ mnameL tmL) :# tmR) match nomatch | mnameR <- Nothing =
+    deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) (tmL :# tmR) match nomatch
+  deferred namesL namesR (tmL :# EDeferred (Deferred _ _ _ mnameR tmR)) match nomatch | mnameL <- Nothing =
+    deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) (tmL :# tmR) match nomatch
+  -- No stable names matched, force the terms and do regular conversion checking
+  deferred _ _ (tmL :# tmR) _ nomatch = nomatch (tmL :# tmR)
+
 
 
 -- Conversion checking is the algorithm for definitional equality used during
@@ -271,11 +446,7 @@ validateOrNot seqOrConst ctx = \case
     Nothing -> error $ "Undefined global " <> show name
     Just (GlobalDefn _ (GlobalTerm _ ty) _) -> ty
   THole _ _fresh -> error "typeof hole not implemented"
-  TUniv meta univ -> EUniv meta $ case univ of
-    UBase lvl -> UBase (lvl + 1)
-    UMeta lvl -> UMeta (lvl + 1)
-    -- This is why `UVar` has an `Int`: increment to get the typeof
-    UVar fresh incr -> UVar fresh (incr + 1)
+  TUniv meta univ -> EUniv meta univ -- FIXME universe
   TAscribe _ tm ty ->
     let
       tyAct = vv tm
@@ -301,11 +472,11 @@ validateOrNot seqOrConst ctx = \case
   TPi _ _ b ty body ->
     -- Π(x : ty : U), (body : U)
     case (vvv ty, force $ snd $ validateScoped b ty body) of
-      (EUniv m1 u1, EUniv m2 u2) -> EUniv (m1 <> m2) (umax u1 u2)
+      (EUniv m1 u1, EUniv m2 u2) -> EUniv (m1 <> m2) (u1) -- FIXME universe
       _ -> error "Bad pi type"
   TSigma _ _ b ty body ->
     case (vvv ty, force $ snd $ validateScoped b ty body) of
-      (EUniv m1 u1, EUniv m2 u2) -> EUniv (m1 <> m2) (umax u1 u2)
+      (EUniv m1 u1, EUniv m2 u2) -> EUniv (m1 <> m2) (u1) -- FIXME universe
       _ -> error "Bad sigma type"
   TPair _ ty left right ->
     validateType ty `seqOrConst` case evalHere ty of
@@ -331,8 +502,8 @@ validateOrNot seqOrConst ctx = \case
       checkFor "Wrong number of indices" (Vector.length indices == Vector.length typeIndices) `seqOrConst`
       validateTelescope "Invalid type constructor parameter" 0 ctx params (ctxOfGlobals $ ctxGlobals ctx) typeParams \ctxParams ->
       validateTelescope "Invalid type constructor index" 0 ctx indices ctxParams typeIndices \_ctxIndices ->
-      -- FIXME: do a proper universe check
-      EUniv mempty (UBase 0)
+      -- FIXME universe
+      EUniv mempty (ULevel (Fresh 0) (Fresh 0))
     _ -> error "Bad type constructor name"
   TTmCtor _ (typeName, ctorName) params args -> case Map.lookup typeName (globalTypes $ ctxGlobals ctx) of
     Just (GlobalTypeInfo { typeParams, typeIndices = _, typeConstrs })
@@ -364,14 +535,13 @@ validateOrNot seqOrConst ctx = \case
           _ -> error "Undefined type constructor"
       _ty -> error $ termTrace "Not a type constructor in case annotation" $ quote quoteCtxHere _ty
   TRecordTy _ fields -> uncurry EUniv $
-    foldl' (\(m1, u1) (EUniv m2 u2) -> (m1 <> m2, umax u1 u2)) (mempty, UBase 0) (vv <$> fields)
+    -- FIXME universe
+    foldl' (\(m1, u1) (EUniv m2 u2) -> (m1 <> m2, u1)) (mempty, ULevel (Fresh 0) (Fresh 0)) (vv <$> fields)
   TRecordTm meta fields -> ERecordTy meta $ vv <$> fields
   TField _ focus field -> case vvv focus of
     ERecordTy _ fields | Just ty <- Map.lookup field fields -> ty
     _ -> error "Bad record field"
-  TLift _ ty -> case vvv ty of
-    EUniv m1 (UBase n) -> EUniv m1 (UMeta n)
-    _ -> error "Must be a type in the base"
+  TLift _ ty -> vvv ty -- FIXME universe
   TQuote meta tm -> ELift meta $ vv tm
   TSplice _ tm -> case vvv tm of
     ELift _ ty -> ty
@@ -474,7 +644,7 @@ makeMotiveType typeName (GlobalTypeInfo { typeParams, typeIndices }) =
       (Vector.imap (const . chosenParam) typeParams)
       (Vector.imap (const . chosenIndex) typeIndices)
     -- And a motive takes that specific type and returns the goal type for it
-    motive = TPi mempty Explicit BUnused chosenType $ Scoped (TUniv mempty (UBase 0))
+    motive = TPi mempty Explicit BUnused chosenType $ Scoped (TUniv mempty (ULevel (Fresh 0) (Fresh 0))) -- FIXME universe
   in prependParams $ prependIndices $ motive
 
 makeCaseRecordType :: Name -> GlobalTypeInfo -> Term

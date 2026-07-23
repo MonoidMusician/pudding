@@ -7,7 +7,7 @@ module Pudding.Core.Types
   )
 where
 
-import Control.DeepSeq (NFData)
+import Control.DeepSeq (NFData (rnf))
 import Control.Lens (from, view)
 import Data.Functor.Apply ((<.*>))
 import Data.Function ((&))
@@ -22,6 +22,9 @@ import Pudding.Types.Metadata
 import Pudding.Types.Stack
 import qualified Data.Aeson as AE
 import Data.Maybe (isJust)
+import Data.Void (Void)
+import Data.Typeable (Typeable)
+import qualified Data.Typeable as Typeable
 
 --------------------------------------------------------------------------------
 -- Main semantic types!                                                       --
@@ -128,7 +131,7 @@ data Term
   | -- Typed holes
     THole Metadata !Fresh
   | -- Type universes
-    TUniv Metadata ULevel
+    TUniv Metadata !ULevel
   | -- Global variables
     TGlobal Metadata !Name
   | -- Type ascription, turned into a deferred node during evaluation
@@ -228,7 +231,7 @@ newtype ScopedTerm = Scoped Term
 -- terms).
 data Eval
   = ENeut Neutral -- do we want it tagged with its ultimate type?
-  | EUniv Metadata ULevel
+  | EUniv Metadata !ULevel
   | ELambda
       Metadata
       !Plicit
@@ -363,7 +366,7 @@ instance AE.FromJSON Deferred where
 ----------------------------------
 
 neutralVar :: Level -> Eval
-neutralVar lvl = ENeut (Neutral (NVar mempty lvl) (view stack []))
+neutralVar lvl = ENeut (Neutral (NVar mempty lvl) Nil)
 
 arityOfTerm :: Term -> Int
 arityOfTerm = go 0
@@ -422,7 +425,7 @@ ctxToList :: forall t. Ctx t -> "inner bindings last" @:: [(Binder, t)]
 ctxToList (Ctx _ s) = view (from stack) s
 
 ctxOfGlobals :: forall t. Globals -> Ctx t
-ctxOfGlobals globals = Ctx globals (view stack [])
+ctxOfGlobals globals = Ctx globals Nil
 
 ctxOfSize :: Globals -> "size" @:: Int -> Ctx ()
 ctxOfSize globals sz = Ctx globals (view stack (replicate sz (BFresh, ())))
@@ -448,12 +451,73 @@ mapCtx f ctx = snd (foldCtx z s ctx)
 -- Helper types!                                                              --
 --------------------------------------------------------------------------------
 
-data ULevel
-  = UBase !Int
-  | UMeta !Int
-  | UVar !Fresh !Int -- unsolved level, plus offset
-  -- sigh, scoping...
+data ULevel = ULevel
+  { uStage :: !Fresh
+  , uLevel :: !Fresh
+  }
   deriving (Eq, Ord, Generic, Show, NFData, AE.ToJSON, AE.FromJSON)
+
+
+-- | When we go into the unification/conversion checking algorithm, we need to
+-- ask it how to relate its arguments. A "more general" type subsumes a
+-- "more specific" type that a term already had.
+--
+-- Places where this matters:
+--
+--   - Universe levels: the subsumption mode determines which constraint to add
+--   - Implicit arguments
+--   - Uhh there is no structural subtyping, i think ...
+data UnifyMode r = UnifyMode
+  { unifyDir :: UnifyDir
+  , shouldSubsume :: RequestSubsumption r
+  , stillInjective :: InjectiveStatus
+  }
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
+
+data UnifyDir
+  = RSubsumesL
+  | LSubsumesR
+  | Invariant
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
+
+-- | Each unification mode can generate a subsumption (an actual term to mediate
+-- between different representations), or it can force it to be the identity
+-- (which does not imply that no work is done, just not work that is
+-- visible to computation: for example, universe levels do not have to be equal,
+-- as they are not relevant to computation, they just have to be related by
+-- the appropriate constraints).
+--
+-- Additionally there might need to be a mode for elaboration? Deferred elab?
+data RequestSubsumption r where
+  IdentitySubsumption :: RequestSubsumption Void
+  GenerateSubsumption :: RequestSubsumption Eval
+
+instance Eq (RequestSubsumption r) where
+  IdentitySubsumption == IdentitySubsumption = True
+  GenerateSubsumption == GenerateSubsumption = True
+instance Ord (RequestSubsumption r) where
+  IdentitySubsumption `compare` IdentitySubsumption = EQ
+  GenerateSubsumption `compare` GenerateSubsumption = EQ
+instance Show (RequestSubsumption r) where
+  show IdentitySubsumption = "IdentitySubsumption"
+  show GenerateSubsumption = "GenerateSubsumption"
+instance NFData (RequestSubsumption r) where
+  rnf IdentitySubsumption = ()
+  rnf GenerateSubsumption = ()
+instance AE.ToJSON (RequestSubsumption r) where
+  toJSON IdentitySubsumption = AE.toJSON @String "IdentitySubsumption"
+  toJSON GenerateSubsumption = AE.toJSON @String "GenerateSubsumption"
+instance Typeable r => AE.FromJSON (RequestSubsumption r) where
+  parseJSON v = AE.parseJSON v >>= \case
+    ("IdentitySubsumption" :: String) | Just Typeable.Refl <- Typeable.eqT @r @Void -> pure IdentitySubsumption
+    ("GenerateSubsumption" :: String) | Just Typeable.Refl <- Typeable.eqT @r @Eval -> pure GenerateSubsumption
+    _ -> error "Decode RequestSubsumption"
+
+-- | Whether we can still learn unification equalities.
+data InjectiveStatus = StillInjective | NotInjective
+  deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
+
+
 
 --------------------
 -- Metadata class --

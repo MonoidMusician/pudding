@@ -26,7 +26,7 @@ import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), Index(Index), StackLike(size, Elem), pattern Nil, pattern (:>), StackFunctor (mapWithLevel), (@@?), stack)
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift), MonadState)
-import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar), ULevel (UBase), globalsFrom, Ctx (ctxGlobals, ctxStack), GlobalTypeInfo (GlobalTypeInfo, typeParams, typeIndices), Closure, ConstructorInfo (ConstructorInfo, ctorIndices), Globals (globalDefns))
+import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals, ctxStack), GlobalTypeInfo (GlobalTypeInfo, typeParams, typeIndices), Closure, ConstructorInfo (ConstructorInfo, ctorIndices), Globals (globalDefns))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl(..), CST(..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize, Attributes))
@@ -59,6 +59,7 @@ import Control.Lens (view, from)
 import qualified Data.Aeson as AE
 import Codec.Binary.UTF8.Generic (toString)
 import qualified Data.Foldable as F
+import Pudding.Types.Monads (Freshener(freshen), FreshT, evalFreshT)
 
 class Applicative m => TwoPhase m where
   twoPhases :: m (m r) -> m r
@@ -139,7 +140,7 @@ type GLM = Compose (ReaderT (IORef NameTable) IO) (GGather Scoped)
 -- | are caught (TODO: define exactly what circular dependencies are).
 -- | GLScope holds the global scope as it is *expected* to be defined, and
 -- | also the local context that is pushed under binders and such.
-type Scoped = GInit (ReaderT GLScope IO)
+type Scoped = GInit (ReaderT GLScope (FreshT IO))
 -- | Continuation monad, so `traverse` can adjust locals
 type Scoping r = ContT r Scoped
 -- | Abstract over both
@@ -231,13 +232,13 @@ runElabFull tbl (Compose stage0) = do
       pure (env, r)
   -- Keep track of all the globals in state, and provide the default
   -- global context with no locals, plus the name table to mint more names
-  (r, _) <- runReaderT (runStateT stage2 (Uninitialized <$ items))
+  (r, _) <- evalFreshT $ runReaderT (runStateT stage2 (Uninitialized <$ items))
     (GLScope tbl items M.empty Nil)
   pure r
 
 runElabScoped :: IORef NameTable -> Scoped r -> IO r
 runElabScoped tbl stage2 = do
-  fmap fst $ runReaderT (runStateT stage2 M.empty) $
+  fmap fst $ evalFreshT $ runReaderT (runStateT stage2 M.empty) $
     GLScope tbl M.empty M.empty Nil
 
 
@@ -396,7 +397,9 @@ elab mexp = \case
         fromMaybe appliedT $ peel Nil (funTmT, appliedT)
     -- TODO: stash type?
     inlineConstructor . fst <$> foldlM thingy (funTmT, funTyE) args
-  CUniv -> synth mexp $ TUniv mempty (UBase 0)
+  CUniv -> do
+    lvl <- ULevel <$> freshen <*> freshen
+    synth mexp $ TUniv mempty lvl
 
   CLambda binders body -> elabBinders (TLambda mempty) binders body
   CPi     binders body -> elabBinders (TPi     mempty) binders body

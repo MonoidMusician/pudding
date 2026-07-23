@@ -123,9 +123,11 @@ term = var <|> (lp *> (P.choice terms <|> app) <* rp)
     , unary TQuote ["quote"]
     , unary TSplice ["splice"]
     , trackMeta do
-        univKind <- UBase <$ keyword ["Type0"] <|> UMeta <$ keyword ["Type1"]
-        lvl <- P.option 0 int
-        pure \meta -> TUniv meta (univKind lvl)
+        _ <- keyword ["Type"]
+        -- FIXME
+        stage <- Fresh <$> P.option 0 int
+        lvl <- Fresh <$> P.option 0 int
+        pure \meta -> TUniv meta (ULevel stage lvl)
     , trackMeta do
         _ <- keyword ["Record"]
         fields <- P.many $ parens $ liftA2 (,) ident term

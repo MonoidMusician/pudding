@@ -78,10 +78,10 @@ printCore = \case
     ]
   TGlobal _m name -> pure $ Doc.pretty name
   THole _m fresh -> pure $ Doc.pretty fresh
-  TUniv _m univ -> pure $ Doc.pretty $ case univ of
-    UBase lvl -> "(Type0 " <> show lvl <> ")" -- (Type0 0), (Type0 1), ...
-    UMeta lvl -> "(Type1 " <> show lvl <> ")" -- (Type1 0), ...
-    UVar fresh incr -> "(Type?" <> show fresh <> "+" <> show incr <> ")"
+  TUniv _m univ -> pure $ Doc.pretty "Type" -- $ case univ of
+    -- UBase lvl -> "(Type0 " <> show lvl <> ")" -- (Type0 0), (Type0 1), ...
+    -- UMeta lvl -> "(Type1 " <> show lvl <> ")" -- (Type1 0), ...
+    -- UVar fresh incr -> "(Type?" <> show fresh <> "+" <> show incr <> ")"
   TLambda _m p binder ty body -> sexp
     [ pure $ "λ" <> if p == Implicit then "?" else ""
     , sexp

@@ -1,7 +1,7 @@
 module Pudding.Types.Monads.Prover where
 
 import Pudding.Types.Monads
-import Pudding.Types.Base (Fresh(..), UnifyMode, type (@::), nextFresh)
+import Pudding.Types.Base (Fresh(..), type (@::), nextFresh)
 import Pudding.Types.Stack (Stack, pattern (:>), pattern Nil)
 import Pudding.Core.Types (Eval, Term, Name, Ctx, NeutPrj)
 import Pudding.Core.Unify as U
@@ -17,29 +17,36 @@ import qualified Pudding.Semantics.Universes.Fused as Universes
 import Pudding.Core.Eval (EvalTypeCtx)
 import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as IntMap
+import Data.IntSet (IntSet)
 
 newtype Prover t = Prover (RWST ProverR ProverW ProverS IO t)
   deriving newtype (Functor, Applicative, Monad)
 
 data ProverS = ProverS
-  { fresh :: Fresh
-  , solns :: IntMap Eval
+  { freshest :: {-# UNPACK #-} !Fresh
+  , uvState :: !(IntMap UnivarState)
+  , uvDeferred :: !(IntMap (Prover ()))
+  , uvConstraints :: !(IntMap (IntSet, Eval, Eval))
   }
 
-data SolveState = SolveState
+data UnivarState = UVState
   -- the original context of the hole. TODO: globals? TODO: let?
-  { solCtx :: !(Ctx ("ty" @:: Eval))
-  , solTm :: !("tm" @:: Eval)
-  , solTy ::  ("ty" @:: Eval) -- ^ lazy
-  -- Instantiations / constraints
-  , solInst :: [ ("ctx" @:: Stack ("value given" @:: NeutPrj), "value achieved" @:: Eval) ]
+  { uvCtx :: !(Ctx ("ty" @:: Eval))
+  -- which variables are possibly relevant, versus known to be irrelevant (False)
+  , uvRelevant :: !(Ctx Bool)
+  -- the value for the term itself and its type
+  , uvTerm :: !("tm" @:: Eval)
+  , uvType ::  ("ty" @:: Eval) -- ^ lazy
+  -- Partial equations (constraints with this unification variable as its head)
+  , uvEqns :: [ ("ctx" @:: Stack ("value given" @:: Eval), "projections" @:: Stack NeutPrj, "value achieved" @:: Eval) ]
   -- Callbacks? for filling in holes for deferred elaboration?
+  , uvNotify :: IntSet -- into ProverS.uvDeferred
+  , uvGlobal :: IntSet -- into ProverS.uvConstraints
   }
-
 
 data ProverR = ProverR
-  { ctx :: EvalTypeCtx
-  , cfg :: Config
+  { proofCtx :: !EvalTypeCtx
+  , proofCfg :: !Config
   }
 
 data ProverW = ProverW
@@ -54,28 +61,20 @@ instance Constraining Prover where
   constrain = Prover . tell
   constraintsFrom (Prover act) = (\(a, w) -> (w, a)) <$> Prover (listen act)
 
-instance Unification Prover where
-  fullSolve (Fresh var) value = Prover do
-    gets (IntMap.lookup var . solns) >>= \case
-      Nothing -> state \s -> (value, s { solns = IntMap.insert var value $ solns s })
-      Just past -> do
-        c <- asks (void . ctx)
-        -- TODO/FIXME: unification!
-        case U.conversionCheck c past value of
-          False -> error "Unification inconsistency"
-          True -> state \s -> (value, s { solns = IntMap.insert var value $ solns s })
-  currentSolution (Fresh var) = Prover do
-    gets (IntMap.lookup var . solns) >>= \case
-      Nothing -> error $ "Missing unification variable: " <> show var
-      Just currently -> pure currently
+
+modifyUnivar :: Fresh -> (Maybe UnivarState -> Prover (UnivarState, b)) -> Prover b
+modifyUnivar (Fresh which) act = do
+  (upd, ret) <- act =<< Prover do gets (IntMap.lookup which . uvState)
+  Prover do
+    ret <$ modify' \s -> s { uvState = IntMap.insert which upd (uvState s) }
 
 instance Checkpointing Prover where
   type Checkpoint Prover = ProverS
-  checkpoint = Prover get
+  checkpointFor k = Prover get >>= k
   rewind = Prover . put
 
 instance Freshener Prover where
-  freshen = Prover $ state \s -> (fresh s, s { fresh = nextFresh (fresh s) })
+  freshen = Prover do state \s -> (freshest s, s { freshest = nextFresh (freshest s) })
 
 instance WithConfig Prover where
-  getConfig = Prover $ asks cfg
+  getConfig = Prover do asks proofCfg
