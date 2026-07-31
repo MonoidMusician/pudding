@@ -1,0 +1,23 @@
+@class Eq (T : Type)
+    eq : T -> T -> Conj Bool
+
+@class Eq1 (F : Type -> Type)
+    eqBy @{X & Y : Type} :
+        (X -> Y -> Conj Bool) ->
+        (F X -> F Y -> Conj Bool)
+
+    eqWith @{X & Y & T, _ : Eq T} :
+        (X -> T) -> (Y -> T) ->
+        (F X -> F Y -> Conj Bool)
+
+@class Ord (T : Type)
+    compare : T -> T -> Ordering
+
+@class Ord1 (F : Type -> Type)
+    compareBy @{X & Y : Type} :
+        (X -> Y -> Ordering) ->
+        (F X -> F Y -> Ordering)
+
+    compareWith @{X & Y & T, _ : Ord T} :
+        (X -> T) -> (Y -> T) ->
+        (F X -> F Y -> Ordering)

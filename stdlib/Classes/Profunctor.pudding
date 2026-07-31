@@ -1,0 +1,233 @@
+/'\
+Profunctors are magical. They tell a story about datatypes.
+
+Profunctor optics capture many shapes of data, performing as adapters of inputs and outputs of various mechanisms.
+Beyond just adapting directly, they adapt gadgets together, with tensoring operations to capture sums and products and other shapes.
+
+Taking this idea a little further, we can derive bidirectional codecs for many interesting mechanisms.
+Some of these gadgets have separate input and output sides, implemented with familiar functors (even applicative, selective applicative, or monadic functors).
+Some of them are more tied together, forming a category or at least having interplay between the sides, which is why having a cohesive profunctor interface is essential.
+
+\'/
+
+'' λΠΣ§·×
+
+@prec
+    < (:???:) '' conduct
+    < (:///:) '' twoLanes
+    < (:!!!:) '' identity
+    < (:\!/:) '' disjuxt
+    < (:/!\:) = (:/!/:) = (:/!:!\:) = (:/!:!/:) '' conjuxt et al.
+    < (:<!:) = (:!>:) '' conjuxtL and conjuxtR
+
+@prec
+    < (:!!!:)
+    < (:>$<$>:) = (:><>:) '' dimap
+
+@module ProfunctorLike (Lawful : Bool) (P : Type -> Type -> Type)
+    @class Profunctor
+        @(op (:>$<$>:))
+        dimap @{U&X&V&Y} : (V -> U) -> (X -> Y) -> P U X -> P V Y
+
+    ''| Combine two profunctor gadgets with conjunction.
+    @class Conjuxt
+        _ : Profunctor
+
+        @(alias conjuxt0)
+        punit : P Unit Unit
+
+        @(name conjuxt2)
+        @(infixr)
+        (:/!\:) @{U&X&V&Y} : P U X -> P V Y -> P (U //\\ V) (X //\\ Y)
+
+        ''| Use the left side for data, discard the data from the right.
+        @(name conjuxtL)
+        @(prec > (:/!\:))
+        (:<!:) @{U&X} : P U X -> P Unit Unit -> P U X
+        l <! r := dimap (λ u. tuple u unit) fst (l /!\ r)
+
+        ''| Use the right side for data, discard the data from the left.
+        @(name conjuxtR)
+        @(prec > (:/!\:))
+        (:!>:) @{U&X} : P Unit Unit -> P U X -> P U X
+        l !> r := dimap (λ u. tuple unit u) snd (l /!\ r)
+
+        ''| Insert a separator.
+        @(name conjuxt2_sep)
+        @(prec = (:/!\:))
+        (:/!:!\:) @{U&X&V&Y} : P U X -> P Unit Unit -> P V Y -> P (U //\\ V) (X //\\ Y)
+        l /! s !\ r := l /!\ (s !> r) '' keep it right associative.
+
+        ''| Feed two gadgets from the same input, taking both outputs.
+        @(name fanout)
+        (:&&&:) @{X&Y & I} : P I X -> P I Y -> P I (X //\\ Y)
+        l &&& r := dimap (join tuple) identity (l /!\ r)
+
+    ''| Combine two profunctor gadgets with disjunction.
+    @class Disjuxt
+        _ : Profunctor
+
+        @(alias disjuxt0)
+        pvoid : P Void Void
+
+        @(name disjuxt2)
+        @(prec < (:/!\:))
+        @(infixr)
+        (:\!/:) @{U&X&V&Y} : P U X -> P V Y -> P (U \\// V) (X \\// Y)
+
+        ''| Choose between two gadgets with the same output.
+        @(name fanin)
+        (:|||:) @{X&Y & O} : P X O -> P Y O -> P (X \\// Y) O
+        l ||| r := dimap identity (either identity identity) (l \!/ r)
+
+    ''| Combine two profunctor gadgets with the `These` tensor.
+    @class Subjuxt
+        _ : Conjuxt
+        _ : Disjuxt
+
+        ''| The idea is that this is like `(l /!\ r) \!/ l \!/ r`, but preferably optimized in some way.
+        @(name subjuxt2)
+        @(prec = (:/!\:))
+        @(infixr)
+        (:/!/:) @{U&X&V&Y} : P U X -> P V Y -> P (U /\\/ V) (X /\\/ Y)
+        @(default)
+        l /!/ r := l /! punit !/ r
+
+        ''| This inserts the separator between the conjoined elements, `(l /! s !\ r) \!/ l \!/ r`, not between the disjoined.
+        @(name subjuxt2_sep)
+        @(prec = (:/!/:))
+        (:/!:!/:) @{U&X&V&Y} : P U X -> P Unit Unit -> P V Y -> P (U //\\ V) (X //\\ Y)
+
+    ''| The case tree for control flow in profunctors.
+    ''|
+    ''| Covariant (“input of input”), contravariant (“output of input”), contravariant (“input of output”), covariant (“output of output”).
+    @data CaseTree (P : Type -> Type) : Π (U&X & V&Y : Type). Type
+    | zero @{P, U&X&V&Y} : (V -> Void) -> (X -> Void) -> CaseTree P  U X  V Y
+    | one  @{P, U&X&V&Y} : (V -> U) -> P V (X -> Y)   -> CaseTree P  U X  V Y
+    | two @{P, I&J&U&X&V&Y&W&Z} :
+        (W -> U \\// V) -> '' the input of the output says what branch to take contravariantly
+        (J -> X \\// Y) -> '' the output of the input says what branch to take covariantly
+        CaseTree P  I X  U Z ->
+        CaseTree P  I Y  V Z ->
+        CaseTree P  I J  W Z
+
+    ''| Construct two lanes of control flow, tensoring the inner data together instead of using mapping functions.
+    @(op @(infixr) (:///:))
+    twoLanes @{P, I & U&X&V&Y & Z} :
+        CaseTree P  I X  U Z ->
+        CaseTree P  I Y  V Z ->
+        CaseTree P  I (X \\// Y)  (U \\// V) Z
+    twoLanes l r = CaseTree'two identity identity l r
+
+    ''| The `two` constructor of `CaseTree`, for passing to `branch_cases`.
+    @data SplitCases : (P : Type -> Type) : Π (I&J & W&Z : Type). Type
+    | split @{P, I&J&U&X&V&Y&W&Z} :
+        (W -> U \\// V) -> '' the input of the output says what branch to take contravariantly
+        (J -> X \\// Y) -> '' the output of the input says what branch to take covariantly
+        CaseTree   P  I X  U Z ->
+        CaseTree   P  I Y  V Z ->
+        SplitCases P  I J  W Z
+
+    ''| This is selective applicative control flow, generalized to profunctors.
+    @class GuideFlow
+        _ : Conjuxt
+
+        conduct @{U&X&V&Y} : P U X -> CaseTree P U X V Y -> P V Y
+
+        /`
+        ''| The important case to implement.
+        branch_cases @{I&J&W&Z} : P I J -> SplitCases P I J W Z -> P W Z
+
+        ''| The other cases can be handled automatically, from `Profunctor` and `Conjuxt`.
+        conduct @{U&X&V&Y} : P U X -> CaseTree P U X V Y -> P V Y
+        ''| Zero cases: use the functions to map `P U X -> P V Y` directly
+        conduct pux (CaseTree'zero vu xv) :=
+            dimap (absurd << vu) (xv >> absurd) pux
+        ''| One case: sequence with `conjuxt2` and remap the result
+        conduct pux (CaseTree'one (vu : V -> U) (pvxy : P V (X -> Y))) :=
+            (λ v. tuple (vu v) v) >$<$> (λ (tuple x f). f x)
+            !!! (pux /!\ pvxy : P (U //\\ V) (X //\\ (X -> Y)))
+        ''| Two cases: delegate to `branch_cases` from the implementation
+        conduct pux (CaseTree'two wuv jxy l r) := branch_cases pux (split wuv jxy l r)
+        `/
+
+        ''| This is the data flow of a selective applicative profunctor.
+        ''| It is written like this to preserve the exact shape of the data, for manipulating data precisely in bidirectional codecs, profunctor optics, and other applications.
+        ''|
+        ''| Covariantly:
+        ''|
+        ''| - The first argument `c` controls which branch to run: left with `W`, right with `Z`.
+        ''| - Then the selected branch runs.
+        ''| - The result captures the output of `c` along with which branch ran: thus `W & X` or `Z & Y`
+        ''|
+        ''| The types for the contravariant direction mirror the covariant, but there is no selection of control flow by `c`: the input already says which to run.
+        ''|
+        ''| Being able to map over input and output directions separately is really important.
+        branch @{I&J&W&Z&U&X&V&Y} :
+            P (I \\// J) (W \\// Z) ->
+            P U X ->
+            P V Y ->
+            P
+                (I //\\ U \\// J //\\ V)
+                (W //\\ X \\// Z //\\ Y)
+        branch c l r = branch_cases c (CaseTree'one l) (CaseTree'one r)
+
+
+    ''| This gives rise to `Lens` in profunctor optics: projecting out a field of a product type.
+    @class Strong
+        _ : Conjuxt
+
+        ''| Map over the first component of a tuple, keeping the second neutral.
+        onFst @{N & X&Y} : P X Y -> P (X //\\ N) (Y //\\ N)
+        ''| Map over the second component of a tuple, keeping the first neutral.
+        onSnd @{N & X&Y} : P X Y -> P (N //\\ X) (N //\\ Y)
+
+    ''| This gives rise to `Prism` in profunctor optics: injecting a constructor of a sum type.
+    @class Choice
+        _ : Conjuxt
+
+        ''| Map over the first component of a sum, keeping the second neutral.
+        onL @{N & X&Y} : P X Y -> P (X \\// N) (Y \\// N)
+        ''| Map over the second component of a sum, keeping the first neutral.
+        onR @{N & X&Y} : P X Y -> P (N \\// X) (N \\// Y)
+
+    ''| This gives rise to `Grate` in profunctor optics: containers with fixed shape, e.g. pairs, vectors, functions.
+    @class Closed
+        _ : Profunctor
+
+        closed @{N & X&Y} : P X Y -> P (N -> X) (N -> Y)
+
+    ''| This gives rise to `Traversal` in profunctor optics, allowing for zero or more foci.
+    ''| The conjunction of `Strong` and `Choice` only allows for zero or one focus: thus `AffineTraversal`.
+    @class Wander
+        _ : Wander1
+        traverseP @{F, _ : Traversable Lawful F} @{X&Y} : P X Y -> P (F X) (F Y)
+
+    @class Wander1
+        _ : Subjuxt
+        traverse1P @{F, _ : Traversable1 Lawful F} @{X&Y} : P X Y -> P (F X) (F Y)
+
+    @class Wonder
+        _ : Wander
+        witherP @{F, _ : Witherable Lawful F} @{X&Y} : P X Y -> P (F X) (F Y)
+
+    @class Check
+        _ : Wander
+        crosswalkP @{F, _ : Crosswalk Lawful F} @{X&Y} : P X Y -> P (F X) (F Y)
+
+
+    @class CoStrong
+        _ : Conjuxt
+
+        ''| Map over the first component of a tuple, keeping the second neutral.
+        unFst @{N & X&Y} : P (X //\\ N) (Y //\\ N) -> P X Y
+        ''| Map over the second component of a tuple, keeping the first neutral.
+        unSnd @{N & X&Y} : P (N //\\ X) (N //\\ Y) -> P X Y
+
+    @class CoChoice
+        _ : Conjuxt
+
+        ''| Map over the first component of a sum, keeping the second neutral.
+        unL @{N & X&Y} : P (X \\// N) (Y \\// N) -> P X Y
+        ''| Map over the second component of a sum, keeping the first neutral.
+        unR @{N & X&Y} : P (N \\// X) (N \\// Y) -> P X Y

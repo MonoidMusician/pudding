@@ -1,0 +1,64 @@
+'' λΠΣ§·×¬
+
+Not := λ (P : Type) -> Void
+(¬:) := Not
+
+''| A decision on a proposition is either a proof (giving a term) or a refutation (taking any proof and producing false from it).
+@data Decide (P : Type)
+| proven (proof : P) : Decide P
+| disproven (disproof : Not P) : Decide P
+
+''| Algorithm to decide a proposition.
+@class DecidableProp (P : Type)
+    decide : Decide P
+
+''| Algorithm to decide a predicate at all points.
+@class DecidablePred @{T : Type} (P : T -> Type)
+    decidePred @{t : T} : Decide (P t)
+
+    decidablePred @{t : T} : DecidableProp (P t)
+    decidablePred = { decide := decidePred }
+
+''| Algorithm to decide a relation between all pairs.
+@class DecidableReln @{X&Y : Type} (R : X -> Y -> Type)
+    decideReln @{x : X, y : Y} : Decide (R x y)
+
+    decidableReln @{x : X, y : Y} : DecidableProp (R x y)
+    decidableReln = { decide := decideReln }
+
+''| Detect equality against a specific basepoint.
+''|
+''| Sometimes certain elements can be detected without being able to decide equality between arbitrary points (especially empty structures, like `nothing : Maybe T` regardless of what `T` is).
+@class Detect (T : Type) (t0 : T)
+    detect @{T : Type} (t0 : T) @{t1 : T} : Decide (t1 = t0)
+
+    detectable @{T : Type} (t0 : T) @{t1 : T} : DecidableProp (t1 = t0)
+    detectable = { decide := detectable }
+
+''| Decide equality between any two elements.
+@class DecidableEq (T : Type)
+    decide_= @{t0 & t1 : T} : Decide (t0 = t1)
+
+    decidable_= @{t0 & t1 : T} : Decidable (t0 = t1)
+    decidable_= := { decide := decide_= }
+
+
+''| The predicate that verifies that its argument is `true`.
+''|
+''| This can also be encoded as a function instead of an inductive type.
+@data IsTrue : Π (b : Bool). Type
+| proveTrue : IsTrue true
+
+''| Prove that `IsTrue false` is uninhabited.
+disproveFalse @{O} : IsTrue false -> O
+disproveFalse := IsTrue'elim
+    @{motive := Bool'case { false := O, true := Unit } }
+    { proveTrue := unit }
+
+''| This predicate is decidable by induction on `b : Bool`.
+@instance _decide_IsTrue : DecidablePred IsTrue := {
+    decidePred @{t} := Bool'case @{motive := Decide << IsTrue} {
+        true := proven proveTrue,
+        false := disproven disproveFalse,
+    } t,
+}.

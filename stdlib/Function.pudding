@@ -1,0 +1,30 @@
+'' λΠΣ§·×
+
+(>>>) @{X : Type, Y : Type, Z : Y -> Type} :
+    Π (f : Π (_ : X). Y)
+      (g : Π (y : Y). Z y).
+    Π (x : X). Z (f x)
+f >>> g := λ x. g (f x)
+
+(<<<) @{X : Type, Y : Type, Z : Y -> Type} :
+    Π (f : Π (y : Y). Z y)
+      (g : Π (_ : X). Y).
+    Π (x : X). Z (g x)
+f <<< g := λ x. f (g x)
+
+(->) := λ (I : Type) (O : Type). Π (_ : I). O
+
+(<->) := λ (I : Type) (O : Type). (O -> I) × (I -> O)
+
+opp @{I & O} : (I <-> O) -> (O <-> I)
+opp := λ (f, g). (g, f)
+
+flip @{X & Y : Type, Z : X -> Y -> Type} :
+    (Π (x : X) (y : Y). Z x y) ->
+    (Π (y : Y) (x : X). Z x y)
+flip := λ f y x. f x y
+
+dup @{X : Type, Z : X -> X -> Type} :
+    (Π (x : X) (x : X). Z x@_0 x@_1) ->
+    (Π (x : X). Z x x)
+dup := λ f x. f x x

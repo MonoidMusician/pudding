@@ -1,0 +1,17 @@
+@precedence
+    < structure
+        < branching '' if:then:else:
+        < prosody '' $ #
+    < typelevel
+        '' ->
+        '' \\// //\\ /\\/
+    < relational '' mediates between the type level and the term level
+        '' =
+    < termlevel
+        < structures '' <$> /!\
+        < expressions
+            < logical '' || &&
+            < comparative '' == <=
+            < algebraic
+                < lattice '' \/ /\
+                < arithmetic '' + *

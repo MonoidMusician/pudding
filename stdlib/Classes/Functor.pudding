@@ -1,0 +1,786 @@
+'' λΠΣ§·×
+
+With @{T : Type} (Cls : T -> Type) := Σ (carrier : T). Cls carrier
+
+''| Index into a datatype. Interprets `T` as a dependent function.
+''|
+''| (This is not necessarily a functor.)
+@class Indexable (T : Type)
+    Index : Type
+    Output : Index -> Type
+
+    @(op (:@[:]))
+    index_into : T -> Π (idx : Index). Output idx
+
+    at_index : Π (idx : Index). T -> Output idx
+    at_index idx container := index_into container idx
+
+''| We can classify something of type `F : Type -> Type` by what interface it implements:
+''|
+''| - `exact` functors only implement `x = y -> f x = f y`, like every function.
+''| - `invariant` functors implement `(x <-> y) -> (f x <-> f y)`.
+''| - `covariant` functors, the most familiar, implement `(x -> y) -> (f x -> f y)`.
+''| - `contravariant` functors implement `(y -> x) -> (f x -> f y)`, with a flip.
+''|   This mostly comes from the contravariance of the input side of functions.
+''| - `phantom` functors implement `(f x <-> f y)` without a precondition.
+@module FunctorLike§
+    @data Classification
+    | exact | invariant | covariant | contravariant | phantom
+
+    @class Classified (F : Type -> Type)
+        classification : Classification
+        lawful : Bool
+
+        @(instance) '' make sure it is considered for instance resolution
+        inst : Classification'case_on classification {
+            exact := Unit,
+            invariant := FunctorLike§Invariant lawful F,
+            covariant := FunctorLike§Functor lawful F,
+            contravariant := FunctorLike§Contravariant lawful F,
+            phantom := FunctorLike§Phantom lawful F,
+        }
+
+@module FunctorLike§ (Lawful : Bool) (F : Type -> Type)
+    Law law := Lawful -> law
+
+    (===) @{T} : T -> T -> Type
+    x === y := Law (x = y)
+
+    @import sib§ (G : Type -> Type) := FunctorLike§ Lawful G
+
+    ''| A phantom functor does not care what its argument is. Is it a constant functor in dependent type theory?
+    @class Phantom
+        _ : Contravariant
+        _ : Covariant
+
+        phantom @{I&O : Type} : (F I -> F O)
+
+        _phantom_self @{IO : Type} @{vs : F IO} : phantom vs === vs
+
+    ''| An invariant functor uses two functions (not necessarily an isomorphism) to map from input to output.
+    @class Invariant
+        invmap @{I&O : Type} : (I <-> O) -> (F I -> F O)
+
+        _invmap_identity @{X : Type} @{xs : F X} : invmap identity xs === xs
+        _invmap_invmap @{X&Y&Z : Type} @{xs : F X} @{f : Y <-> Z, g : X <-> Y} :
+            invmap f (invmap g xs) === invmap (f << g) xs
+
+    ''| These are useful shapes regardless of variance. Even more useful for profunctors!
+    @(export_members)
+    @module Novariant'
+
+        ''| Combine two functors with multiplexing, the `Either` tensor (sum).
+        @class Plexing
+            _ : Invariant
+            @(name plexing)
+            @(infixr)
+            (\|/) @{X&Y : Type} : F X -> F Y -> F (X \\// Y)
+
+        ''| Combine two functors with tupling, the `Tuple` tensor (product).
+        @class Tupling
+            _ : Invariant
+            @(name tupling)
+            @(infixr)
+            (/|\) @{X&Y : Type} : F X -> F Y -> F (X //\\ Y)
+
+        ''| Combine with the `These` tensor.
+        @class Theseing
+            _ : Tupling
+            _ : Plexing
+            @(name theseing)
+            @(infixr)
+            (/\/) @{X&Y : Type} : F X -> F Y -> F (X /\\/ Y)
+
+        ''| Identity for `Plexing`.
+        @class FVoid
+            fvoid : F Void
+
+        ''| Identity for `Tupling`.
+        @class FUnit
+            funit : F Unit
+
+    @class Contravariant
+        _ : Invariant
+
+        contramap @{I&O : Type} : (O -> I) -> (F I -> F O)
+
+        oblivious @{I : Type} : F I -> F Void
+        @(morally)
+        oblivious := contramap absurd
+
+        @provides Invariant'invmap := λ (f, _). contramap f
+
+        _contramap_identity @{X : Type} @{xs : F X} : contramap identity xs === xs
+        _contramap_contramap @{X&Y&Z : Type} @{xs : F X} @{f : Y -> Z, g : X -> Y} :
+            contramap f (contramap g xs) === contramap (f >> g) xs
+
+    ''| The convariant functor class, for data and control flow.
+    @class Functor
+        _ : Invariant
+
+        @(haskell fmap)
+        @(name map)
+        @(flip (<#>)) '' automatically @(infixl)
+        @(infixr)
+        (<$>) @{I&O : Type} : (I -> O) -> (F I -> F O)
+
+        @provides Invariant'invmap := λ (_, f). map f
+
+        @(name map_const)
+        @(flip @(haskell ($>)) (#>)) '' automatically @(infixl)
+        @(infixl)
+        @(prec = (<$>))
+        (<$) : @{I&O : Type} : O -> (F I -> F O)
+        @(morally)
+        (<$) := λ o. map (λ i. o)
+
+        @(haskell void)
+        ignore @{I&O : Type, _ : Subsingleton O} : F I -> F O
+        @(morally)
+        ignore := map_const single
+
+        _map_identity @{X : Type} @{xs : F X} : map identity xs === xs
+        _map_map @{X&Y&Z : Type} @{xs : F X} @{f : Y -> Z, g : X -> Y} :
+            map f (map g xs) === map (f << g) xs
+
+    ''| It is useful to loosely associate an index with each position of a functor while iterating over it: e.g. the Nat index of a list, or a key in a map.
+    ''| `map_ixed` determines every other.
+    @class FunctorIxed
+        Index : Type
+
+        @(name map_ixed)
+        @(flip (<#>.))
+        @(infixl)
+        @(prec = (<$>))
+        (.<$>) : @{I&O : Type} : ({ i : Index, v : I } -> O) -> (F I -> F O)
+
+        _map_ixless @{I&O : Type} @{f : I -> O} @{vs : F I} :
+            map_ixed (λ { v }. f v) === map f xs
+
+    (:Ixed:) @{{ Index } : FunctorIxed} (I : Type) :=
+        { i : Index, v : I }
+
+
+    ''| ## Conjunctive |''
+
+    ''| It is useful to include `pure` as its own class, even without `lift2` (the operation it is an identity for).
+    @class Pointed
+        _ : Functor
+        _ : FUnit
+
+        pure @{O : Type} : O -> F O
+
+        @(optional)
+        pure_ixed @{{ Index } : FunctorIxed} @{O : Type} : (Index -> O) -> F O
+
+        _funit : funit === pure unit
+
+    @class Apply
+        _ : Functor
+        _ : Tupling
+
+        @(flip (·<*[·]>·))
+        lift2 @{X&Y&O : Type} :
+            (X -> Y -> O) ->
+            (F X -> F Y -> F O)
+
+        _tupling_lift2 @{X&Y : Type} @{xs : F X, ys : F Y} : xs /|\ ys === lift2 tuple xs ys
+
+        _lift2_lift2_L2R @{X&Y&I&Z&O : Type} @{f : I -> Z -> O, g : X -> Y -> I} @{xs : F X, ys : F Y, zs : F Z} :
+            lift2 f (lift2 g xs ys) zs === lift2 (λ x (h, z). f (h x) z) xs (lift2 (λ y z. (λ x. g x y, z)) ys zs)
+        _lift2_lift2_R2L @{X&Y&I&Z&O : Type} @{f : X -> I -> O, g : Y -> Z -> I} @{xs : F X, ys : F Y, zs : F Z} :
+            lift2 f xs (lift2 g ys zs) === lift2 (λ (x, h) z. f x (h z)) (lift2 (λ x y. (x, g y)) xs ys) zs
+
+        @(optional)
+        lift2_ixed @{_ : FunctorIxed} @{X&Y&O : Type} :
+            (F :Ixed: X -> F :Ixed: Y -> O) ->
+            (F X -> F Y -> F O)
+
+        @(name fapply "functor apply")
+        (<*>) := lift2 ($)
+
+    @class Applicative
+        _ : Apply
+        _ : Pointed
+
+        _pure_lift2 @{X&Y&O : Type} @{f : X -> Y -> O} @{x : X} @{ys : F Y} :
+            lift2 f (pure x) ys === map (f x) ys
+        _lift2_pure @{X&Y&O : Type} @{f : X -> Y -> O} @{xs : F X} @{y : Y} :
+            lift2 f xs (pure y) === map (λ x. f x y) xs
+
+    ''| This is a precursor to `Monad`.
+    @class Bind
+        _ : Functor
+
+        join @{O : Type} : F (F O) -> F O
+
+        ''| Associativity of `join`.
+        _join_join @{O : Type} @{vs : F (F (F O))} :
+            join (map join vs) === join (join vs)
+
+        ''| Naturality of `join`.
+        _map_join @{I&O : Type} @{f : I -> O} @{vs : F (F I)} :
+            join (map (map f) vs) === map f (join vs)
+
+        @(name bind)
+        @(flip (=<<))
+        @(infixl)
+        (>>=) : @{I&O : Type} : F I -> (I -> F O) -> F O
+        @(morally)
+        (>>=) := λ vs f. join (map f vs)
+
+        @(optional)
+        @(name bind_ixed)
+        @(flip (.=<<))
+        @(prec = (>>=))
+        @(infixl)
+        (>>=.) @{_ : FunctorIxed} @{I&O : Type} :
+            F I -> (F :Ixed: I -> F O) -> F O
+
+    @class Monad
+        _ : Bind
+        _ : Selective
+        _ : MultiPhase
+
+        ''| Both `join` coming from `Bind` and `phases2` coming from `MultiPhase` should compute the same.
+        _join_is_phases2 @{O} @{vs : F (F O)} :
+            join vs === phases2 vs
+
+        ''| `Applicative` and `Monad` share an identity.
+        ''| This is not true for every category, it originates in the strength of `Type`.
+        _join_pure @{O : Type} @{vs : F O} :
+            join (pure vs) === vs
+        _join_map_pure @{O : Type} @{vs : F O} :
+            join (map pure vs) === vs
+
+    ''| An identity for `Zippable`, which may be an endless stream (or may be an adjoined identity).
+    @class Endless
+        endless @{O : Type} : O -> F O
+
+        @(optional)
+        endless_ixed @{{ Index } : FunctorIxed} @{O : Type} : (Index -> O) -> F O
+
+    ''| Repeat for a finite amount.
+    @class Repeat
+        repeat @{O : Type} : Nat -> O -> F O
+
+        @(optional)
+        repeat_ixed @{{ Index } : FunctorIxed} @{O : Type} : Nat -> (Index -> O) -> F O
+
+    ''| This is, in fact, a restatement of `Apply`, but with more of a structural intent.
+    ''| Of course `List`-likes can implement both with different semantics.
+    @class Zippable
+        _ : Functor
+        zip_with @{X&Y&O : Type} :
+            (X -> Y -> O) ->
+            (F X -> F Y -> F O)
+
+        @(optional)
+        zip_with_ixed @{_ : FunctorIxed} @{X&Y&O : Type} :
+            (F :Ixed: X -> F :Ixed: Y -> O) ->
+            (F X -> F Y -> F O)
+
+        _zip_with_zip_with_L2R @{X&Y&I&Z&O : Type} @{f : I -> Z -> O, g : X -> Y -> I} @{xs : F X, ys : F Y, zs : F Z} :
+            zip_with f (zip_with g xs ys) zs === zip_with (λ x (h, z). f (h x) z) xs (zip_with (λ y z. (λ x. g x y, z)) ys zs)
+        _zip_with_zip_with_R2L @{X&Y&I&Z&O : Type} @{f : X -> I -> O, g : Y -> Z -> I} @{xs : F X, ys : F Y, zs : F Z} :
+            zip_with f xs (zip_with g ys zs) === zip_with (λ (x, h) z. f x (h z)) (zip_with (λ x y. (x, g y)) xs ys) zs
+
+    @class EndlessZippable
+        _ : Endless
+        _ : Zippable
+
+        _endless_zip_with @{X&Y&O : Type} @{f : X -> Y -> O} @{x : X} @{ys : F Y} :
+            zip_with f (endless x) ys === map (f x) ys
+        _zip_with_endless @{X&Y&O : Type} @{f : X -> Y -> O} @{xs : F X} @{y : Y} :
+            zip_with f xs (endless y) === map (λ x. f x y) xs
+
+    ''| ## Data |''
+    ''|
+    ''| Based on the shape of the data, no other semantics. |''
+
+    ''| A `Foldable` may not even be a `Functor`, which makes it tricky to give semantics for.
+    ''| The concept is that it targets all (finitely many) elements of the item type in a predefined order.
+    ''| `Traversable` formalizes this, and all `Foldable`+`Functor` ought to implement `Traversable`.
+    ''| The most notable example of a non-`Functor` `Foldable` is `Set` (based on `Ord`), but that would be expressed differently in dependent type theory.
+    @class Foldable
+        @(op
+            @(flip (#..))
+            @(infixr)
+            (..$)
+        )
+        fold_map @{I&O : Type, _ : Monoid O}.
+            (I -> O) -> F I -> O
+
+        _fold_map_nil @{I : Type} @{vs : F I} :
+            fold_map nil xs === nil
+
+        fold @{O : Type, _ : Monoid O}. F O -> O
+        fold := fold_map λ s. s
+
+        ''| This allows more efficient handling of empty structures, since they should be quick to detect.
+        enfold_map @{I&O : Type, _ : Semigroup O}. (I -> O) -> F O -> Maybe O
+        @(morally)
+        enfold_map := λ f. fold_map (just << f)
+
+        enfold @{O : Type, _ : Semigroup O}. F O -> Maybe O
+        @(morally)
+        enfold := enfold_map λ s. s
+
+        foldr @{I&O : Type} : (I -> O -> O) -> O -> F I -> O
+        foldl @{I&O : Type} : (O -> I -> O) -> O -> F I -> O
+
+        length @{I} : F I -> Nat
+        @(morally)
+        length := fold_map λ _. succ zero
+
+        is_empty @{I} : F I -> Conj Bool
+        @(morally)
+        is_empty := is_just << enfold_map λ _. unit
+
+        to_list @{O} : F O -> List O
+        @(morally)
+        to_list := foldr cons empty
+
+        to_stack @{O} : F O -> Stack O
+        @(morally)
+        to_stack := foldl snoc empty
+
+        foldr_from @{I&O : Type} : O -> (I -> O -> O) -> F I -> O
+        foldr_from = flip foldr
+        foldl_from @{I&O : Type} : O -> (O -> I -> O) -> F I -> O
+        foldl_from = flip foldl
+
+        foldr_on @{I&O : Type} : F I -> O -> (I -> O -> O) -> O
+        foldr_on items start folder = foldr folder start items
+        foldl_on @{I&O : Type} : F I -> O -> (O -> I -> O) -> O
+        foldl_on items start folder = foldl folder start items
+
+    @class Foldable1
+        _ : Foldable
+
+        '' TODO: some functors (e.g. quotients) need lawful semigroups
+        fold1_map @{I&O : Type, _ : Semigroup O}. (I -> O) -> F I -> O
+
+        fold1 := fold1_map λ s. s
+
+        foldr1 @{I&O : Type} : (I -> O -> O) -> (I -> O) -> F I -> O
+        foldl1 @{I&O : Type} : (O -> I -> O) -> (I -> O) -> F I -> O
+
+        foldr1_from @{I&O : Type} : (I -> O) -> (I -> O -> O) -> F I -> O
+        foldr1_from = flip foldr1
+        foldl1_from @{I&O : Type} : (I -> O) -> (O -> I -> O) -> F I -> O
+        foldl1_from = flip foldl1
+
+        foldr1_on @{I&O : Type} : F I -> (I -> O) -> (I -> O -> O) -> O
+        foldr1_on items start folder = foldr1 folder start items
+        foldl1_on @{I&O : Type} : F I -> (I -> O) -> (O -> I -> O) -> O
+        foldl1_on items start folder = foldl1 folder start items
+
+        rassoc @{T : Type} : (T -> T -> T) -> F T -> T
+        rassoc := foldr1_from identity
+        lassoc @{T : Type} : (T -> T -> T) -> F T -> T
+        lassoc := foldl1_from identity
+
+        _fold_1_map @{I&O : Type, _ : Monoid O} @{f : I -> O} @{vs : F I} :
+            fold1_map f vs === fold_map f vs
+        _enfold1_map @{I&O : Type, _ : Semigroup O} @{f : I -> O} @{vs : F O} :
+            enfold_map f vs === just (fold1_map f vs)
+
+    ''| `Traversable` allows reconstructing the structure after the applicative folding.
+    @class Traversable
+        _ : Functor
+        _ : Foldable
+        traverse @{M, _ : sib'Applicative M} @{I&O : Type} : (I -> M O) -> (F I -> M (F O))
+        sequence @{M, _ : sib'Applicative M} @{  O : Type} : F (M O) -> M (F O)
+
+        _traverse_pure @{M, _ : sib'Applicative M} @{O : Type} @{vs : F O} :
+            traverse pure vs === pure vs
+
+        _sequence_map @{M, _ : sib'Applicative M} @{I&O : Type} @{f : I -> M O} @{vs : F I} :
+            sequence (map f xs) === traverse f xs
+
+    @class Traversable1
+        _ : Foldable1
+        _ : Traversable
+        traverse1 @{M, _ : sib'Apply M} @{I&O : Type} : (I -> M O) -> (F I -> M (F O))
+        sequence1 @{M, _ : sib'Apply M} @{  O : Type} : F (M O) -> M (F O)
+
+        _sequence1_map @{M, _ : sib'Apply M} @{I&O : Type} @{f : I -> M O} {vs : F I} :
+            sequence1 (map f xs) === traverse1 f xs
+
+        _traverse_1 @{M, _ : sib'Applicative M} @{I&O : Type} @{f : I -> M O, vs : F I} :
+            traverse f vs === traverse1 f vs
+        _sequence_1 @{M, _ : sib'Applicative M} @{  O : Type} @{vs : F (M O)} :
+            sequence vs === sequence1 vs
+
+    ''| ## Double Data |''
+    ''|
+    ''| Classes for working with two containers at once.
+
+    ''| `Align` lines up similar positions between shapes of a functor, making a choice about how to relate them for different shapes.
+    ''| For instance, cons lists choose to align head to head, so their index from the start is always the same, but one tail may continue on.
+    ''| Maps align by key, pretty simple.
+    ''|
+    ''| This does not have `MayAlign` as a superclass because `Align` may try harder to align disparate shapes.
+    @class Align
+        _ : Functor
+
+        align_with @{X&Y&O : Type} : (These X Y -> O) -> F X -> F Y -> F O
+
+        @(optional)
+        align_with_ixed @{_ : FunctorIxed} @{X&Y&O : Type} : (These (F :Ixed: X) (F :Ixed: Y) -> O) -> F X -> F Y -> F O
+
+        _align_self @{I&X&Y&O : Type} @{f : These X Y -> O, g : I -> X, h : I -> Y} @{vs : F I} :
+            align_with f (map g vs) (map h vs) === map (λ v. f (both (g v) (h v))) vs
+
+        '' will_align_with @{X&Y&O : Type} @{f : These X Y -> O} @{xs : F X, ys : F Y} :
+            '' may_align_with f xs ys === just (align_with f xs ys)
+
+    ''| This positions `empty` as an identity for `align`.
+    @class Alignable
+        _ : Empty
+
+        _empty_align @{X&Y&O : Type} @{f : These X Y -> O} @{ys : F Y} :
+            align_with f empty ys === map (f << that) ys
+        _align_empty @{X&Y&O : Type} @{f : These X Y -> O} @{xs : F X} :
+            align_with f xs empty === map (f << this) xs
+
+
+    ''| `MayAlign` also makes a choice about what shapes are compatible, so that it can align coproducts.
+    ''| Enables `(MayAlign f, MayAlign g) => MayAlign (Coproduct f g)`.
+    @class MayAlign
+        _ : Functor
+
+        may_align_with @{X&Y&O : Type} : (These X Y -> O) -> F X -> F Y -> Maybe (F O)
+
+        @(optional)
+        may_align_with_ixed @{_ : FunctorIxed} @{X&Y&O : Type} : (F :Ixed: (These X Y) -> O) -> F X -> F Y -> Maybe (F O)
+
+        _may_align_self @{I&X&Y&O : Type} @{f : These X Y -> O, g : I -> X, h : I -> Y} @{vs : F I} :
+            may_align_with f (map g vs) (map h vs) === just (map (λ v. f (both (g v) (h v))) hs)
+
+    ''| `Unify` does not have to make decisions about alignment of indices between different shapes, because it does not unify different shapes.
+    @class Unify
+        _ : Functor
+
+        unify_with @{X&Y&O : Type} : (X -> Y -> O) -> F X -> F Y -> Maybe (F O)
+
+        @(optional)
+        unify_with_ixed @{_ : FunctorIxed} @{X&Y&O : Type} : (F :Ixed: (X × Y) -> O) -> F X -> F Y -> Maybe (F O)
+
+        _unify_self @{I&X&Y&O : Type} @{f : These X Y -> O, g : I -> X, h : I -> Y} @{vs : F I} :
+            unify f (map g vs) (map h vs) === just (map (λ v. f (g v) (h v)) vs)
+
+    ''| ## Shrinking |''
+
+    ''| Removing items from a container that is not necessarily a `Functor`.
+    ''| Again, the main example in Haskell would be `Set`, although that relies on the fact that `just` and `left`/`right` are monotonic.
+    @class Compactable
+        _ : Empty
+
+        compact @{O : Type} : F (Maybe O) -> F O
+
+        _compact_empty @{O : Type} : compact empty === empty @{O}
+
+        separate @{L&R : Type} : F (Either L R) -> { L : F L, R : F R }
+
+    ''| A suite of functions for filtering functors.
+    ''| `Witherable` requires the structure to be finite and ordered, but `Filterable` does not.
+    @class Filterable
+        _ : Compactable
+        _ : Functor
+
+        filter_map @{I&O : Type} : (I -> Maybe O) -> F I -> F O
+
+        _filter_map_nothing @{I&O : Type} {vs : F I} :
+            filter_map (λ _. nothing : Maybe O) vs === empty
+        _compact_via_filter_map @{O : Type} {vs : F O} :
+            compact vs === filter_map identity vs
+
+        filter @{T : Type} : (T -> Boolean) -> F T -> F T
+        @(morally)
+        filter f := filter_map λ t.
+            if: f t :then: just t :else: nothing
+
+        sift_map @{I&L&R : Type} : (I -> { L : Maybe L, R : Maybe R }) -> F I -> { L : F L, R : F R }
+
+        partition_map @{I&L&R : Type} : (I -> Either L R) -> F I -> { L : F L, R : F R }
+        @(morally)
+        partition_map f := sift_map λ i. Either'case {
+            left l := { L := just l, R := nothing },
+            right r := { L := nothing, R := just r },
+        } (f i)
+
+        unalign_with @{I&L&R : Type} : (I -> These L R) -> F I -> { L : F L, R : F R }
+        unalign_with f := sift_map λ i. These'case {
+            this l := { L := just l, R := nothing },
+            that r := { L := nothing, R := just r },
+            both l r := { L := just l, R := just r },
+        } (f i)
+
+    ''| These allow effects while traversing, which means that `winnow`/`wilt` cannot be derived from `wither` anymore, since they would require two separate traversals.
+    ''| (Although that would be okay for idempotent applicatives.)
+    ''| These structures are necessarily finite, to allow `Apply` and `Align` to do their jobs.
+    @class Witherable
+        _ : Filterable
+        _ : Traversable
+
+        winnow @{M : Type -> Type, _ : Applicative M} @{I&L&R : Type}
+            (I -> M { L : Maybe L, R : Maybe R }) ->
+            (F I -> M { L : F L, R : F R })
+        wither @{M : Type -> Type, _ : Applicative M} @{I&O : Type}
+            (I -> M (Maybe O)) ->
+            (F I -> M (F O))
+        wilt @{M : Type -> Type, _ : Applicative M} @{I&L&R : Type}
+            (I -> M (Either L R)) ->
+            (F I -> M { L : F L, R : F R })
+        @(morally)
+        wilt f := winnow λ i. Either'case {
+            left l := { L := just l, R := nothing },
+            right r := { L := nothing, R := just r },
+        } <$> f i
+
+    ''| Crosswalk is a funny new one.
+    ''| It is similar to `Traversable`, but because it uses `align :: F X -> F Y -> F (These X Y)`, each element may or may not show up in the output at each alignment.
+    ''| A good choice for `M` is `Map k`.
+    '' TODO: version with access to `pure`?
+    @class Crosswalk
+        _ : Traversable
+        crosswalk  @{M, _ : sib'Alignable M} @{I&O : Type} : (I -> M O) -> (F I -> M (F O))
+        parkinglot @{M, _ : sib'Alignable M} @{  O : Type} : F (M O) -> M (F O)
+        @(morally)
+        parkinglot := crosswalk identity
+
+        _parkinglot_map @{M, _ : sib'Alignable M} @{I&O : Type} @{f : I -> M O} {vs : F I} :
+            parkinglot (map f xs) === crosswalk f xs
+
+    ''| It works for nonempty structures too, which do not need access to `empty`{.haskell} or `pure`{.haskell} from `M`.
+    @class Crosswalk1
+        _ : Crosswalk
+        _ : Traversable1
+        crosswalk1  @{M, _ : sib'Align M} @{I&O : Type} : (I -> M O) -> (F I -> M (F O))
+        parkinglot1 @{M, _ : sib'Align M} @{  O : Type} : F (M O) -> M (F O)
+        @(morally)
+        parkinglot1 := crosswalk1 identity
+
+        _parkinglot1_map @{M, _ : sib'Align M} @{I&O : Type} @{f : I -> M O} {vs : F I} :
+            parkinglot1 (map f xs) === crosswalk1 f xs
+
+        _traverse_1 @{M, _ : sib'Alignable M} @{I&O : Type} @{f : I -> M O, vs : F I} :
+            traverse f vs === traverse1 f vs
+        _sequence_1 @{M, _ : sib'Alignable M} @{  O : Type} @{vs : F (M O)} :
+            sequence vs === sequence1 vs
+
+    ''| ## Control Flow |''
+
+    @(no export_members)
+    @data CaseTree (I & R : Type)
+    '' Two (or more) cases
+    | two @{X & Y : Type} :
+        '' How to split the input into data for each case
+        '' (Note that `X` and `X` are existential here!)
+        (I -> Either X Y) ->
+        '' Control flow for the `Left` case
+        CaseTree F X R ->
+        '' Control flow for the `Right` case
+        CaseTree F Y R ->
+        CaseTree F I R
+    '' One static effect
+    | one : (F (I -> R)) -> CaseTree F I R
+    '' Represent an empty case branching
+    | zero : (I -> Void) -> CaseTree F I R
+
+    @(no export_members)
+    @data ControlFlow (P : Type -> Type -> Type) (I & O : Type)
+    | pure : (I -> O) -> ControlFlow P I O
+    | lift : P I O -> ControlFlow P I O
+    | sequence @{J} : ControlFlow P I J -> ControlFlow P J O -> ControlFlow P I O
+    | absurd : (I -> Void) -> ControlFlow P I O
+    | branch @{X&Y} :
+        (I -> Either X Y) ->
+        ControlFlow P X O ->
+        ControlFlow P Y O ->
+        ControlFlow P I O
+
+    Apprrow (F : Type -> Type) (I & O : Type) := F (I -> O)
+    ControlFlowF (F : Type -> Type) :=
+        ControlFlow (Apprrow F)
+
+
+    ''| Selective applicative functors.
+    @class Selective
+        _ : Applicative
+        @(name control_flow)
+        (=>=>) : @{I&O : Type} : F I -> CaseTree F I O -> F O
+
+    @module Selective'
+        branch @{F : Type -> Type, _ : Selective} @{X & Y & O : Type} :
+            F (Either X Y) -> F (X -> O) -> F (Y -> O) -> F O
+        branch discr onX onY := control_flow discr
+            (CaseTree'two (λ xy. xy) (CaseTree'one onX) (CaseTree'one onY))
+
+        select @{F : Type -> Type, _ : Selective} @{X & Y & O : Type} :
+            F (Either X O) -> F (X -> O) -> F O
+        select discr onX := branch discr onX (pure λ r. r)
+
+        interpret @{I&O : Type} : ControlFlowF F I O -> F (I -> O)
+        interpret = ControlFlowF'rec {
+            pure := pure,
+            lift := identity,
+            sequence := lift2 (>>),
+            absurd f := pure (f >> absurd),
+            branch
+        }
+
+    ''| Bounded iteration with static analysis.
+    @class TraverseFlow
+        _ : Selective
+        andTraverse  @{T, _ : Traversable  T} @{I&O} : F (T I) -> ControlFlow F I O -> F (T O)
+        andTraverse1 @{T, _ : Traversable1 T} @{I&O} : F (T I) -> ControlFlow F I O -> F (T O)
+
+    ''| Unbounded iteration but with static analysis still.
+    @class LoopFlow
+        _ : Selective
+        doWhile @{I&O} : F I -> ControlFlow F I (Either O I) -> F O
+
+    ''| Least fixed point.
+    @class FixedPoint
+        _ : Selective
+        leastFixedPoint @{R} : (F R -> F R) -> F R
+
+    ''| An `Applicative` functor with multiple phases, allowing it to approximate a monad while still having the static analysis capabilities of an applicative for the first phase of computation.
+    @class MultiPhase
+        '' Maybe this is just Bind, if I drop Applicative ...
+        _ : Applicative
+
+        phases2 @{R} : F (F R) -> F R
+
+        ''| Associativity for `phases2`.
+        _phases3 @{R} @{vs : F (F (F R))} :
+            phases2 (map phases2 vs) === phases2 (phases2 vs)
+
+        ''| This is not necessarily the identity.
+        next_phase @{R} : F R -> F R
+        @(morally)
+        next_phase := phases2 << pure
+
+        ''| But the opposite should be.
+        _same_phase @{R} @{vs : F R} :
+            phases2 (map pure vs) === vs
+
+
+
+    ''| ## Disjunctive |''
+
+    @class Empty
+        empty @{O : Type} : F O
+
+    ''| `Alt` forms a semigroup for functors.
+    ''| It may interact with the conjunctive classes if they apply, but it is formulated on its own.
+    @class Alt
+        _ : Functor
+        _ : Plexing
+
+        alt_map @{X&Y&O : Type} : (X -> O) -> (Y -> O) -> F X -> F Y -> F O
+
+        @(name alt)
+        (<|>) @{O : Type} : F O -> F O -> F O
+        @(morally)
+        (<|>) := alt_map (λ o. o) (λ o. o)
+
+        _plexing_alt @{X&Y : Type} @{xs : F X, ys : F Y} : xs \|/ ys === alt_map left right xs ys
+
+        @(simpl)
+        _alt_alt @{O : Type} @{xs : F O, ys : F O, zs : F O} :
+            (xs <|> ys) <|> zs === xs <|> (ys <|> zs)
+
+        _alt_map_alt_map_L2R @{X&Y&I&Z&O : Type} @{f : I -> O, g : Z -> O, h : X -> I, k : Y -> I} @{xs : F X, ys : F Y, zs : F Z} :
+            alt_map f g (alt_map h k xs ys) zs === alt_map (f << h) id xs (alt_map (f << k) g ys zs)
+        _alt_map_alt_map_R2L @{X&Y&I&Z&O : Type} @{f : X -> O, g : I -> O, h : Y -> I, k : Z -> I} @{xs : F X, ys : F Y, zs :
+            alt_map f g xs (alt_map h k ys zs) === alt_map id (g << k) (alt_map f (g << h) xs ys) zs
+
+
+    ''| `Plus` forms a monoid for functors.
+    @class Plus
+        _ : Alt
+        _ : Empty
+        _ : FVoid
+
+        _empty_alt @{X&Y&O : Type} @{f : X -> O, g : Y -> O} @{ys : F Y} :
+            alt_map f g empty ys === map g ys
+        _alt_empty @{X&Y&O : Type} @{f : X -> O, g : Y -> O} @{xs : F X} :
+            alt_map f g xs empty === map f xs
+
+        _map_empty @{I&O : Type} @{f : I -> O} : map f empty === empty
+        _fvoid_empty : fvoid === empty @{(Void)}
+
+    '' Laws???
+    @class Alternative
+
+    ''| ## Duals |''
+
+    @class Extract
+        extract @{O : Type} : F O -> O
+
+    @class Extend
+        _ : Functor
+        extend @{I&O : Type} : (F I -> O) -> F I -> F O
+
+        duplicate := extend identity
+
+    @class Comonad
+        _ : Extend
+        _ : Functor
+
+        _extend_extract @{O : Type} @{vs : F O} :
+            extend extract vs === vs
+        _extend_extract @{O : Type} @{vs : F O} :
+            extract (extend identity vs) === vs
+
+    ''| Kind of a dual of `Traversable`
+    @class Distributive
+        distribute @{G : Type -> Type, _ : Functor G, O : Type} :
+            F (G O) -> G (F O)
+
+        @(name flap)
+        (<@>) : @{I&O : Type} : F (I -> O) -> I -> F O
+        (<@>) := distribute @{G := (->) I, O := O}
+
+    ''| A `Representable` functor is isomorphic to `(Rep -> _)` for some type `Rep`.
+    @class Representable
+        _ : Distributive
+        Rep : Type
+        tabulator @{O : Type} : Iso (F O) (Rep -> O)
+
+    ''| ## Contravariant |''
+
+    @module Contravariant§
+        @class Decide
+            _ : Contravariant
+            _ : Plexing
+
+            choose @{X&Y&O} : (O -> Either X Y) -> F X -> F Y -> F O
+
+            _choose_plexing @{X&Y} @{xs : F X, ys : F Y} : choose identity xs ys === plexing xs ys
+
+        @class Decidable
+            _ : Decide
+            _ : FVoid
+
+            lose @{O} : (O -> Void) -> F O
+            lose f := contramap f fvoid
+
+        @class Divide
+            _ : Contravariant
+            _ : Tupling
+
+            divide @{X&Y&O} : (O -> Tuple X Y) -> F X -> F Y -> F O
+
+            _divide_tupling @{X&Y} @{xs : F X, ys : F Y} : divide identity xs ys === tupling xs ys
+
+        @class Dividable
+            _ : Divide
+            _ : FUnit
+
+            conquer @{O} : F O
+            conquer := contramap (λ _. unit) funit

@@ -1,0 +1,40 @@
+@data Void.
+
+@(expose_members)
+@data Unit | unit.
+
+@(expose_members)
+@data Bool
+| false : Bool
+| true : Bool.
+
+@data Ordering
+| eq | lt | gt
+
+@data PartialOrdering
+| eq | uncomp | lt | gt
+
+@data PreOrdering
+| eq | equiv | uncomp | lt | gt
+
+@data Identity (T : Type) : Type
+| mk @{T : Type} (t : T) : Identity T
+
+@(expose_members)
+@data Maybe (T : Type) : Type
+| nothing @{T : Type} : Maybe T
+| just @{T : Type} (t : T) : Maybe T
+
+@(expose_members)
+@data Either (L & R : Type) : Type
+| left  (l : L) : Either L R
+| right (r : R) : Either L R
+
+@data Tuple (L & R : Type) : Type
+| tuple (l : L) (r : R) : Tuple L R
+
+@data These (L & R : Type) : Type
+| this (l : L)
+| that (r : R)
+| both (l : L) (r : R)
+

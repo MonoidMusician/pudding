@@ -1,0 +1,59 @@
+'' λΠΣ§·×
+
+@module EqualityType§ ((=) : Π @{T : Type} (t0 & t1 : T). Type)
+    @module EqualityTypeInstance§ @{T : Type}
+        @(constructor)
+        refl (t : T) : t = t
+
+        symm (t0 & t1 : T) : t0 = t1 -> t1 = t0
+        ''| For lower precedence
+        (symm:) := symm
+
+        trans (t0 & t1 & t2 : T) : t0 = t1 -> t1 = t2 -> t0 = t2
+        (:trans:) := trans
+
+        @(simpl)
+        symm_symm @{t0 & t1 : T} (p : t0 = t1) : symm (symm p) = p
+
+        @(simpl)
+        trans_refl @{t0 & t1 : T} (p01 : t0 = t1) : p01 :trans: refl = p01
+        @(simpl)
+        refl_trans @{t0 & t1 : T} (p01 : t0 = t1) : refl :trans: p01 = p01
+
+        @(assoc)
+        trans_trans @{t0 & t1 & t2 & t3 : T}
+            (p01 : t0 = t1)
+            (p12 : t1 = t2)
+            (p23 : t2 = t3) :
+            (p01 :trans: p12) :trans: p23 = p01 :trans: (p12 :trans: p23)
+
+        ''| One formulation of an induction principle for the equality type.
+        @(induction)
+        axiomJ
+            @{t0 : T}
+            (P : Π (t1 : T). t0 = t1 -> Type)
+            (P_refl : P x refl)
+            @{t1 : T} (p : t0 = t1) :
+            P y p
+
+    subst @{T : Type} (P : T -> Type) @{t0 & t1 : T} (prf : t0 = t1) : P t0 -> P t1
+    transp @{T0 & T1 : Type} (prf : T0 = T1) : T0 -> T1
+    congr @{I&O : Type} (f : I -> O) @{i0 & i1 : I} (prf : t0 = t1) : f t0 = f t1
+    apply @{I&O : Type} @{f0 & f1 : I -> O} (prf : f0 = f1) @{i : I} : f0 arg = f1 arg
+    congrapply @{I&O : Type} @{f0 & f1 : I -> O} (fprf : f0 = f1) @{i0 & i1 : I} (iprf : i0 = i1) : f0 i0 = f1 i1
+
+    ''| All elements of a subsingleton are equal, which (in classical logic)
+    ''| means it has zero or one elements.
+    Subsingleton (T : Type) := Π (t0 & t1 : T). t0 = t1
+
+    ''| A singleton has a unique basepoint which every element is equal to.
+    Singleton (T : Type) := Σ ((base := t0) : T). Π (t1 : T). t1 = base
+
+
+@module PathType§ @{(·=·) : Π @{T : Type} (t0 & t1 : T). Type} ((·=[·]=·) : Π @{T0 & T1 : Type} (t0 : T0) (rel : T0 = T1) (t1 : T). Type)
+    congrapply @{I : Type, O : I -> Type} @{f0 & f1 : Π (i : I). O i} (pf : f0 = f1) @{i0 & i1 : I} (pi : i0 = i1) :
+        f0 i0 =[ congr O pi ]= f1 i1
+    dcongrapply @{I0 & I1 : Type, pI : I0 = I1} @{O0 : I0 -> Type, O1 : I1 -> Type, pO : O0 =[ eqFun pI refl ]= O1}
+        @{f0 : Π (i : I0). O0 i, f1 : Π (i : I1). O1 i, pf : f0 =[ eqPi pI pO ]= f1)
+        @{i0 : I0, i1 : I1, pi : i0 =[ pI ]= i1} :
+        f0 i0 =[ eqAp p0 pi ]= f1 i1

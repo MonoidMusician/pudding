@@ -1,0 +1,45 @@
+@import Data'List'
+
+'' λΠΣ§·×
+
+@(export_members)
+@data HList : List Type -> Type
+| hempty : HList empty
+| hcons @{T, TS} : T -> HList TS -> HList (cons T TS)
+
+''| Return the head and tail for an `HList` known to be an `hcons` from its type.
+unhcons @{T, TS} : HList (cons T TS) -> T × HList TS
+unhcons (hcons hd tl) = (hd, tl)
+unhcons @{T, TS} =
+    '' Define the motive to be trivial for the `empty` case...
+    let: motive := List'rec {
+        empty := Unit,
+        cons  := λ T TS. T × HList TS,
+    };
+    '' ... since we know it returns the `cons` case
+    HList'case @{motive} {
+        hempty := unit,
+        hcons  := λ hd tl. (hd, tl),
+    } : HList (cons T TS) -> T × HList TS.
+
+
+''| Use an `HList` of functions and an `HList` of inputs to create an `HList` of outputs.
+happly @{IO : List (Type × Type)} : HList (IO <#> λ (i, o). i -> o) -> HList (fst <$> IO) -> HList (snd <$> IO)
+happly @{IO := empty} hempty hempty = hempty
+happly @{IO := cons (I, O) IO} (hcons (f : I -> O) fs) (hcons (i : I) is) = hcons (f i : O) (happly @{IO} fs is)
+
+''| Helper type for `happly`.
+HAPPLY (IOS : List (Type × Type)) = HList (IO <#> λ (i, o). i -> o) -> HList (fst <$> IO) -> HList (snd <$> IO)
+''| Define `happly` by cases on the list index, and `unhcons` each `HList`.
+happly @{IOS : List (Type × Type)} : HAPPLY IOS
+happly @{IOS} = List'elim @{motive := HAPPLY} {
+    empty : HAPPLY empty
+    empty _ _ := hempty,
+
+    cons : Π (IO := (I, O)) IOS. HAPPLY IOS -> HAPPLY (cons IO IOS)
+    cons IO IOS inner fs is :=
+        let:
+            (f : I -> O, fs) := unhcons fs;
+            (i : I, is) := unhcons is;
+        hcons (f i : O) (inner fs is),
+} IOS.

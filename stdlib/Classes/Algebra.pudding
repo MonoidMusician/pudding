@@ -1,0 +1,204 @@
+'' λΠΣ§·×
+
+''| Newtype for the additive side of rings et cetera.
+@(newtype)
+Add (T : Type) := T
+
+''| Newtype for the multiplicative side of rings et cetera.
+@(newtype)
+Mul (T : Type) := T
+
+''| Newtype for the join side of a lattice.
+@(newtype)
+Join (T : Type) := T
+
+''| Newtype for the meet side of a lattice.
+@(newtype)
+Meet (T : Type) := T
+
+''| Newtype for the conjunctive side of Heyting/Boolean algebras.
+@(newtype)
+Conj (T : Type) := T
+
+''| Newtype for the disjunctive side of Heyting/Boolean algebras.
+@(newtype)
+Disj (T : Type) := T
+
+
+@(infixl)
+(+) @{T : Type, { (<>) } : Magma (Add T)} : T -> T -> T
+(+) := (<>)
+
+@(infixl)
+(-) @{T : Type, _ : Magma (Add T), _ : Inv (Add T)} : T -> T -> T
+(-) := (<>-) : Add T -> Add T -> Add T
+
+zero @{T : Type, { nil } : Nil (Add T)} : T -> T -> T
+zero := nil
+
+@(infixl)
+(*) @{T : Type, { (<>) } : Magma (Mul T)} : T -> T -> T
+(*) := (<>)
+
+@(infixl)
+(/) @{T : Type, _ : Magma (Mul T), _ : Inv (Mul T)} : T -> T -> T
+(/) := (<>-) : Mul T -> Mul T -> Mul T
+
+one @{T : Type, { nil } : Nil (Mul T)} : T -> T -> T
+one := nil
+
+
+@(infixr)
+(/\) @{T : Type, { (<>) } : Magma (Meet T)} : T -> T -> T
+(/\) := (<>)
+
+top @{T : Type, { nil } : Nil (Meet T)} : T -> T -> T
+top := nil
+
+@(infixr)
+(\/) @{T : Type, { (<>) } : Magma (Join T)} : T -> T -> T
+(\/) := (<>)
+
+bot @{T : Type, { nil } : Nil (Join T)} : T -> T -> T
+bot := nil
+
+
+@(infixr)
+(&&) @{T : Type, { (<>) } : Magma (Conj T)} : T -> T -> T
+(&&) := (<>)
+
+tt @{T : Type, { nil } : Nil (Conj T)} : T -> T -> T
+tt := nil
+
+@(infixr)
+(||) @{T : Type, { (<>) } : Magma (Disj T)} : T -> T -> T
+(||) := (<>)
+
+ff @{T : Type, { nil } : Nil (Disj T)} : T -> T -> T
+ff := nil
+
+
+@prec
+    < logical '' || &&
+        < (||) < (&&)
+    < comparative '' == <=
+    < algebraic
+        < lattice '' \/ /\
+            < (\/) < (/\)
+        < arithmetic '' + *
+            < (+) = (-) < (*) = (/)
+
+
+@module PreAlgebra' (T : Type)
+    @class Nil
+        nil : T
+    @class Inv
+        @(name inv)
+        (-:) : T -> T
+    @class Magma
+        ''| The default catenate operation.
+        ''| Right associative for left-to-right laziness and efficient cons-list append (these are related).
+        @(infixr)
+        (<>) : T -> T -> T
+
+        (:concat:) := (<>)
+        (:precat:) := flip (<>)
+
+        ''| These are flipped due to partial application.
+        concat := (:precat:)
+        precat := (:concat:)
+    @(prec > (<>))
+    @(infixr)
+    (<>-) @{_ : Inv, _ : Magma} : T -> T -> T
+    x <>- y := x <> inv y
+    @(prec > (<>))
+    @(infixl)
+    (-<>) @{_ : Inv, _ : Magma} : T -> T -> T
+    x -<> y := inv x <> y
+    @class SMul S
+        @(name smul)
+        (•) : S -> T -> T
+    @class Exp E
+        @(name exp)
+        (^) : T -> E -> T
+
+
+@module Algebra' (Lawful : Bool) (T : Type)
+    @import PreAlgebra' T
+
+    Law law := Lawful -> law
+
+    (===) : T -> T -> Type
+    x === y := Law (x = y)
+
+    (:tive:) := λ
+        (Wrapper : Type -> Type)
+        (AlgCls : Bool -> Type -> Type).
+            AlgCls Lawful (Wrapper T)
+
+    @class Semigroup
+        _ : Magma
+        @(assoc) concat_concat @{x&y&z : T} : (x <> y) <> z === x <> (y <> z)
+    @class Monoid
+        _ : Nil
+        _ : Magma
+        @(simpl) nil_concat @{x : T} : nil <> x === x
+        @(simpl) concat_nil @{x : T} : x <> nil === x
+    @class Group
+        _ : Inv
+        _ : Monoid
+        @(simpl) inv_concat @{x : T} : inv x <> x === nil
+        @(simpl) concat_inv @{x : T} : x <> inv x === nil
+        @(simpl) inv_inv @{x : T} : inv (inv x) === x
+        @(simpl) inv_nil : inv nil === nil
+        inv_of_concat @{x & y : T} : inv (x <> y) === inv y <> inv x
+    @class CommMagma
+        _ : Magma
+        @(comm) concat_comm @{x & y : T} : x <> y === y <> x
+    @class CommMonoid
+        _ : Monoid
+        _ : CommMagma
+    @class CommGroup
+        _ : Group
+        _ : CommMagma
+
+    @class Semiring
+        _ : Add :tive: Algebra'CommMonoid
+        _ : Mul :tive: Algebra'Monoid
+
+        distrL_*_+ @{x&y&z} : x * (y + z) === x * y + x * z
+        distrR_*_+ @{x&y&z} : (x + y) * z === x * z + y * z
+    @class CommSemiring
+        _ : Semiring
+        _ : Mul :tive: Algebra'CommMonoid
+    @class Ring
+        _ : Semiring
+        _ : Add :tive: Algebra'CommGroup
+    @class CommRing
+        _ : Ring
+        _ : CommSemiring
+
+
+    @class BddLattice
+        _ : Disj :tive: Algebra'BddSemilattice
+        _ : Conj :tive: Algebra'BddSemilattice
+
+    @class DistrLattice
+        _ : Disj :tive: Algebra'BddSemilattice
+        _ : Conj :tive: Algebra'BddSemilattice
+
+        distrL_/\_\/ @{x&y&z} : x /\ (y \/ z) === x /\ y \/ x /\ z
+
+    @class HeytingAlgebra
+        _ : DistrLattice
+
+        (not:) : T -> T
+        (:implies:) : T -> T -> T
+
+    @class BooleanAlgebra
+        _ : HeytingAlgebra
+
+        not_\/ @{x : T} : not x \/ x === top
+        \/_not @{x : T} : x \/ not x === top
+
+

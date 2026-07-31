@@ -794,7 +794,6 @@ anyNameForm qual = longestOf
       else (Nothing, ops1)
     pure $! ast pre ops post
 
--- TODO: require that at least one is a name?
 compoundName :: Relexer (NonEmpty Text)
 compoundName = do
   let

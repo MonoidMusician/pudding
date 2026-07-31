@@ -1,0 +1,3 @@
+@data Stack (t : Type) : Type
+| empty @{t} : Stack t
+| snoc  @{t} : Stack t -> t -> Stack t

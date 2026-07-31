@@ -1,0 +1,36 @@
+@module CategoryLike' (Lawful : Bool) @{O : Type} (C : O -> O -> Type)
+    Law law := Lawful -> law
+
+    (===) @{x&y : O} : C x y -> C x y -> Type
+    f === g := Law (f = g)
+
+    @class Semigroupoid
+        @(infixl)
+        (>>) @{x&y&z : O} : Π (f : C x y, g : C y z). C x z
+        @(infixr)
+        (<<) := flip (>>)
+
+        @(assoc) >>_>> @{w&x&y&z} @{f : C y z, g : C x y, h : C w x} : f >> (g >> h) === (f >> g) >> h
+
+        @(assoc) <<_<< @{w&x&y&z} @{f : C y z, g : C x y, h : C w x} : (f << g) << h === f << (g << h) := >>_>>
+
+    @class Category
+        _ : Semigroupoid
+        id @{x : O} : C x x
+
+        @(simpl) id_>> @{x&y : O} @{f : C x y} : id >> f === f
+        @(simpl) >>_id @{x&y : O} @{f : C x y} : f >> id === f
+
+        @(simpl) id_<< @{x&y : O} @{f : C x y} : id << f === f := >>_id
+        @(simpl) <<_id @{x&y : O} @{f : C x y} : f << id === f := id_>>
+
+    @class Groupoid
+        _ : Category
+
+
+@class Functor @{O1 & O2} (F : O1 -> O2)
+    C1 : O1 -> O1 -> Type
+    C2 : O2 -> O2 -> Type
+    _ : Category C1
+    _ : Category C2
+    map @{i & o : O1} : C1 i o -> C2 (F i) (F o)

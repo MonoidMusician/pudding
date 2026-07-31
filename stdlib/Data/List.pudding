@@ -1,0 +1,40 @@
+@(export_members)
+@data List (T : Type) : Type
+| empty @{T} : List T
+| cons  @{T} : T -> List T -> List T
+
+'' λΠΣ§·×
+
+map @{I&O : Type} : (I -> O) -> List I -> List O
+map := λ f. List'elim {
+    empty := empty,
+    cons := λ hd tl. cons (f hd) tl,
+}.
+
+traverse @{
+    M : Type -> Type,
+    _ : Applicative M,
+    I&O : Type
+} : (I -> M O) -> List I -> M (List O)
+traverse := λ f. List'elim {
+    empty := pure empty,
+    cons := λ hd tl. cons <$> f hd <*> tl,
+}.
+
+foldr @{I&O : Type} : (I -> O -> O) -> O -> List I -> O
+foldr := λ cons empty. List'elim {
+    empty := empty,
+    cons := cons,
+}.
+
+foldl @{I&O : Type} : (O -> I -> O) -> O -> List I -> O
+foldl := λ s z l. List'elim {
+    empty := λ acc. acc,
+    cons := λ hd tl acc. tl (s acc hd)
+} l z.
+
+reverse @{O : Type} : List O -> List O
+reverse := λ l. List'elim {
+    empty := λ acc. acc,
+    cons := λ hd tl acc. tl (cons hd acc),
+} l empty.

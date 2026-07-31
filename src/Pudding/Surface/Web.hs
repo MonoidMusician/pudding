@@ -7,7 +7,7 @@ import Pudding.Surface.Lexer hiding (demo)
 import qualified Pudding.Surface.Happy as Happy
 
 import qualified Data.Text as T
-import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Name (nameText), Term, GlobalInfo (DefnGlobal))
+import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Name (nameText), Term, GlobalInfo (DefnGlobal), pattern Nil, Globals, globalsFrom, Ctx (Ctx))
 import qualified Text.Parsec as P
 import qualified Data.Text.IO.Utf8 as TIO
 import Control.Monad.Identity (Identity (runIdentity))
@@ -43,6 +43,9 @@ import qualified Data.Vector as Vector
 import Data.IORef (newIORef, modifyIORef', readIORef)
 import Pudding.Surface.Delaborator (delab, runDelab)
 import qualified Pudding.Surface.Delaborator as Delab
+import qualified Pudding.Core.Unify as U
+import Pudding.Core.Eval (EvalTypeCtx)
+import qualified Pudding.Core.Eval as E
 
 data Formats = Formats
   { text :: Text
@@ -221,6 +224,41 @@ delabModule modul = Formats
     maybe "_" nameText name <> " : " <> formatCST f ty <> "\n" <>
     maybe "_" nameText name <> " := " <> formatCST f tm <> "\n\n"
 
+validateTerm :: Term -> Formats
+validateTerm = formatsTerm . U.validateQuote Nil
+
+validateModule :: (Vector.Vector (Maybe Name, GlobalInfo), Globals) -> Formats
+validateModule (modul, globals) = Formats
+  { text = text
+  , html = xmlEscape text
+  , ansi = fmt Ansi
+  , json = AE.toJSON modulTyped
+  }
+  where
+  text = fmt Plain
+  ctx :: forall ctx. Ctx ctx
+  ctx = Ctx globals Nil
+  cc msg tm0 tm1 = if U.conversionCheck ctx tm0 tm1 then () else error msg
+  validateGTerm (GlobalTerm tmT tmE) =
+    let
+      -- FIXME: `force` here does not terminate
+      !tyE = U.validate ctx tmT
+      !tmE' = tyE `seq` E.eval ctx tmT
+    in cc "different eval" tmE tmE' `seq` tyE
+  modulTyped = modul <&> fmap \case
+    info@(DefnGlobal (GlobalDefn _ (GlobalTerm tyT tyE) (GlobalTerm tmT tmE))) ->
+      let
+        !inferred = validateGTerm (GlobalTerm tmT tmE)
+        !typeOfType = validateGTerm (GlobalTerm tyT tyE)
+        !compared = inferred `seq` typeOfType `seq` cc "GlobalDefn wrong type" tyE inferred
+      in compared `seq` info
+    info -> info
+  fmt f = modulTyped & foldMap \(name, info) ->
+    case info of
+      DefnGlobal (GlobalDefn _ (GlobalTerm ty _) (GlobalTerm _tm _)) ->
+        maybe "_" nameText name <> " : " <> formatCore f ty <> "\n\n"
+      _ -> mempty
+
 extra :: Text -> IO Stage -> IO [(Text, Stage)]
 extra name produce = catching name $ pure . (name,) <$> produce
 
@@ -255,7 +293,8 @@ finishExpr _ _ expr =
     catching "elab" do
       term <- Elab.runElabScoped tbl (Elab.elab Nothing expr)
       pure [stage4ESuccess term] <> fold
-        [ extra "delab" $ pure $ StageSuccess (delabTerm term) Nothing
+        [ extra "validate" $ pure $ StageSuccess (validateTerm term) Nothing
+        , extra "delab" $ pure $ StageSuccess (delabTerm term) Nothing
         ]
 
 finishDecls :: [LEXED] -> [Token] -> [Decl] -> IO Stages
@@ -263,9 +302,11 @@ finishDecls _ _ decls =
   (stage3DSuccess decls :) <$> do
     tbl <- initTable
     catching "elab" do
-      (_, modul) <- Elab.runElabFull tbl (Elab.elaborateModule decls)
+      (forCtx, modul) <- Elab.runElabFull tbl (Elab.elaborateModule decls)
+      let ctx = U.bootGlobals $ globalsFrom forCtx
       pure [stage4DSuccess modul] <> fold
-        [ extra "delab" $ pure $ StageSuccess (delabModule modul) Nothing
+        [ extra "validate" $ pure $ StageSuccess (validateModule (modul, ctx)) Nothing
+        , extra "delab" $ pure $ StageSuccess (delabModule modul) Nothing
         ]
 
 
