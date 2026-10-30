@@ -129,7 +129,7 @@ data Term
   = -- (Local) variables
     TVar Metadata !Index
   | -- Typed holes
-    THole Metadata !Fresh
+    THole Metadata !Fresh ("scope" @:: Vector Term)
   | -- Type universes
     TUniv Metadata !ULevel
   | -- Global variables
@@ -271,17 +271,17 @@ data Eval
 -- A Neutral is stuck on a variable (or hole), with some projections and eliminators applied to it.
 -- (This is the Normalization part of NbE: inserting variables to evaluate open terms.)
 data Neutral = Neutral
-  { neutralBlocking :: NeutFocus,
+  { neutralBlocking :: NeutFocus
     -- | Spine of projections/function applications/eliminators to apply,
     -- either to reconstruct the syntax around the variable, or to finish
     -- evaluating it once it is known.
-    neutralSpine :: Stack NeutPrj
+  , neutralSpine :: Stack NeutPrj
   }
   deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
 
 data NeutFocus
   = NVar Metadata !Level
-  | NHole Metadata !Fresh -- needs some scoping information(?)
+  | NHole Metadata !Fresh (Vector Eval) -- needs some scoping information(?)
   -- this is a kind of weak neutral: it will be evaluated when it reaches the
   -- arity of function arguments and they are not all neutrals, and it can
   -- also be evaluated during conversion checking
@@ -418,6 +418,10 @@ type EvalCtx = Ctx Eval
 -- Context used for `quote`: `ctxSize` is just used to convert `Level` back to `Index`
 type QuoteCtx = Ctx ()
 
+-- | Context used for typechecking: the type (first!!) paired with its current value
+-- | (perhaps just the default neutral variable).
+type EvalTypeCtx = Ctx ("type" @:: Eval, "value" @:: Eval)
+
 ctxOfList :: forall t. Globals -> "inner bindings last" @:: [(Binder, t)] -> Ctx t
 ctxOfList globals s = Ctx globals (view stack s)
 
@@ -492,6 +496,10 @@ data RequestSubsumption r where
   IdentitySubsumption :: RequestSubsumption Void
   GenerateSubsumption :: RequestSubsumption Eval
 
+asRequested :: forall r. RequestSubsumption r -> (Eval -> Eval) -> (r -> r)
+asRequested IdentitySubsumption _ = id
+asRequested GenerateSubsumption f = f
+
 instance Eq (RequestSubsumption r) where
   IdentitySubsumption == IdentitySubsumption = True
   GenerateSubsumption == GenerateSubsumption = True
@@ -526,7 +534,10 @@ data InjectiveStatus = StillInjective | NotInjective
 instance HasMetadata Term where
   traverseMetadata1Depth d f = \case
     TVar old idx -> (\new -> TVar new idx) <$> f old
-    THole old hole -> (\new -> THole new hole) <$> f old
+    THole old hole scope ->
+      (\new -> THole new hole)
+        <$> f old
+        <.*> traverse (traverseMetadataDepth d (apply f)) scope
     TUniv old univ -> (\new -> TUniv new univ) <$> f old
     TGlobal old name -> (\new -> TGlobal new name) <$> f old
     TAscribe old tm ty ->
@@ -659,8 +670,11 @@ instance HasMetadata Neutral where
 
 instance HasMetadata NeutFocus where
   traverseMetadata1Depth _ f (NVar old lvl) = (\new -> NVar new lvl) <$> f old
-  traverseMetadata1Depth _ f (NHole old hole) = (\new -> NHole new hole) <$> f old
   traverseMetadata1Depth _ f (NGlobal arity old name) = (\new -> NGlobal arity new name) <$> f old
+  traverseMetadata1Depth d f (NHole old hole scope) =
+    (\new -> NHole new hole)
+      <$> f old
+      <.*> traverse (traverseMetadataDepth d (apply f)) scope
 
 instance HasMetadata NeutPrj where
   traverseMetadata1Depth d f = \case
@@ -699,6 +713,13 @@ data Summarize m = Summarize
   , onNeutFocus :: NeutFocus -> m
   , onTerm :: Term -> Visit m
   }
+trivialSummarize :: forall m. Monoid m => Summarize m
+trivialSummarize = Summarize
+  { onEval = const $ Append mempty
+  , onTerm = const $ Append mempty
+  , onNeutPrj = const $ Append mempty
+  , onNeutFocus = const mempty
+  }
 
 data Shift t r m = Shift
   { intoBinder :: Plicit -> Binder -> (t, m) -> r -> r
@@ -728,7 +749,7 @@ summarize (Summarize { onEval, onNeutPrj, onNeutFocus, onTerm }) =
   termChildren :: Term -> Maybe m
   termChildren = \case
     TVar _ _ -> mempty
-    THole _ _ -> mempty
+    THole _ _ scope -> foldMap summTerm scope
     TUniv _ _ -> mempty
     TGlobal _ _ -> mempty
     TAscribe _ tm ty -> summTerm tm <> summTerm ty

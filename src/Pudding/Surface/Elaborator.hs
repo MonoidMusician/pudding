@@ -26,7 +26,7 @@ import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), Index(Index), StackLike(size, Elem), pattern Nil, pattern (:>), StackFunctor (mapWithLevel), (@@?), stack)
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift), MonadState)
-import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals, ctxStack), GlobalTypeInfo (GlobalTypeInfo, typeParams, typeIndices), Closure, ConstructorInfo (ConstructorInfo, ctorIndices), Globals (globalDefns))
+import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals, ctxStack), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo, typeParams, typeIndices), Closure, ConstructorInfo (ConstructorInfo, ctorIndices), Globals (globalDefns))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl(..), CST(..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize, Attributes))
@@ -34,7 +34,6 @@ import Data.Foldable (Foldable (fold), foldlM, for_)
 import Data.Functor.Compose (Compose (Compose))
 import Control.Monad.Reader.Class (MonadReader (local, ask), asks)
 import Data.List.NonEmpty (NonEmpty(..))
-import Pudding.Core.Eval (EvalTypeCtx)
 import qualified Pudding.Core.Unify as U
 import qualified Pudding.Core.Eval as E
 import Pudding.Surface.Lexer (VariableDB(..), NameForm(..), VariableName)
@@ -182,19 +181,7 @@ quote e = do
   pure $ E.quote c e
 
 reinfer :: HasCallStack => Term -> Scoped Eval
-reinfer t = do
-  c <- currentCtx
-  pure $ U.quickTermType c t
-
-validate :: HasCallStack => Term -> Scoped Eval
-validate t = do
-  c <- currentCtx
-  pure $! U.validate c t
-
-conversionCheck :: HasCallStack => Eval -> Eval -> Scoped Bool
-conversionCheck e1 e2 = do
-  c <- void <$> currentCtx
-  pure $ U.conversionCheck c e1 e2
+reinfer = U.quickTermType
 
 globalEval :: HasCallStack => Term -> Scoped GlobalTerm
 globalEval t = do
@@ -257,6 +244,7 @@ currentCtx = do
   -- Here we want to gather all the things that have actually been defined
   initialized <- gets $ M.mapMaybe \case
     Initialized r -> Just r
+    -- Plus the things that are provisionally defined
     Initializing (Just r) -> Just r
     _ -> Nothing
   let currentGlobals = U.bootGlobals $ globalsFrom initialized

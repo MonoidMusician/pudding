@@ -26,3 +26,7 @@ instance (Generic t, Ord (Rep t ())) => Ord (FastEq t) where
 (/==) :: forall t. Eq t => t -> t -> Bool
 !t1 /== !t2 = not (t1 === t2)
 
+
+(===?) :: forall t. t -> t -> Bool
+!t1 ===? !t2 = isTrue# (reallyUnsafePtrEquality t1 t2)
+

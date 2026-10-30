@@ -15,7 +15,6 @@ import GHC.Generics (Generic, Generically(..))
 import Data.Functor (void)
 import Pudding.Types.Config (Universes, Config)
 import qualified Pudding.Semantics.Universes.Fused as Universes
-import Pudding.Core.Eval (EvalTypeCtx)
 import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as IntMap
 import Control.Monad.Error.Class (MonadError (throwError))

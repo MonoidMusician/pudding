@@ -19,6 +19,7 @@ import qualified Pudding.Core.Eval as Eval
 import Data.Functor (void)
 import qualified Pudding.Core.Parser as Parse
 import qualified Data.Map as Map
+import qualified Data.Vector as Vector
 
 -- NamedDefaults requires GHC 9.12.1
 default (Text)
@@ -85,7 +86,8 @@ instance Convert Text Eval where
 evalTest :: TestSuite
 evalTest = TestSuite "EvalTest" $ withTestContext do
   let
-    type0 = TUniv mempty $ UBase 0
+    -- FIXME??
+    type0 = TUniv mempty $ ULevel (Fresh 0) (Fresh 1)
   testCase "Globals" do
     globals <- asks ctxGlobals
     _ <- flip Map.traverseWithKey (globalDefns globals) \name -> \case
@@ -251,7 +253,8 @@ expectType tm ty = do
 
 termEquiv :: Term -> Term -> Bool
 termEquiv (TVar _ i1) (TVar _ i2) = i1 == i2
-termEquiv (THole _ f1) (THole _ f2) = f1 == f2
+termEquiv (THole _ f1 es1) (THole _ f2 es2) =
+  f1 == f2 && Vector.length es1 == Vector.length es2 && and (Vector.zipWith termEquiv es1 es2)
 termEquiv (TUniv _ l1) (TUniv _ l2) = l1 == l2
 termEquiv (TGlobal _ n1) (TGlobal _ n2) = n1 == n2
 termEquiv (TLambda _ p1 _ t1 (Scoped b1)) (TLambda _ p2 _ t2 (Scoped b2)) =

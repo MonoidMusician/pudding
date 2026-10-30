@@ -4,10 +4,7 @@ module Pudding.Types.Monads where
 import Pudding.Types.Config (Config)
 import GHC.Base (Symbol)
 import Data.Text (Text)
-import Pudding.Types.Base (Fresh(..), type (@::))
-import Pudding.Types.Stack (pattern Nil)
-import Pudding.Core.Types (Eval (ENeut), Term, Name, Binder, Metadata, Level (Level), Neutral (Neutral), NeutFocus (NVar), UnifyDir, ULevel, UnifyMode, nextFresh, EvalCtx)
-import Pudding.Core.Eval (EvalTypeCtx)
+import Pudding.Core.Types
 import Data.Pair (Pair)
 import Control.Monad.State.Strict (StateT, MonadTrans (lift), MonadState (state, get, put), evalStateT, MonadIO)
 import Control.Monad.Reader.Class (MonadReader)
@@ -16,6 +13,10 @@ import Control.Monad.Writer.Class (MonadWriter)
 import Control.Monad.Trans.Reader (ReaderT)
 import Control.Monad.Trans.Except (ExceptT)
 import Control.Monad.Trans.Writer.Strict (WriterT)
+import Pudding.Semantics.Universes.Evidence (Relationship)
+import GHC.Stack (HasCallStack)
+import Data.Functor (void)
+import qualified Data.Map as Map
 
 -----------------
 -- Memoization --
@@ -69,7 +70,6 @@ class Monad m => WithConfig m where
 class Monad m => Scoping m where
   -- this may incorporate updated globals each time
   askCtx :: m EvalTypeCtx
-  ctxSize :: m Int
   bindVar :: forall r. Binder -> ("type" @:: Eval, "value" @:: Eval) -> m r -> m r
 
 bindNeut :: forall m r. Scoping m => Metadata -> Binder -> ("type" @:: Eval) -> (Level -> Eval -> m r) -> m r
@@ -78,8 +78,23 @@ bindNeut meta bdr ty inner = do
   let neut = ENeut (Neutral (NVar meta lvl) Nil)
   bindVar bdr (ty, neut) (inner lvl neut)
 
+ctxSize :: Scoping m => m Int
+ctxSize = size <$> askCtx
+
 askEvalCtx :: Scoping m => m EvalCtx
 askEvalCtx = fmap snd <$> askCtx
+
+askQuoteCtx :: Scoping m => m QuoteCtx
+askQuoteCtx = void <$> askCtx
+
+askGlobals :: Scoping m => m Globals
+askGlobals = ctxGlobals <$> askCtx
+
+lookupType :: Scoping m => ("type name" @:: Name) -> m (Maybe GlobalTypeInfo)
+lookupType name = Map.lookup name . globalTypes <$> askGlobals
+
+lookupDefn :: Scoping m => ("defn name" @:: Name) -> m (Maybe GlobalDefn)
+lookupDefn name = Map.lookup name . globalDefns <$> askGlobals
 
 class Scoping m => Evaling m where
   eval  :: Term -> m Eval
@@ -88,15 +103,19 @@ class Scoping m => Evaling m where
   -- may be a no-op, may be constant (reader-like),
   -- or may be the full stateful apparatus
   currentSolution :: Fresh -> m (Maybe Eval)
+  progressGlobal :: Eval -> m Eval
+
 
 
 -- Writer-like
+
+type ULevelEvidence = ()
 class Constraining m where
   type Constraints m
   constrain :: Constraints m -> m ()
   constraintsFrom :: m a -> m (Constraints m, a)
 
-  constrainULevel :: UnifyDir -> Pair ULevel -> m ()
+  constrainULevel :: Relationship ULevelEvidence -> m ()
 
 -- State/IO-like
 class Constraining m => Unifying m where
@@ -111,6 +130,7 @@ class Checkpointing m where
 -- logging...
 
 class Evaling m => Typing m where
+  fatal :: HasCallStack => String -> m any
   validate :: Term -> m ("type" @:: Eval)
   validEval :: Term -> m ("type" @:: Eval, "value" @:: Eval)
 

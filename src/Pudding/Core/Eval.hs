@@ -149,8 +149,8 @@ etaRecord fields e = ERecordTm mempty $ Map.mapWithKey (const . doField e) field
 
 -- Inline the global if it has reached its arity and its arguments are not all
 -- neutrals themselves, otherwise keep it “neutral”.
-checkGlobal :: forall t. Ctx t -> Eval -> Eval
-checkGlobal ctx e@(ENeut (Neutral (NGlobal arity _ _name) prjs))
+progressGlobal :: forall t. Ctx t -> Eval -> Eval
+progressGlobal ctx e@(ENeut (Neutral (NGlobal arity _ _name) prjs))
   | arity <= List.length prjs && not (idlePrjs prjs)
     = fromMaybe e (forceGlobal ctx e)
   where
@@ -163,14 +163,14 @@ checkGlobal ctx e@(ENeut (Neutral (NGlobal arity _ _name) prjs))
     idlePrjs (_ :> _) = False
     -- All arguments were neutral
     idlePrjs Nil = True
-checkGlobal _ e = e
+progressGlobal _ e = e
 
 -- Just evaluate a neutral global
 forceGlobal :: forall t. HasCallStack => Ctx t -> Eval -> Maybe Eval
 forceGlobal ctx (ENeut (Neutral (NGlobal _ _ name) prjs)) =
   case Map.lookup name (globalDefns $ ctxGlobals ctx) of
     Just (GlobalDefn _ _ (GlobalTerm _ evaled)) ->
-      Just (checkGlobal ctx (doPrjs evaled prjs))
+      Just (progressGlobal ctx (doPrjs evaled prjs))
     _ -> Nothing
 forceGlobal _ _ = Nothing
 
@@ -258,7 +258,7 @@ evaling = \case
       -- If it was stuck as a neutral, we need to preserve the argument on the
       -- stack of projections to apply to the neutral variable
       (ENeut (Neutral focus prjs), evalingArg) ->
-        checkGlobal ctx $ ENeut $ Neutral
+        progressGlobal ctx $ ENeut $ Neutral
           { neutralBlocking = focus
           , neutralSpine = prjs :> NApp metaApp plicit evalingArg
           }
@@ -275,14 +275,14 @@ evaling = \case
       -- apply `fst` to it when it does reduce -> this means that in quoting we
       -- can actually reconstruct the syntax around the neutral
       ENeut (Neutral focus prjs) ->
-        checkGlobal ctx $ ENeut (Neutral focus (prjs :> NFst meta))
+        progressGlobal ctx $ ENeut (Neutral focus (prjs :> NFst meta))
       _ -> error "Type error: cannot project from non-sigma"
   TSnd meta term -> \ctx ->
     -- Again, we look to beta reduce, or add a projection to a neutral
     case undeferred $ evaling term ctx of
       EPair _ _ _ right -> right
       ENeut (Neutral focus prjs) ->
-        checkGlobal ctx $ ENeut (Neutral focus (prjs :> NSnd meta))
+        progressGlobal ctx $ ENeut (Neutral focus (prjs :> NSnd meta))
       _ -> error "Type error: cannot project from non-sigma"
   TAscribe meta tm ty -> \ctx ->
     let value = evaling tm ctx in
@@ -297,15 +297,17 @@ evaling = \case
   -- A hole is a neutral: we do not know its value yet. Thus we have to block
   -- on it and record its arguments or projections. This is contrary to the
   -- neutrals for abstract variables, which are introduced *outside* of eval.
-  THole meta hole -> pure $ ENeut (Neutral (NHole meta hole) Nil)
+  THole meta hole scope -> do
+    scope' <- traverse evaling scope
+    pure $ ENeut (Neutral (NHole meta hole scope') Nil)
   TTyCtor meta name params indices -> ETyCtor meta name <$> traverse evaling params <*> traverse evaling indices
   TTmCtor meta name params args -> ETmCtor meta name <$> traverse evaling params <*> traverse evaling args
   TCase meta motive cases scrutinee -> \ctx ->
     case undeferred $ evaling scrutinee ctx of
       ETmCtor _meta (_tyName, ctorName) _params args ->
-        checkGlobal ctx $ doApps (doField (evaling cases ctx) ctorName) (Stack.fromFoldable args)
+        progressGlobal ctx $ doApps (doField (evaling cases ctx) ctorName) (Stack.fromFoldable args)
       ENeut (Neutral focus prjs) ->
-        checkGlobal ctx $ ENeut (Neutral focus (prjs :> NCase meta (evaling motive ctx) (evaling cases ctx)))
+        progressGlobal ctx $ ENeut (Neutral focus (prjs :> NCase meta (evaling motive ctx) (evaling cases ctx)))
       _ -> error "Type error: cannot case on non-inductive"
   TRecordTy meta fields -> ERecordTy meta <$> traverse evaling fields
   TRecordTm meta fields -> ERecordTm meta <$> traverse evaling fields
@@ -349,7 +351,7 @@ eval2termWith forceGlobals handleClosure = \case
     let
       base = case focus of
         NVar meta lvl -> TVar meta (index ctx lvl)
-        NHole meta hole -> THole meta hole
+        NHole meta hole scope -> THole meta hole (traverse e2t scope ctx)
         NGlobal _ _ name
           | forceGlobals
           , Just (GlobalDefn _ _ (GlobalTerm term _)) <-
@@ -417,9 +419,6 @@ traceTerm = Dbg.traceWith (toString . AE.encode)
 -- eval2term :: Eval -> QuoteCtx -> Term
 -- eval2term = eval2termWith \(Closure savedCtx savedBody) _ _ -> term
 
-type TypeCtx = Ctx Term
-type EvalTypeCtx = Ctx ("type" @:: Eval, "value" @:: Eval)
-
 
 shift :: Int -> Term -> Term
 shift = shiftFrom 0
@@ -430,7 +429,7 @@ shiftFrom _ 0 = id
 shiftFrom base delta = \case
   TVar meta (Index idx) -> TVar meta (Index (if idx >= base then idx + delta else idx))
   TGlobal meta name -> TGlobal meta name
-  THole meta fresh -> THole meta fresh
+  THole meta fresh scope -> THole meta fresh (go <$> scope)
   TUniv meta univ -> TUniv meta univ
   TAscribe meta tm ty -> TAscribe meta (go tm) (go ty)
   TLet meta b ty defn (Scoped body) -> TLet meta b (go ty) (go defn) (Scoped (into body))
@@ -466,8 +465,8 @@ shiftFrom' base delta t = conserve' t \case
     Altered $ TVar meta (Index (idx + delta))
   TVar _ _ -> pure t
   TGlobal _ _ -> pure t
-  THole   _ _ -> pure t
   TUniv   _ _ -> pure t
+  THole meta hole scope -> THole meta hole <$> traverse go scope
   TAscribe meta tm ty -> TAscribe meta <$> go tm <*> go ty
   TLet meta b ty defn body -> TLet meta b <$> go ty <*> go defn <*> into body
   TLambda meta p b ty body -> TLambda meta p b <$> go ty <*> into body
@@ -490,3 +489,9 @@ shiftFrom' base delta t = conserve' t \case
   go = shiftFrom' base delta
   into (Scoped body) = Scoped <$>
     shiftFrom' (base+1) delta body
+
+
+mkHOAS :: EvalCtx -> Binder -> ("ty" @:: Eval) -> (Eval -> Eval) -> Eval
+mkHOAS ctx bdr inputTy f = ELambda mempty Explicit bdr inputTy $ Closure ctx bdr $
+  Scoped $ quote (void ctx :> (bdr, ())) $ f $ ENeut $ Neutral (NVar mempty (Level $ size ctx)) Nil
+

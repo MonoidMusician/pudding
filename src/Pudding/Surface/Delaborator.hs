@@ -190,7 +190,8 @@ delab = \case
         pure $ CVar Nothing $ DBIndex $ fromIntegral idx
   TGlobal _m name -> pure $
     CVar (Just $ PlainName [] $ nameText name) PlainVar
-  THole _m fresh -> pure $ CHole (Just $ T.pack $ show fresh)
+  -- FIXME: scope
+  THole _m fresh scope -> pure $ CHole (Just $ T.pack $ show fresh)
   TUniv _m univ -> pure CUniv
   TAscribe _m tm ty -> flip CAscribe <$> delab ty <*> delab tm
   TLet _ binder ty tm (Scoped body) -> do

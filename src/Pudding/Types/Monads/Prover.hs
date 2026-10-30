@@ -1,23 +1,31 @@
 module Pudding.Types.Monads.Prover where
 
 import Pudding.Types.Monads
-import Pudding.Types.Base (Fresh(..), type (@::), nextFresh)
-import Pudding.Types.Stack (Stack, pattern (:>), pattern Nil)
-import Pudding.Core.Types (Eval, Term, Name, Ctx, NeutPrj)
+import qualified Pudding.Types.Monads as M
+import Pudding.Core.Types
 import Pudding.Core.Unify as U
 import Pudding.Core.Eval as E
 import Control.Monad.Trans.RWS.Strict (RWST)
-import Control.Monad.Writer.Class (tell, censor, listen)
+import Control.Monad.Reader.Class (asks, MonadReader (local))
+import Control.Monad.Writer.Class (tell, listen)
 import Control.Monad.State.Class (get, gets, state, put, modify')
-import Control.Monad.Reader.Class (ask, asks, local)
 import GHC.Generics (Generic, Generically(..))
-import Data.Functor (void)
+import Data.Function ((&))
+import Data.Functor (void, (<&>))
 import Pudding.Types.Config (Universes, Config)
 import qualified Pudding.Semantics.Universes.Fused as Universes
-import Pudding.Core.Eval (EvalTypeCtx)
 import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as IntMap
 import Data.IntSet (IntSet)
+import qualified Data.IntSet as IntSet
+import Data.IntMap.Monoidal.Strict (MonoidalIntMap)
+import qualified Data.IntMap.Monoidal.Strict as MonoidalIntMap
+import Data.Vector (Vector)
+import Data.Pair (Pair(..), pattern Pair)
+import Control.Lens (review)
+import qualified Pudding.Semantics.Universes.Fused as Fused
+
+type Equation = Pair Eval
 
 newtype Prover t = Prover (RWST ProverR ProverW ProverS IO t)
   deriving newtype (Functor, Applicative, Monad)
@@ -25,32 +33,128 @@ newtype Prover t = Prover (RWST ProverR ProverW ProverS IO t)
 data ProverS = ProverS
   { freshest :: {-# UNPACK #-} !Fresh
   , uvState :: !(IntMap UnivarState)
+  -- | indexed by univar ID?
   , uvDeferred :: !(IntMap (Prover ()))
-  , uvConstraints :: !(IntMap (IntSet, Eval, Eval))
+  -- | sparse array / arbitrary IDs
+  , uvConstraints :: !(IntMap ("uvs involved" @:: IntSet, Equation))
+  , uvConstraintsRev :: !("uv ID to" @:: MonoidalIntMap ("uvConstraints" @:: IntSet))
+  }
+
+-- TODO: cache by referential identity
+uvsOf :: Either Eval Term -> IntSet
+uvsOf = summarize $ trivialSummarize
+  { onNeutFocus = \case
+      NHole _ (Fresh n) _ -> IntSet.singleton n
+      _ -> IntSet.empty
   }
 
 data UnivarState = UVState
   -- the original context of the hole. TODO: globals? TODO: let?
-  { uvCtx :: !(Ctx ("ty" @:: Eval))
+  { uvCtx :: !EvalTypeCtx
   -- which variables are possibly relevant, versus known to be irrelevant (False)
   , uvRelevant :: !(Ctx Bool)
   -- the value for the term itself and its type
   , uvTerm :: !("tm" @:: Eval)
   , uvType ::  ("ty" @:: Eval) -- ^ lazy
   -- Partial equations (constraints with this unification variable as its head)
-  , uvEqns :: [ ("ctx" @:: Stack ("value given" @:: Eval), "projections" @:: Stack NeutPrj, "value achieved" @:: Eval) ]
+  , uvEqns :: Stack ("ctx" @:: Vector ("value given" @:: Eval), "projections" @:: Stack NeutPrj, "value achieved" @:: Eval)
   -- Callbacks? for filling in holes for deferred elaboration?
   , uvNotify :: IntSet -- into ProverS.uvDeferred
-  , uvGlobal :: IntSet -- into ProverS.uvConstraints
   }
+
+data AfterSolve = AfterSolve
+  { aftHeadEqns :: Stack Equation
+  , aftGlobalEqns :: IntMap (IntSet, Equation)
+  }
+
+-- | Gather the equations as a list of pairs
+aftEqns :: AfterSolve -> [Equation]
+aftEqns d =
+  review rstack (aftHeadEqns d)
+    <>
+  (snd <$> IntMap.toAscList (snd <$> aftGlobalEqns d))
+
+-- Solve a variable fully and return constraints it is involved in,
+-- so they can be checked/solved in turn.
+--
+-- Assumes that it has the correct type.
+solveFully :: Fresh -> Eval -> Prover AfterSolve
+solveFully (Fresh !i) !val = do
+  st <- Prover get
+  let
+    -- Global equations that constrain this variable.
+    -- Will be returned in an arbitrary order *after*
+    -- the head equations, which are stored with the variable.
+    globalEqns :: IntMap (IntSet, Equation)
+    globalEqns =
+      case MonoidalIntMap.lookup i (uvConstraintsRev st) of
+        Nothing -> IntMap.empty
+        Just relevant ->
+          IntMap.intersection (uvConstraints st) $ IntMap.fromSet id relevant
+  case IntMap.lookup i $ uvState st of
+    Nothing -> do
+      ctx <- Prover $ asks proofCtx
+      ty <- U.quickTermType =<< M.quote val
+      let
+        entry = UVState
+          { uvCtx = ctx
+          , uvRelevant = error "TODO: free vars for uvRelevant"
+          , uvTerm = val
+          , uvType = ty
+          , uvEqns = Nil
+          , uvNotify = mempty
+          }
+      Prover $ put $ st
+        { uvState = IntMap.insert i entry $ uvState st }
+      pure $ AfterSolve { aftHeadEqns = Nil, aftGlobalEqns = globalEqns }
+    Just current -> do
+      ctx <- Prover $ asks proofCtx
+      let
+        updated = current
+          { uvCtx = ctx
+          , uvRelevant = error "TODO: free vars for uvRelevant"
+          , uvTerm = val
+          }
+        hydrate locals prjs = ENeut $ Neutral
+          (NHole mempty (Fresh i) locals)
+          prjs
+        headEqns = uvEqns current
+          <&> \(locals, prjs, result) -> Pair (hydrate locals prjs) result
+      Prover $ put $! st
+        { uvState = IntMap.insert i updated $ uvState st }
+      pure $ AfterSolve { aftHeadEqns = headEqns, aftGlobalEqns = globalEqns }
+
+-- Create a new constraint to check when the relevant variables are solved
+equateGlobal :: Equation -> Prover ()
+equateGlobal (l :# r) = do
+  Fresh i <- freshen
+  let mentioned = uvsOf (Left l) <> uvsOf (Left r)
+  Prover $ modify' \s -> s
+    { uvConstraints = IntMap.insert i (mentioned, l :# r) $ uvConstraints s
+    , uvConstraintsRev = uvConstraintsRev s <> MonoidalIntMap.fromSet (const (IntSet.singleton i)) mentioned
+    }
+
+equateHead :: Equation -> Prover ()
+equateHead (focus :# result) = case focus of
+  ENeut (Neutral (NHole _meta (Fresh i) locals) prjs) -> do
+    st <- Prover get
+    updated <- case IntMap.lookup i $ uvState st of
+      Nothing -> error "equateHead"
+      Just current -> pure $
+        current { uvEqns = uvEqns current :> (locals, prjs, result) }
+    Prover $ put $! st
+      { uvState = IntMap.insert i updated $ uvState st }
+  _ -> error "equateHead"
 
 data ProverR = ProverR
   { proofCtx :: !EvalTypeCtx
   , proofCfg :: !Config
+  -- TODO: cache for stuff
   }
 
 data ProverW = ProverW
-  { universe :: Universes.Fused ()
+  { levels :: Universes.Fused ULevelEvidence
+  -- , stages
   }
   deriving (Generic)
   deriving Monoid via Generically ProverW
@@ -60,6 +164,7 @@ instance Constraining Prover where
   type Constraints Prover = ProverW
   constrain = Prover . tell
   constraintsFrom (Prover act) = (\(a, w) -> (w, a)) <$> Prover (listen act)
+  constrainULevel rel = constrain $ mempty { levels = Fused.constraint rel }
 
 
 modifyUnivar :: Fresh -> (Maybe UnivarState -> Prover (UnivarState, b)) -> Prover b
@@ -78,3 +183,41 @@ instance Freshener Prover where
 
 instance WithConfig Prover where
   getConfig = Prover do asks proofCfg
+
+
+
+instance Scoping Prover where
+  askCtx = Prover do asks proofCtx
+  bindVar b tyval (Prover inner) = Prover do
+    inner & local \ctx -> ctx { proofCtx = proofCtx ctx :> (b, tyval) }
+
+
+instance Evaling Prover where
+  eval tm = do
+    ctx <- M.askEvalCtx
+    pure $ E.eval ctx tm
+  quote val = do
+    ctx <- M.askQuoteCtx
+    pure $ E.quote ctx val
+  currentSolution (Fresh which) = Prover do
+    tm <- gets (fmap uvTerm . IntMap.lookup which . uvState)
+    -- TODO: return Nothing if the var is not solved?
+    pure tm
+  progressGlobal val = do
+    ctx <- M.askCtx
+    pure $ E.progressGlobal ctx val
+
+
+instance Typing Prover where
+  fatal err = error err
+
+  validate = U.validate
+  validEval tm = do
+    ty <- U.validate tm
+    val <- M.eval tm
+    pure (ty, val)
+
+instance Unifying Prover where
+
+instance Proving Prover where
+  subsume = U.subsume
