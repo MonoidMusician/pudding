@@ -5,7 +5,7 @@ import qualified Pudding.Types.Monads as M
 import Pudding.Core.Types
 import Pudding.Core.Unify as U
 import Pudding.Core.Eval as E
-import Control.Monad.Trans.RWS.Strict (RWST)
+import Control.Monad.Trans.RWS.Strict (RWST (runRWST))
 import Control.Monad.Reader.Class (asks, MonadReader (local))
 import Control.Monad.Writer.Class (tell, listen)
 import Control.Monad.State.Class (get, gets, state, put, modify')
@@ -24,6 +24,8 @@ import Data.Vector (Vector)
 import Data.Pair (Pair(..), pattern Pair)
 import Control.Lens (review)
 import qualified Pudding.Semantics.Universes.Fused as Fused
+import Data.Maybe (fromMaybe)
+import Control.Monad.IO.Class (MonadIO (liftIO))
 
 type Equation = Pair Eval
 
@@ -160,6 +162,22 @@ data ProverW = ProverW
   deriving Monoid via Generically ProverW
   deriving Semigroup via Generically ProverW
 
+runProverMonad :: forall m t. MonadIO m => Config -> Prover t -> m t
+runProverMonad cfg (Prover act) = do
+  let
+    r = ProverR
+      { proofCtx = Nil
+      , proofCfg = cfg
+      }
+    s = ProverS
+      { freshest = Fresh 0
+      , uvState = IntMap.empty
+      , uvDeferred = IntMap.empty
+      , uvConstraints = IntMap.empty
+      , uvConstraintsRev = MonoidalIntMap.empty
+      }
+  liftIO $ runRWST act r s <&> \(t, _, _) -> t
+
 instance Constraining Prover where
   type Constraints Prover = ProverW
   constrain = Prover . tell
@@ -210,6 +228,7 @@ instance Evaling Prover where
 
 instance Typing Prover where
   fatal err = error err
+  context msg act = act
 
   validate = U.validate
   validEval tm = do
@@ -218,6 +237,12 @@ instance Typing Prover where
     pure (ty, val)
 
 instance Unifying Prover where
+  unsafeSolve var val = do
+    _ <- solveFully var val
+    M.currentSolution var <&> fromMaybe val
 
 instance Proving Prover where
   subsume = U.subsume
+
+instance MonadIO Prover where
+  liftIO = Prover . liftIO

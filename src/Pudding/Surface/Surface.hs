@@ -11,6 +11,7 @@ import Pudding.Types.Stack (pattern Nil)
 import qualified Text.Parsec as P
 import qualified Data.Text.IO.Utf8 as TIO
 import Control.Monad.Identity (Identity (runIdentity))
+import Control.Monad.IO.Class (liftIO)
 import Data.Show.Reshow (reshow)
 import qualified Pudding.Surface.Elaborator as Elab
 import Pudding.Core.Printer (Style(..), formatCore)
@@ -22,6 +23,7 @@ import Control.DeepSeq (force)
 import qualified Pudding.Surface.Delaborator as D
 import System.Environment (getArgs)
 import Data.Foldable (for_)
+import qualified Pudding.Types.Monads as M
 
 surfaceToCore :: String -> T.Text -> IO (Either T.Text T.Text)
 surfaceToCore filename contents = do
@@ -111,15 +113,17 @@ demoREPL = do
               (Right cst, _) -> do
                 TIO.putStrLn $ reshow cst
                 tbl <- initTable
-                tm <- Elab.runElabScoped tbl (Elab.elab Nothing cst)
-                TIO.putStrLn $ formatCore Ansi tm
-                tyE <- evaluate $ force $ U.validate Nil tm
-                let tyT = E.quote Nil tyE
+                (tm, tyT) <- Elab.runElabScoped tbl do
+                  tm <- Elab.elab Nothing cst
+                  _ <- liftIO $ TIO.putStrLn $ formatCore Ansi tm
+                  tyE <- M.validate tm
+                  tyT <- M.quote tyE
+                  pure (tm, tyT)
                 TIO.putStrLn $ formatCore Ansi tyT
                 TIO.putStrLn $ D.format D.Ansi $ D.printCST (D.runDelab $ D.delab tm) D.atTop
                 TIO.putStrLn $ D.format D.Ansi $ D.printCST (D.runDelab $ D.delab tyT) D.atTop
               (_, Right decl) -> do
                 TIO.putStrLn $ reshow decl
     \(err :: SomeException) -> TIO.putStrLn $ T.pack $ show err
-  demo
+  demoREPL
 

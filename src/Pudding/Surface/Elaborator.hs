@@ -26,7 +26,7 @@ import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), Index(Index), StackLike(size, Elem), pattern Nil, pattern (:>), StackFunctor (mapWithLevel), (@@?), stack)
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift), MonadState)
-import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals, ctxStack), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo, typeParams, typeIndices), Closure, ConstructorInfo (ConstructorInfo, ctorIndices), Globals (globalDefns))
+import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals, ctxStack), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo, typeParams, typeIndices), Closure, ConstructorInfo (ConstructorInfo, ctorIndices), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL), UnifyMode (UnifyMode), InjectiveStatus (StillInjective))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl(..), CST(..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize, Attributes))
@@ -58,7 +58,11 @@ import Control.Lens (view, from)
 import qualified Data.Aeson as AE
 import Codec.Binary.UTF8.Generic (toString)
 import qualified Data.Foldable as F
-import Pudding.Types.Monads (Freshener(freshen), FreshT, evalFreshT)
+import Pudding.Types.Monads (Freshener(freshen))
+import qualified Pudding.Types.Monads as M
+import Data.Pair (Pair(..))
+import Pudding.Types.Monads.Prover (Prover, runProverMonad)
+import Pudding.Types.Config (Field(dflt))
 
 class Applicative m => TwoPhase m where
   twoPhases :: m (m r) -> m r
@@ -139,7 +143,7 @@ type GLM = Compose (ReaderT (IORef NameTable) IO) (GGather Scoped)
 -- | are caught (TODO: define exactly what circular dependencies are).
 -- | GLScope holds the global scope as it is *expected* to be defined, and
 -- | also the local context that is pushed under binders and such.
-type Scoped = GInit (ReaderT GLScope (FreshT IO))
+type Scoped = GInit (ReaderT GLScope Prover)
 -- | Continuation monad, so `traverse` can adjust locals
 type Scoping r = ContT r Scoped
 -- | Abstract over both
@@ -219,13 +223,13 @@ runElabFull tbl (Compose stage0) = do
       pure (env, r)
   -- Keep track of all the globals in state, and provide the default
   -- global context with no locals, plus the name table to mint more names
-  (r, _) <- evalFreshT $ runReaderT (runStateT stage2 (Uninitialized <$ items))
+  (r, _) <- runProverMonad dflt $ runReaderT (runStateT stage2 (Uninitialized <$ items))
     (GLScope tbl items M.empty Nil)
   pure r
 
 runElabScoped :: IORef NameTable -> Scoped r -> IO r
 runElabScoped tbl stage2 = do
-  fmap fst $ evalFreshT $ runReaderT (runStateT stage2 M.empty) $
+  fmap fst $ runProverMonad dflt $ runReaderT (runStateT stage2 M.empty) $
     GLScope tbl M.empty M.empty Nil
 
 
@@ -247,7 +251,7 @@ currentCtx = do
     -- Plus the things that are provisionally defined
     Initializing (Just r) -> Just r
     _ -> Nothing
-  let currentGlobals = U.bootGlobals $ globalsFrom initialized
+  let currentGlobals = globalsFrom initialized
   localCtx <- asks glCtx
   pure $ localCtx { ctxGlobals = currentGlobals }
 
@@ -319,8 +323,7 @@ elaborateDefn attrs mty tm = do
     ty' <- case mty' of
       Just (tyT, tyE) -> pure $ GlobalTerm tyT tyE
       Nothing -> globalQuote =<< reinfer tmT
-    -- TODO: arity
-    GlobalDefn 0 ty' <$> globalEval tmT
+    GlobalDefn (arityOfTerm tmT) ty' <$> globalEval tmT
 
 
 elabType :: HasCallStack => CST -> Scoped Term
@@ -331,39 +334,22 @@ synth :: HasCallStack => Maybe ("expected type" @:: Eval) -> Term -> Scoped Term
 synth Nothing term = pure term
 synth (Just expE) term = do
   actE <- reinfer term
-  fromMaybe term <$> do
-    coe term (actE, expE) >>= traverse
-      \result -> do
-        actE' <- reinfer result
-        conversionCheck actE' expE >>= \case
-          True -> pure result
-          False -> error "Synthesized coercion failed"
+  fromMaybe term <$> coe term (actE, expE)
 
 -- | Generate a term coerced from actual type to expected type, or `Nothing` if
 -- | no coercion is necessary.
 coe :: HasCallStack => Term -> ("actual type" @:: Eval, "expected type" @:: Eval) -> Scoped (Maybe Term)
-coe term = \case
-  -- Both are lifted terms? operate inside the lifted value
-  (ELift _ actE, ELift _ expE) -> do
-    coeMap (TQuote mempty) (TSplice mempty) (actE, expE)
-  -- Lifted term where it is not expected?
-  (ELift _ actE, expE) -> do
-    -- Splice, and continue coercing
-    Just <$> coe' (TSplice mempty term) (actE, expE)
-  -- Otherwise make sure they match literally
-  (actE, expE) -> conversionCheck actE expE >>= \case
-    True -> pure Nothing
-    False -> error "Synthesized type mismatch"
-  where
-  coe' inner tys = fromMaybe inner <$> coe inner tys
-  coeMap outOf inTo tys = fmap @Maybe outOf <$> coe (inTo term) tys
+coe term (actE, expE) = do
+  (tys, coercion) <- M.subsume (UnifyMode RSubsumesL GenerateSubsumption StillInjective) (actE :# expE)
+  for coercion \fn ->
+    TApp mempty Explicit <$> M.quote fn <*> pure term
 
 -- | Elaborate a piece of surface syntax against an expected type.
 elab :: HasCallStack => Maybe ("expected type" @:: Eval) -> CST -> Scoped Term
 elab mexp = \case
   CApps fun args -> synth mexp =<< do
     funTmT <- elab Nothing fun
-    funTyE <- validate funTmT
+    funTyE <- M.validate funTmT
     let
       thingy (_, EPi _ Implicit _ _ _) _ = error "cannot handle implicits"
       thingy (funT, EPi _ Explicit _ argTy clo) arg = do
@@ -454,19 +440,9 @@ elab mexp = \case
     tyT <- elabType ty
     tyE <- eval tyT
     tmT <- elab (Just tyE) tm
-    tmtyE <- validate tmT
-    conversionCheck tyE tmtyE >>= \case
-      True -> pure (TAscribe mempty tmT tyT)
-      False -> do
-        tyN <- quote tyE
-        tmtyT <- quote tmtyE
-        ps <- asks (P.PS 0 . size . glCtx)
-        error $ fold
-          [ "Type error: "
-          , "\n" <> T.unpack do P.format P.Ansi $ P.printCore tyN ps
-          , "\n" <> T.unpack do P.format P.Ansi $ P.printCore tmtyT ps
-          , "\n" <> T.unpack do P.format P.Ansi $ P.printCore tmT ps
-          ]
+    tmtyE <- M.validate tmT
+    (tys, coercion) <- M.subsume (UnifyMode RSubsumesL IdentitySubsumption StillInjective) (tyE :# tmtyE)
+    pure (TAscribe mempty tmT tyT)
 
   -- | CAssign !CST !CST -- for patterns and do notation
 

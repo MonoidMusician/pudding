@@ -23,3 +23,19 @@ instance Field Universes where
 data Validation = Validation
   {
   }
+
+instance Field Validation where
+  dflt = Validation
+  merge _ _ = Validation
+
+
+instance Field Config where
+  dflt = Config
+    { universes = dflt
+    , validation = dflt
+    }
+  merge l r = Config
+    { universes = merge (universes l) (universes r)
+    , validation = merge (validation l) (validation r)
+    }
+

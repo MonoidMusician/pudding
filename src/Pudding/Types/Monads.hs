@@ -6,17 +6,20 @@ import GHC.Base (Symbol)
 import Data.Text (Text)
 import Pudding.Core.Types
 import Data.Pair (Pair)
-import Control.Monad.State.Strict (StateT, MonadTrans (lift), MonadState (state, get, put), evalStateT, MonadIO)
+import Control.Monad.State.Strict (StateT(..), MonadTrans (lift), MonadState (state, get, put), evalStateT, MonadIO, mapStateT)
 import Control.Monad.Reader.Class (MonadReader)
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.Writer.Class (MonadWriter)
-import Control.Monad.Trans.Reader (ReaderT)
-import Control.Monad.Trans.Except (ExceptT)
-import Control.Monad.Trans.Writer.Strict (WriterT)
+import Control.Monad.Trans.Reader (ReaderT(..), mapReaderT)
+import Control.Monad.Trans.Except (ExceptT(..), mapExceptT)
+import Control.Monad.Trans.Writer.Strict (WriterT(..), mapWriterT)
 import Pudding.Semantics.Universes.Evidence (Relationship)
 import GHC.Stack (HasCallStack)
 import Data.Functor (void)
 import qualified Data.Map as Map
+import qualified Control.Monad.Trans.State.Strict as StateT
+import Data.Tuple (swap)
+import qualified Control.Monad.Trans.Except as ExceptT
 
 -----------------
 -- Memoization --
@@ -119,18 +122,44 @@ class Constraining m where
 
 -- State/IO-like
 class Constraining m => Unifying m where
-  -- unsafeSolve :: Fresh -> Eval -> m Eval
-  -- currentSolution :: Fresh -> m Eval
+  unsafeSolve :: Fresh -> Eval -> m Eval
 
-class Checkpointing m where
+class Monad m => Checkpointing m where
   type Checkpoint m
   checkpointFor :: forall r. (Checkpoint m -> m r) -> m r
   rewind :: Checkpoint m -> m ()
+
+instance Checkpointing m => Checkpointing (StateT s m) where
+  type Checkpoint (StateT s m) = (s, Checkpoint m)
+  checkpointFor f = StateT \s ->
+    checkpointFor \chkpt ->
+      runStateT (f (s, chkpt)) s
+  rewind (s, chkpt) = lift (rewind chkpt) *> put s
+instance Checkpointing m => Checkpointing (ReaderT r m) where
+  type Checkpoint (ReaderT r m) = Checkpoint m
+  checkpointFor f = ReaderT \r ->
+    checkpointFor \chkpt -> runReaderT (f chkpt) r
+  rewind = lift . rewind
+instance Checkpointing m => Checkpointing (ExceptT e m) where
+  type Checkpoint (ExceptT e m) = Checkpoint m
+  checkpointFor f = ExceptT $ checkpointFor \chkpt ->
+    case f chkpt of ExceptT act -> act
+  rewind = lift . rewind
+instance (Checkpointing m, Monoid w) => Checkpointing (WriterT w m) where
+  type Checkpoint (WriterT w m) = Checkpoint m
+  checkpointFor f = WriterT $ checkpointFor (runWriterT . f)
+  rewind = lift . rewind
+instance Checkpointing m => Checkpointing (FreshT m) where
+  type Checkpoint (FreshT m) = (Fresh, Checkpoint m)
+  checkpointFor f = FreshT $ checkpointFor \chkpt ->
+    case f chkpt of FreshT act -> act
+  rewind (s, chkpt) = lift (rewind chkpt) *> FreshT (put s)
 
 -- logging...
 
 class Evaling m => Typing m where
   fatal :: HasCallStack => String -> m any
+  context :: HasCallStack => String -> m r -> m r
   validate :: Term -> m ("type" @:: Eval)
   validEval :: Term -> m ("type" @:: Eval, "value" @:: Eval)
 
@@ -172,6 +201,9 @@ newtype FreshT m r = FreshT (StateT Fresh m r)
 instance Monad m => Freshener (FreshT m) where
   freshen = FreshT do state \s -> (s, nextFresh s)
 
+mapFreshT :: (m (r, Fresh) -> n (r, Fresh)) -> FreshT m r -> FreshT n r
+mapFreshT f (FreshT act) = FreshT (mapStateT f act)
+
 evalFreshT :: Monad m => FreshT m r -> m r
 evalFreshT (FreshT act) = evalStateT act (Fresh 0)
 
@@ -196,3 +228,120 @@ instance WithConfig m => WithConfig (ExceptT e m) where getConfig = lift getConf
 instance (WithConfig m, Monoid w) => WithConfig (WriterT w m) where getConfig = lift getConfig
 
 
+instance Scoping m => Scoping (StateT s m) where
+  askCtx = lift askCtx
+  bindVar bdr tyval = mapStateT (bindVar bdr tyval)
+instance Scoping m => Scoping (ReaderT r m) where
+  askCtx = lift askCtx
+  bindVar bdr tyval = mapReaderT (bindVar bdr tyval)
+instance Scoping m => Scoping (ExceptT e m) where
+  askCtx = lift askCtx
+  bindVar bdr tyval = mapExceptT (bindVar bdr tyval)
+instance (Scoping m, Monoid w) => Scoping (WriterT w m) where
+  askCtx = lift askCtx
+  bindVar bdr tyval = mapWriterT (bindVar bdr tyval)
+instance Scoping m => Scoping (FreshT m) where
+  askCtx = lift askCtx
+  bindVar bdr tyval = mapFreshT (bindVar bdr tyval)
+
+
+instance Evaling m => Evaling (StateT s m) where
+  eval = lift . eval
+  quote = lift . quote
+  currentSolution = lift . currentSolution
+  progressGlobal = lift . progressGlobal
+instance Evaling m => Evaling (ReaderT r m) where
+  eval = lift . eval
+  quote = lift . quote
+  currentSolution = lift . currentSolution
+  progressGlobal = lift . progressGlobal
+instance Evaling m => Evaling (ExceptT e m) where
+  eval = lift . eval
+  quote = lift . quote
+  currentSolution = lift . currentSolution
+  progressGlobal = lift . progressGlobal
+instance (Evaling m, Monoid w) => Evaling (WriterT w m) where
+  eval = lift . eval
+  quote = lift . quote
+  currentSolution = lift . currentSolution
+  progressGlobal = lift . progressGlobal
+instance Evaling m => Evaling (FreshT m) where
+  eval = lift . eval
+  quote = lift . quote
+  currentSolution = lift . currentSolution
+  progressGlobal = lift . progressGlobal
+
+
+instance (Monad m, Constraining m) => Constraining (StateT s m) where
+  type Constraints (StateT s m) = Constraints m
+  constrain = lift . constrain
+  constraintsFrom = fmap swap . StateT.liftListen (fmap swap . constraintsFrom)
+  constrainULevel = lift . constrainULevel
+instance (Monad m, Constraining m) => Constraining (ReaderT r m) where
+  type Constraints (ReaderT r m) = Constraints m
+  constrain = lift . constrain
+  constraintsFrom (ReaderT f) = ReaderT $ constraintsFrom . f
+  constrainULevel = lift . constrainULevel
+instance (Monad m, Constraining m) => Constraining (ExceptT e m) where
+  type Constraints (ExceptT e m) = Constraints m
+  constrain = lift . constrain
+  constraintsFrom = fmap swap . ExceptT.liftListen (fmap swap . constraintsFrom)
+  constrainULevel = lift . constrainULevel
+instance (Monad m, Constraining m, Monoid w) => Constraining (WriterT w m) where
+  type Constraints (WriterT w m) = Constraints m
+  constrain = lift . constrain
+  constraintsFrom (WriterT act) = WriterT $ (\(x, (y, z)) -> ((x, y), z)) <$> constraintsFrom act
+  constrainULevel = lift . constrainULevel
+instance (Monad m, Constraining m) => Constraining (FreshT m) where
+  type Constraints (FreshT m) = Constraints m
+  constrain = lift . constrain
+  constraintsFrom (FreshT act) = FreshT (constraintsFrom act)
+  constrainULevel = lift . constrainULevel
+
+instance Typing m => Typing (StateT s m) where
+  fatal = lift . fatal
+  context msg = mapStateT (context msg)
+  validate = lift . validate
+  validEval = lift . validEval
+instance Typing m => Typing (ReaderT r m) where
+  fatal = lift . fatal
+  context msg = mapReaderT (context msg)
+  validate = lift . validate
+  validEval = lift . validEval
+instance Typing m => Typing (ExceptT e m) where
+  fatal = lift . fatal
+  context msg = mapExceptT (context msg)
+  validate = lift . validate
+  validEval = lift . validEval
+instance (Typing m, Monoid w) => Typing (WriterT w m) where
+  fatal = lift . fatal
+  context msg = mapWriterT (context msg)
+  validate = lift . validate
+  validEval = lift . validEval
+instance Typing m => Typing (FreshT m) where
+  fatal = lift . fatal
+  context msg = mapFreshT (context msg)
+  validate = lift . validate
+  validEval = lift . validEval
+
+instance (Monad m, Unifying m) => Unifying (StateT s m) where
+  unsafeSolve = fmap lift . unsafeSolve
+instance (Monad m, Unifying m) => Unifying (ReaderT r m) where
+  unsafeSolve = fmap lift . unsafeSolve
+instance (Monad m, Unifying m) => Unifying (ExceptT e m) where
+  unsafeSolve = fmap lift . unsafeSolve
+instance (Monad m, Unifying m, Monoid w) => Unifying (WriterT w m) where
+  unsafeSolve = fmap lift . unsafeSolve
+instance (Monad m, Unifying m) => Unifying (FreshT m) where
+  unsafeSolve = fmap lift . unsafeSolve
+
+instance Proving m => Proving (StateT s m) where
+  subsume = fmap lift . subsume
+instance Proving m => Proving (ReaderT r m) where
+  subsume = fmap lift . subsume
+instance Proving m => Proving (ExceptT e m) where
+  subsume = fmap lift . subsume
+instance (Proving m, Monoid w) => Proving (WriterT w m) where
+  subsume = fmap lift . subsume
+instance Proving m => Proving (FreshT m) where
+  subsume = fmap lift . subsume
