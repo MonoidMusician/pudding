@@ -78,8 +78,8 @@ printCore = \case
     ]
   TGlobal _m name -> pure $ Doc.pretty name
   -- FIXME: scope?
-  THole _m fresh scope -> pure $ Doc.pretty fresh
-  TUniv _m univ -> pure $ Doc.pretty "Type" -- $ case univ of
+  THole _m fresh _scope -> pure $ Doc.pretty fresh
+  TUniv _m _univ -> pure $ Doc.pretty ("Type" :: String) -- $ case univ of
     -- UBase lvl -> "(Type0 " <> show lvl <> ")" -- (Type0 0), (Type0 1), ...
     -- UMeta lvl -> "(Type1 " <> show lvl <> ")" -- (Type1 0), ...
     -- UVar fresh incr -> "(Type?" <> show fresh <> "+" <> show incr <> ")"

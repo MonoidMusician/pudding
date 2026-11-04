@@ -13,7 +13,6 @@ import qualified Data.Aeson as AE
 import GHC.Generics (Generic)
 import qualified Pudding.Surface.Web as SW
 import Data.Function ((&))
-import Data.Monoid (All(All))
 import qualified Data.Set as Set
 import Control.Exception (evaluate)
 import Control.Monad.Error.Class (tryError)

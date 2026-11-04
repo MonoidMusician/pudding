@@ -7,7 +7,6 @@ import qualified Pudding.Surface.Happy as Happy
 
 import qualified Data.Text as T
 import Pudding.Core.Types (initTable, GlobalDefn(..), GlobalTerm(..), Name(..), GlobalInfo(..))
-import Pudding.Types.Stack (pattern Nil)
 import qualified Text.Parsec as P
 import qualified Data.Text.IO.Utf8 as TIO
 import Control.Monad.Identity (Identity (runIdentity))
@@ -15,11 +14,8 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Show.Reshow (reshow)
 import qualified Pudding.Surface.Elaborator as Elab
 import Pudding.Core.Printer (Style(..), formatCore)
-import GHC.IO (catch, evaluate)
+import GHC.IO (catch)
 import GHC.Exception (SomeException)
-import qualified Pudding.Core.Unify as U
-import qualified Pudding.Core.Eval as E
-import Control.DeepSeq (force)
 import qualified Pudding.Surface.Delaborator as D
 import System.Environment (getArgs)
 import Data.Foldable (for_)

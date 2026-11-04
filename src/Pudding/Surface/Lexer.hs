@@ -502,7 +502,7 @@ prettyMod = foldMap \mname ->
 instance Doc.Pretty NameForm where
   pretty = \case
     PlainName qual name -> prettyMod qual <> Doc.pretty name
-    CompoundName qual name -> prettyMod qual <> intercalateMap1 (Doc.pretty ".") Doc.pretty name
+    CompoundName qual name -> prettyMod qual <> intercalateMap1 (Doc.pretty ("." :: String)) Doc.pretty name
     OperatorName qual pre inf post -> prettyMod qual <> fold
       [ reflow "("
       , reflow $ T.intercalate ":"

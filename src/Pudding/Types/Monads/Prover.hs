@@ -11,8 +11,8 @@ import Control.Monad.Writer.Class (tell, listen)
 import Control.Monad.State.Class (get, gets, state, put, modify')
 import GHC.Generics (Generic, Generically(..))
 import Data.Function ((&))
-import Data.Functor (void, (<&>))
-import Pudding.Types.Config (Universes, Config)
+import Data.Functor ((<&>))
+import Pudding.Types.Config (Config)
 import qualified Pudding.Semantics.Universes.Fused as Universes
 import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as IntMap
@@ -228,7 +228,7 @@ instance Evaling Prover where
 
 instance Typing Prover where
   fatal err = error err
-  context msg act = act
+  context _msg act = act
 
   validate = U.validate
   validEval tm = do

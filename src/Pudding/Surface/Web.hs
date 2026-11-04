@@ -7,7 +7,7 @@ import Pudding.Surface.Lexer hiding (demo)
 import qualified Pudding.Surface.Happy as Happy
 
 import qualified Data.Text as T
-import Pudding.Core.Types (EvalTypeCtx, initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Name (nameText), Term, GlobalInfo (DefnGlobal), pattern Nil, Globals, globalsFrom, Ctx (Ctx))
+import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Name (nameText), Term, GlobalInfo (DefnGlobal), Globals, globalsFrom)
 import qualified Text.Parsec as P
 import qualified Data.Text.IO.Utf8 as TIO
 import Control.Monad.Identity (Identity (runIdentity))
@@ -43,8 +43,6 @@ import qualified Data.Vector as Vector
 import Data.IORef (newIORef, modifyIORef', readIORef)
 import Pudding.Surface.Delaborator (delab, runDelab)
 import qualified Pudding.Surface.Delaborator as Delab
-import qualified Pudding.Core.Unify as U
-import qualified Pudding.Core.Eval as E
 
 data Formats = Formats
   { text :: Text
@@ -227,7 +225,7 @@ delabModule modul = Formats
 -- validateTerm = formatsTerm . U.validateQuote Nil
 
 validateModule :: (Vector.Vector (Maybe Name, GlobalInfo), Globals) -> Formats
-validateModule (modul, globals) = Formats
+validateModule (modul, _globals) = Formats
   { text = text
   , html = xmlEscape text
   , ansi = fmt Ansi
@@ -235,8 +233,8 @@ validateModule (modul, globals) = Formats
   }
   where
   text = fmt Plain
-  ctx :: forall ctx. Ctx ctx
-  ctx = Ctx globals Nil
+--   ctx :: forall ctx. Ctx ctx
+--   ctx = Ctx globals Nil
   -- cc msg tm0 tm1 = if U.conversionCheck ctx tm0 tm1 then () else error msg
   -- validateGTerm (GlobalTerm tmT tmE) =
   --   let

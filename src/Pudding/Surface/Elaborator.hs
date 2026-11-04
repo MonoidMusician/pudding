@@ -24,21 +24,20 @@ import Data.Text (Text)
 import Pudding.Types.Name (Name(..), internalize, NameTable, canonicalName)
 import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::))
 import Pudding.Types.Metadata
-import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), Index(Index), StackLike(size, Elem), pattern Nil, pattern (:>), StackFunctor (mapWithLevel), (@@?), stack)
+import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), StackLike(size), pattern Nil, pattern (:>), (@@?))
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift), MonadState)
-import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals, ctxStack), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo, typeParams, typeIndices), Closure, ConstructorInfo (ConstructorInfo, ctorIndices), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL), UnifyMode (UnifyMode), InjectiveStatus (StillInjective))
+import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals, ctxStack), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo), Closure, ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL), UnifyMode (UnifyMode), InjectiveStatus (StillInjective))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl(..), CST(..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize, Attributes))
-import Data.Foldable (Foldable (fold), foldlM, for_)
+import Data.Foldable (foldlM, for_)
 import Data.Functor.Compose (Compose (Compose))
 import Control.Monad.Reader.Class (MonadReader (local, ask), asks)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Pudding.Core.Unify as U
 import qualified Pudding.Core.Eval as E
 import Pudding.Surface.Lexer (VariableDB(..), NameForm(..), VariableName)
-import Data.Maybe (fromMaybe, catMaybes)
-import qualified Pudding.Core.Printer as P
+import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import Control.Arrow (Arrow(first))
 import qualified Data.List.NonEmpty as NE
@@ -48,15 +47,7 @@ import qualified Data.Vector as Vector
 import Control.Monad (join, when)
 import GHC.Stack (HasCallStack)
 import qualified Data.List as List
-import Control.DeepSeq (force)
 import Data.Monoid (Any(Any))
-import Data.Coerce (coerce)
-import GHC.IO (evaluate)
-import qualified Debug.Trace as Dbg
-import qualified Pudding.Core.Printer as C.Print
-import Control.Lens (view, from)
-import qualified Data.Aeson as AE
-import Codec.Binary.UTF8.Generic (toString)
 import qualified Data.Foldable as F
 import Pudding.Types.Monads (Freshener(freshen))
 import qualified Pudding.Types.Monads as M
@@ -299,7 +290,7 @@ elaborateDecl = \case
         tyName <- mintName glNames tyText
         asks (M.lookup tyName . glGlobals) >>= \case
           Just tyDef -> tyDef >>= \case
-            TypeGlobal (GlobalTypeInfo _ _ ctors) -> do
+            TypeGlobal (GlobalTypeInfo _ _ _ctors) -> do
               ctx <- currentCtx
               pure $ DefnGlobal $ fromMaybe (error "wat") $ M.lookup ctorName $ globalDefns $ ctxGlobals ctx
             _ -> error "Impossible"
@@ -340,7 +331,7 @@ synth (Just expE) term = do
 -- | no coercion is necessary.
 coe :: HasCallStack => Term -> ("actual type" @:: Eval, "expected type" @:: Eval) -> Scoped (Maybe Term)
 coe term (actE, expE) = do
-  (tys, coercion) <- M.subsume (UnifyMode RSubsumesL GenerateSubsumption StillInjective) (actE :# expE)
+  (_tys, coercion) <- M.subsume (UnifyMode RSubsumesL GenerateSubsumption StillInjective) (actE :# expE)
   for coercion \fn ->
     TApp mempty Explicit <$> M.quote fn <*> pure term
 
@@ -441,7 +432,7 @@ elab mexp = \case
     tyE <- eval tyT
     tmT <- elab (Just tyE) tm
     tmtyE <- M.validate tmT
-    (tys, coercion) <- M.subsume (UnifyMode RSubsumesL IdentitySubsumption StillInjective) (tyE :# tmtyE)
+    (_tys, _coercion) <- M.subsume (UnifyMode RSubsumesL IdentitySubsumption StillInjective) (tyE :# tmtyE)
     pure (TAscribe mempty tmT tyT)
 
   -- | CAssign !CST !CST -- for patterns and do notation

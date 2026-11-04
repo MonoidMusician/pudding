@@ -10,21 +10,17 @@ module Pudding.Core.Unify where
 import Pudding.Core.Types
 import Pudding.Core.Eval
 import qualified Data.Map as Map
-import Data.Foldable (fold, foldl')
+import Data.Foldable (foldl')
 import Data.Function ((&))
 import Data.Functor ((<&>), void)
 import Data.Functor.Classes (Eq1(liftEq))
 import GHC.StableName (StableName)
 import qualified Data.List as List
 import qualified Data.Vector as Vector
-import Data.Maybe (fromMaybe)
 import GHC.Stack (HasCallStack)
 import Data.These (These(..))
 import Data.Semialign.Indexed (SemialignWithIndex (ialignWith))
 import qualified Pudding.Types.Stack as Stack
-import Debug.Trace (traceWith)
-import qualified Data.Text as T
-import qualified Pudding.Core.Printer as P
 import Data.Align (Semialign(alignWith))
 import GHC.Generics (Generic)
 import Control.DeepSeq (NFData)
@@ -32,9 +28,6 @@ import Pudding.Types.Monads (Proving, bindNeut, Constraining (constrainULevel))
 import Control.Lens (view)
 import Data.Pair (Pair(..))
 import qualified Pudding.Types.Monads as M
-import Data.Traversable (for)
-import Control.Monad.Error.Class (MonadError(throwError))
-import Control.Arrow (Arrow(first, second))
 import Data.Distributive (Distributive(distribute))
 import Pudding.Semantics.Universes.Evidence (Relation(Equal, LessThanEqual))
 import qualified Data.FastEq as FastEq
@@ -241,10 +234,10 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
   -- under an injective constructor
   modeCC = UnifyMode Invariant IdentitySubsumption (stillInjective mode)
   -- Contravariant mode, just flip the relation of left and right
-  modeContra = case unifyDir mode of
-    LSubsumesR -> UnifyMode RSubsumesL (shouldSubsume mode) (stillInjective mode)
-    RSubsumesL -> UnifyMode LSubsumesR (shouldSubsume mode) (stillInjective mode)
-    Invariant  -> UnifyMode Invariant  (shouldSubsume mode) (stillInjective mode)
+--   modeContra = case unifyDir mode of
+--     LSubsumesR -> UnifyMode RSubsumesL (shouldSubsume mode) (stillInjective mode)
+--     RSubsumesL -> UnifyMode LSubsumesR (shouldSubsume mode) (stillInjective mode)
+--     Invariant  -> UnifyMode Invariant  (shouldSubsume mode) (stillInjective mode)
 
   cc :: Pair Eval -> m (Pair Eval)
   cc pair = fst <$> subsume modeCC pair
@@ -291,9 +284,9 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
       These x y -> cc (x :# y)
 
   -- Helpers for results
-  unified e = ((e, e), Nothing)
+
   bified es = (es, Nothing)
-  unifyBdr bdrL bdrR = bdrL
+  unifyBdr bdrL _bdrR = bdrL
 
   deferred :: forall ret. [StableName Eval] -> [StableName Eval] -> Pair Eval -> ret -> (Pair Eval -> m ret) -> m ret
   -- Short circuit on matching `EDeferred` stable names!
@@ -370,13 +363,13 @@ validateOrNot should = \case
     univL <- vvv ty
     univR <- force . snd =<< validateScoped b ty body
     case (univL, univR) of
-      (EUniv m1 u1, EUniv m2 u2) -> pure $ EUniv (m1 <> m2) (u1) -- FIXME universe
+      (EUniv m1 u1, EUniv m2 _u2) -> pure $ EUniv (m1 <> m2) (u1) -- FIXME universe
       _ -> M.fatal "Bad pi type"
   TSigma _ _ b ty body -> do
     univL <- vvv ty
     univR <- force . snd =<< validateScoped b ty body
     case (univL, univR) of
-      (EUniv m1 u1, EUniv m2 u2) -> pure $ EUniv (m1 <> m2) (u1) -- FIXME universe
+      (EUniv m1 u1, EUniv m2 _u2) -> pure $ EUniv (m1 <> m2) (u1) -- FIXME universe
       _ -> M.fatal "Bad sigma type"
   TPair _ ty left right -> do
     might $ void $ validateType ty
@@ -453,7 +446,7 @@ validateOrNot should = \case
     liftA2 doApp (ee motive) (M.eval scrutinee)
   TRecordTy _ fields -> uncurry EUniv <$>
     -- FIXME universe
-    foldl' (\(m1, u1) (EUniv m2 u2) -> (m1 <> m2, u1)) (mempty, ULevel (Fresh 0) (Fresh 0)) <$> traverse vv fields
+    foldl' (\(m1, u1) (EUniv m2 _u2) -> (m1 <> m2, u1)) (mempty, ULevel (Fresh 0) (Fresh 0)) <$> traverse vv fields
   TRecordTm meta fields -> ERecordTy meta <$> traverse vv fields
   TField _ focus field -> vvv focus >>= \case
     ERecordTy _ fields | Just ty <- Map.lookup field fields -> pure ty
@@ -475,7 +468,7 @@ validateOrNot should = \case
 
   -- TODO: subsumption
   cc :: HasCallStack => String -> Eval -> Eval -> m ()
-  cc err l r | should =
+  cc _err l r | should =
     void $ subsume (UnifyMode Invariant IdentitySubsumption StillInjective) (l :# r)
   cc _ _ _ = pure ()
 

@@ -1,10 +1,6 @@
 module Pudding () where
 
-import Data.Text (Text)
-import Pudding.Core.Parser (declarations, runParser)
 -- import Pudding.Core.Unify (bootGlobals)
-import GHC.IO (unsafePerformIO)
-import Pudding.Core.Types (Globals)
 
 -- parseAndBootGlobals :: Text -> Globals
 -- parseAndBootGlobals source = unsafePerformIO do

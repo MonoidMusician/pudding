@@ -358,7 +358,7 @@ instance AE.ToJSON Deferred where
     (meta, why, ty, isJust share, tm)
 instance AE.FromJSON Deferred where
   parseJSON v = do
-    (meta, why, ty, (share :: Bool), tm) <- AE.parseJSON v
+    (meta, why, ty, _share :: Bool, tm) <- AE.parseJSON v
     pure $ Deferred meta why ty Nothing tm
 
 ----------------------------------
@@ -753,11 +753,11 @@ summarize (Summarize { onEval, onNeutPrj, onNeutFocus, onTerm }) =
     TUniv _ _ -> mempty
     TGlobal _ _ -> mempty
     TAscribe _ tm ty -> summTerm tm <> summTerm ty
-    TLet _ b ty val body -> summTerm ty <> summTerm val <> summScoped body
-    TLambda _ p b ty body -> summTerm ty <> summScoped body
-    TPi _ p b ty body -> summTerm ty <> summScoped body
+    TLet _ _ ty val body -> summTerm ty <> summTerm val <> summScoped body
+    TLambda _ _ _ ty body -> summTerm ty <> summScoped body
+    TPi _ _ _ ty body -> summTerm ty <> summScoped body
     TApp _ _ fun arg -> summTerm fun <> summTerm arg
-    TSigma _ p b ty body -> summTerm ty <> summScoped body
+    TSigma _ _ _ ty body -> summTerm ty <> summScoped body
     TPair _ t l r -> summTerm t <> summTerm l <> summTerm r
     TFst _ t -> summTerm t
     TSnd _ t -> summTerm t
@@ -766,7 +766,7 @@ summarize (Summarize { onEval, onNeutPrj, onNeutFocus, onTerm }) =
     TCase _ motive cases scrutinee -> summTerm motive <> summTerm cases <> summTerm scrutinee
     TRecordTy _ fields -> foldMap summTerm fields
     TRecordTm _ fields -> foldMap summTerm fields
-    TField _ focus field -> summTerm focus
+    TField _ focus _field -> summTerm focus
     TLift _ t -> summTerm t
     TQuote _ t -> summTerm t
     TSplice _ t -> summTerm t
@@ -794,9 +794,9 @@ summarize (Summarize { onEval, onNeutPrj, onNeutFocus, onTerm }) =
   evalChildren = \case
     ENeut (Neutral focus prjs) -> Just $ handleNeutral prjs focus
     EUniv _ _ -> mempty
-    ELambda _ p b ty body -> summEval ty <> summClosure body
-    EPi _ p b ty body -> summEval ty <> summClosure body
-    ESigma _ p b ty body -> summEval ty <> summClosure body
+    ELambda _ _ _ ty body -> summEval ty <> summClosure body
+    EPi _ _ _ ty body -> summEval ty <> summClosure body
+    ESigma _ _ _ ty body -> summEval ty <> summClosure body
     EPair _ t l r -> summEval t <> summEval l <> summEval r
     ETyCtor _ _ params indices -> foldMap summEval params <> foldMap summEval indices
     ETmCtor _ _ params args -> foldMap summEval params <> foldMap summEval args

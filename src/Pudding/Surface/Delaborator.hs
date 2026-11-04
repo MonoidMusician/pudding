@@ -191,8 +191,8 @@ delab = \case
   TGlobal _m name -> pure $
     CVar (Just $ PlainName [] $ nameText name) PlainVar
   -- FIXME: scope
-  THole _m fresh scope -> pure $ CHole (Just $ T.pack $ show fresh)
-  TUniv _m univ -> pure CUniv
+  THole _m fresh _scope -> pure $ CHole (Just $ T.pack $ show fresh)
+  TUniv _m _univ -> pure CUniv
   TAscribe _m tm ty -> flip CAscribe <$> delab ty <*> delab tm
   TLet _ binder ty tm (Scoped body) -> do
     tyE <- evalD ty
@@ -228,7 +228,7 @@ delab = \case
   TTyCtor _m name params indices -> apps (CVar (Just $ PlainName [] $ nameText name) PlainVar) <$>
     traverse delab
       (Vector.toList params <> Vector.toList indices)
-  TTmCtor _m (tyname, name) params args -> apps (CVar (Just $ PlainName [] $ nameText name) PlainVar) <$>
+  TTmCtor _m (_tyname, name) params args -> apps (CVar (Just $ PlainName [] $ nameText name) PlainVar) <$>
     traverse delab
       (Vector.toList params <> Vector.toList args)
   -- TCase _m motive cases scrutinee -> _
