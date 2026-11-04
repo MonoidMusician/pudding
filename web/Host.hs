@@ -27,8 +27,7 @@ getOpts :: Int -> Scotty.Options
 getOpts port = Scotty.defaultOptions
   { Scotty.settings =
       Warp.setHost "127.0.0.1"
-      $ Warp.setPort port
-      $ Warp.defaultSettings
+      $ Warp.setPort port Warp.defaultSettings
   }
 
 data Content = Content

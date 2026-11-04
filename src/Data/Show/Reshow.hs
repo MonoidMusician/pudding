@@ -89,8 +89,7 @@ parseShown = asum
 layers :: Parser Printer -> Parser Printer
 layers more =
   separated (const $ Doc.pretty ("," :: String)) (P.char ',' *> P.many P.space) $
-    separated' (const Doc.line) (P.many1 P.space) $
-      more
+    separated' (const Doc.line) (P.many1 P.space) more
 
 separated :: forall x. Printer -> Parser x -> Parser Printer -> Parser Printer
 separated docSep parseSep item = many1SepEndBy parseSep item <&>

@@ -57,7 +57,7 @@ data UnivarState = UVState
   , uvRelevant :: !(Ctx Bool)
   -- the value for the term itself and its type
   , uvTerm :: !("tm" @:: Eval)
-  , uvType ::  ("ty" @:: Eval) -- ^ lazy
+  , uvType :: "ty" @:: Eval -- ^ lazy
   -- Partial equations (constraints with this unification variable as its head)
   , uvEqns :: Stack ("ctx" @:: Vector ("value given" @:: Eval), "projections" @:: Stack NeutPrj, "value achieved" @:: Eval)
   -- Callbacks? for filling in holes for deferred elaboration?
@@ -218,16 +218,15 @@ instance Evaling Prover where
     ctx <- M.askQuoteCtx
     pure $ E.quote ctx val
   currentSolution (Fresh which) = Prover do
-    tm <- gets (fmap uvTerm . IntMap.lookup which . uvState)
     -- TODO: return Nothing if the var is not solved?
-    pure tm
+    gets (fmap uvTerm . IntMap.lookup which . uvState)
   progressGlobal val = do
     ctx <- M.askCtx
     pure $ E.progressGlobal ctx val
 
 
 instance Typing Prover where
-  fatal err = error err
+  fatal = error
   context _msg act = act
 
   validate = U.validate

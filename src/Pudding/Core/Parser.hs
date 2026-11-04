@@ -290,7 +290,7 @@ declarations = P.many declaration >>= \decls -> do
   pure $ globalsFrom globals
 
 runParser :: Parser a -> P.SourceName -> Text -> IO (Either P.ParseError a)
-runParser p s t = runParserScope p [] s t
+runParser p = runParserScope p []
 
 runParserScope :: Parser a -> [Text] -> P.SourceName -> Text -> IO (Either P.ParseError a)
 runParserScope p names s t = do

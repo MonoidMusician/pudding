@@ -1,3 +1,4 @@
+{- HLINT ignore "Use unless" -}
 -- | This is the lexer/tokenizer for the surface syntax of Pudding. It is a bit
 -- | unique, operating in two phases to gradually parse more structure, but
 -- | this gives some predictability to the complicated lexical syntax, and
@@ -52,12 +53,12 @@ instance NFData P.SourcePos where
 demo :: IO ()
 demo = do
   line <- TIO.getLine
-  prelexed <- pure $ runIdentity (P.runPT (prelex <* P.eof) WHITESPACE "<input>" line)
+  let prelexed = runIdentity (P.runPT (prelex <* P.eof) WHITESPACE "<input>" line)
   case prelexed of
     Left err -> TIO.putStrLn $ T.pack $ show err
     Right r -> do
       TIO.putStrLn $ T.pack $ show r
-      tokenized <- pure $ runIdentity (P.runPT (tokenize <* P.eof) Nothing "<input>" r)
+      let tokenized = runIdentity (P.runPT (tokenize <* P.eof) Nothing "<input>" r)
       case tokenized of
         Left err -> TIO.putStrLn $ T.pack $ show err
         Right ts -> do

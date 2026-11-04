@@ -5,6 +5,7 @@
 -- | Currently it does not have any features for unification: that needs
 -- | some monad design first.
 {-# OPTIONS_GHC -Werror=incomplete-patterns #-}
+{- HLINT ignore "Redundant <$>" -}
 module Pudding.Core.Unify where
 
 import Pudding.Core.Types
@@ -363,13 +364,13 @@ validateOrNot should = \case
     univL <- vvv ty
     univR <- force . snd =<< validateScoped b ty body
     case (univL, univR) of
-      (EUniv m1 u1, EUniv m2 _u2) -> pure $ EUniv (m1 <> m2) (u1) -- FIXME universe
+      (EUniv m1 u1, EUniv m2 _u2) -> pure $ EUniv (m1 <> m2) u1 -- FIXME universe
       _ -> M.fatal "Bad pi type"
   TSigma _ _ b ty body -> do
     univL <- vvv ty
     univR <- force . snd =<< validateScoped b ty body
     case (univL, univR) of
-      (EUniv m1 u1, EUniv m2 _u2) -> pure $ EUniv (m1 <> m2) (u1) -- FIXME universe
+      (EUniv m1 u1, EUniv m2 _u2) -> pure $ EUniv (m1 <> m2) u1 -- FIXME universe
       _ -> M.fatal "Bad sigma type"
   TPair _ ty left right -> do
     might $ void $ validateType ty
@@ -570,7 +571,7 @@ makeMotiveType typeName (GlobalTypeInfo { typeParams, typeIndices }) =
       (Vector.imap (const . chosenIndex) typeIndices)
     -- And a motive takes that specific type and returns the goal type for it
     motive = TPi mempty Explicit BUnused chosenType $ Scoped (TUniv mempty (ULevel (Fresh 0) (Fresh 0))) -- FIXME universe
-  in prependParams $ prependIndices $ motive
+  in prependParams $ prependIndices motive
 
 makeCaseRecordType :: Name -> GlobalTypeInfo -> Term
 makeCaseRecordType typeName tyInfo@(GlobalTypeInfo { typeParams, typeConstrs }) =
@@ -581,7 +582,7 @@ makeCaseRecordType typeName tyInfo@(GlobalTypeInfo { typeParams, typeConstrs }) 
       TLambda mempty p b paramType $ Scoped inner
     -- Now take a motive for those parameters
     abstractedMotiveType = makeMotiveType typeName tyInfo
-    chosenParamForMotive i = TVar mempty $ Index $ (length typeParams - 1 - i)
+    chosenParamForMotive i = TVar mempty $ Index $ length typeParams - 1 - i
     chosenMotiveType = Vector.ifoldl
       (\motiveTypeFn i (p, _, _) -> TApp mempty p motiveTypeFn $ chosenParamForMotive i)
       abstractedMotiveType typeParams
@@ -593,7 +594,7 @@ makeCaseRecordType typeName tyInfo@(GlobalTypeInfo { typeParams, typeConstrs }) 
       TApp mempty Explicit (applyParams abstracted) $ TVar mempty $ Index 0
     caseTypes = typeConstrs & Map.mapWithKey \ctorName ctorInfo ->
       applyParamsAndMotive $ makeCaseFnType typeName tyInfo ctorName ctorInfo
-  in prependParams $ prependMotive $ TRecordTy mempty $ caseTypes
+  in prependParams $ prependMotive $ TRecordTy mempty caseTypes
 
 -- TODO: share this evaluation
 makeCaseFnType :: Name -> GlobalTypeInfo -> Name -> ConstructorInfo -> Term
@@ -605,7 +606,7 @@ makeCaseFnType typeName tyInfo@(GlobalTypeInfo { typeParams, typeIndices = _ }) 
       TLambda mempty p b paramType $ Scoped inner
     -- Now take a motive for those parameters
     abstractedMotiveType = makeMotiveType typeName tyInfo
-    chosenParamForMotive i = TVar mempty $ Index $ (length typeParams - 1 - i)
+    chosenParamForMotive i = TVar mempty $ Index $ length typeParams - 1 - i
     chosenMotiveType = Vector.ifoldl
       (\motiveTypeFn i (p, _, _) -> TApp mempty p motiveTypeFn $ chosenParamForMotive i)
       abstractedMotiveType typeParams
@@ -635,7 +636,7 @@ makeCaseFnType typeName tyInfo@(GlobalTypeInfo { typeParams, typeIndices = _ }) 
     appliedMotive = TApp mempty Explicit relevantMotive chosenValue
     -- And plug in the value from the arguments
   -- Now we fit it all together, then let the caller apply it
-  in prependParams $ prependMotive $ prependArguments $ appliedMotive
+  in prependParams $ prependMotive $ prependArguments appliedMotive
 
 data StrictPositivityM t
   = NotPositive
