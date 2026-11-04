@@ -24,6 +24,7 @@ import Control.Applicative (many, (<|>), empty, asum, Alternative (some))
 import Data.Foldable (fold, traverse_)
 import Data.Functor (void, (<&>))
 import Data.Function ((&))
+import Data.List (unsnoc)
 import qualified Data.Text as T
 import Data.Text (Text)
 import Pudding.Core.Types ()
@@ -786,12 +787,18 @@ anyNameForm qual = longestOf
     Bool -> [t] -> Bool ->
     Relexer r
   assemble ast hasPre ops0 hasPost = do
-    (pre, ops1) <- pure if hasPre
-      then (Just (head ops0), tail ops0)
-      else (Nothing, ops0)
-    (post, ops) <- pure if hasPost
-      then (Just (last ops1), init ops1)
-      else (Nothing, ops1)
+    let (pre, ops1) =
+          case ops0 of
+            (hd:tl) | hasPre ->
+              (Just hd, tl)
+            _ ->
+              (Nothing, ops0)
+    let (post, ops) =
+          case unsnoc ops1 of
+            Just (lt, dh) | hasPost ->
+              (Just dh, lt)
+            _ ->
+              (Nothing, ops1)
     pure $! ast pre ops post
 
 compoundName :: Relexer (NonEmpty Text)
