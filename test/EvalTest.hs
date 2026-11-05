@@ -42,21 +42,21 @@ addVars = flip $ foldr (uncurry addVar)
 
 globalSource :: Text
 globalSource = T.unlines
-  -- Id := \(x : Type0) -> x
-  [ "(define Id (lambda (x (Type0)) x))"
-  , "(define Id1 (lambda (x (Type0 1)) x))"
+  -- Id := \(x : Type 0) -> x
+  [ "(define Id (lambda (x (Type 0)) x))"
+  , "(define Id1 (lambda (x (Type 0 1)) x))"
   -- Polymorphic identity function
-  , "(define identity (lambda (t (Type0)) (lambda (x t) x)))"
-  , "(define identity1 (lambda (t (Type0 1)) (lambda (x t) x)))"
+  , "(define identity (lambda (t (Type 0)) (lambda (x t) x)))"
+  , "(define identity1 (lambda (t (Type 0 1)) (lambda (x t) x)))"
   -- Non-dependent function type
-  , "(define Fun (lambda (I (Type0)) (lambda (O (Type0)) (Pi (x I) O))))"
+  , "(define Fun (lambda (I (Type 0)) (lambda (O (Type 0)) (Pi (x I) O))))"
   -- Basic ADTs
   , "(inductive Void () ())"
   , "(inductive Unit () () (unit))"
   , "(inductive Bool () () (true) (false))"
-  , "(inductive Maybe ((T (Type0))) () (nothing) (just ((v T)) ()))"
-  , "(inductive IsJust ((T (Type0))) ((mv (Maybe T))) (proveJust ((v T)) ((just T v))))"
-  , "(inductive Either ((L (Type0)) (R (Type0))) ()"
+  , "(inductive Maybe ((T (Type 0))) () (nothing) (just ((v T)) ()))"
+  , "(inductive IsJust ((T (Type 0))) ((mv (Maybe T))) (proveJust ((v T)) ((just T v))))"
+  , "(inductive Either ((L (Type 0)) (R (Type 0))) ()"
   , "  (left ((v L))) (right ((v R))))"
   ]
 
@@ -99,17 +99,17 @@ evalTest = TestSuite "EvalTest" $ withTestContext do
       --   liftIO $ putStrLn $ T.unpack $ formatCore Ansi $ typecheckUnder [] ty
       _ -> pure ()
     testCase "Id" do
-      expectType "Id1" "(Pi (t (Type0 1)) (Type0 1))"
+      expectType "Id1" "(Pi (t (Type 0 1)) (Type 0 1))"
     testCase "identity" do
-      expectType "identity1" "(Pi (t (Type0 1)) (Pi (x t) t))"
+      expectType "identity1" "(Pi (t (Type 0 1)) (Pi (x t) t))"
   testCase "AlphaEquivalence" do
-    t1 <- parseTerm "(lambda (A (Type0)) A)"
-    t2 <- parseTerm "(lambda (B (Type0)) B)"
+    t1 <- parseTerm "(lambda (A (Type 0)) A)"
+    t2 <- parseTerm "(lambda (B (Type 0)) B)"
     expectEquiv Term' t1 t2
   testCase "BetaReduction" do
-    t1 <- parseTerm "(lambda (x (Type0 1)) x)"
-    t2 <- parseTerm "(Type0)"
-    t3 <- parseTerm "(identity1 (Type0 1) (Type0))"
+    t1 <- parseTerm "(lambda (x (Type 0 1)) x)"
+    t2 <- parseTerm "(Type 0)"
+    t3 <- parseTerm "(identity1 (Type 0 1) (Type 0))"
     TApp mempty Explicit t1 t2 `defEqTo` t3
     testCase "SimpleDefinition" do
       "(Fun Unit Void)" `defEqTo` "(Pi (t Unit) Void)"
@@ -140,26 +140,26 @@ evalTest = TestSuite "EvalTest" $ withTestContext do
   testCase "AlreadyNormalized" do
     let
       alreadyNormalized s = normalizesTo s s
-    alreadyNormalized "(lambda (x (Type0)) x)"
-    alreadyNormalized "(Pi (t (Type0)) (Type0))"
-    alreadyNormalized "(lambda (t (Type0)) (lambda (x t) x))"
-    alreadyNormalized "(Pi (t (Type0)) (Pi (x t) t))"
+    alreadyNormalized "(lambda (x (Type 0)) x)"
+    alreadyNormalized "(Pi (t (Type 0)) (Type 0))"
+    alreadyNormalized "(lambda (t (Type 0)) (lambda (x t) x))"
+    alreadyNormalized "(Pi (t (Type 0)) (Pi (x t) t))"
   testCase "DoubleNormalize" do
     let
       doublyNormalize s = do
         (_, t) <- evalNorm =<< convert s
         normalizesTo t t
-    doublyNormalize "(Id1 (Id1 (Type0)))"
-    doublyNormalize "identity1 (Type0) (Type0)"
+    doublyNormalize "(Id1 (Id1 (Type 0)))"
+    doublyNormalize "identity1 (Type 0) (Type 0)"
     doublyNormalize $ T.unlines
-      [ "(lambda (A (Type0))"
-      , "  (lambda (B (Type0))"
+      [ "(lambda (A (Type 0))"
+      , "  (lambda (B (Type 0))"
       , "    (lambda (f (Pi (x A) B))"
       , "      f)))"
       ]
     doublyNormalize $ T.unlines
-      [ "(lambda (A (Type0))"
-      , "  (lambda (B (Type0))"
+      [ "(lambda (A (Type 0))"
+      , "  (lambda (B (Type 0))"
       , "    (lambda (f (Pi (x A) B))"
       , "      (lambda (x A)"
       , "        (f x)))))"
@@ -183,7 +183,7 @@ evalTest = TestSuite "EvalTest" $ withTestContext do
       liftIO $ print $ SubTerm' 0 tyR
 
     do
-      tmT <- parseTerm "(lambda (Err (Type0)) (identity (Either Err Unit) (right Err Unit unit)))"
+      tmT <- parseTerm "(lambda (Err (Type 0)) (identity (Either Err Unit) (right Err Unit unit)))"
       tyT <- typecheck tmT
       liftIO $ print $ SubTerm' 0 tmT
       liftIO $ print $ SubTerm' 0 tyT
@@ -198,8 +198,8 @@ evalTest = TestSuite "EvalTest" $ withTestContext do
       liftIO $ print $ SubTerm' 0 tyP
   testCase "2LTT" do
     liftBoolType <- parseTerm "(Lift Bool)"
-    "(splice (quote (lambda (x (Type0)) x)))"
-      `normalizesTo` "(lambda (x (Type0)) x)"
+    "(splice (quote (lambda (x (Type 0)) x)))"
+      `normalizesTo` "(lambda (x (Type 0)) x)"
     addVar "v" liftBoolType do
       "(quote (splice v))" `normalizesTo` "v"
 

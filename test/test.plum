@@ -1,9 +1,9 @@
 -- Stdlib-ish
 
-(define Id (lambda (x (Type0)) x))
-(define Id1 (lambda (x (Type0 1)) x))
-(define identity (lambda (t (Type0)) (lambda (x t) x)))
-(define identity1 (lambda (t (Type0 1)) (lambda (x t) x)))
+(define Id (lambda (x (Type 0)) x))
+(define Id1 (lambda (x (Type 0 1)) x))
+(define identity (lambda (t (Type 0)) (lambda (x t) x)))
+(define identity1 (lambda (t (Type 0 1)) (lambda (x t) x)))
 
 (inductive Void () ())
 (inductive Unit () () (unit))
@@ -11,19 +11,19 @@
 (inductive IsTrue () ((b Bool)) (proveTrue () (true)))
 
 -- Non-dependent function type
-(define Fun (lambda (I (Type0)) (lambda (O (Type0)) (Pi (x I) O))))
-(define Not (lambda (P (Type0)) (Fun P Void)))
+(define Fun (lambda (I (Type 0)) (lambda (O (Type 0)) (Pi (x I) O))))
+(define Not (lambda (P (Type 0)) (Fun P Void)))
 
-(inductive Maybe ((T (Type0))) () (nothing) (just ((v T)) ()))
-(inductive IsJust ((T (Type0))) ((mv (Maybe T))) (proveJust ((v T)) ((just T v))))
+(inductive Maybe ((T (Type 0))) () (nothing) (just ((v T)) ()))
+(inductive IsJust ((T (Type 0))) ((mv (Maybe T))) (proveJust ((v T)) ((just T v))))
 
-(inductive Either ((L (Type0)) (R (Type0))) ()
+(inductive Either ((L (Type 0)) (R (Type 0))) ()
   (left ((v L))) (right ((v R))))
 
-(inductive Decide ((P (Type0))) ()
+(inductive Decide ((P (Type 0))) ()
   (proven ((proof P))) (disproven ((disproof (Not P)))))
 
-(inductive Eq ((T (Type0))) ((x T) (z T))
+(inductive Eq ((T (Type 0))) ((x T) (z T))
   (refl ((y T)) ((y) (y))))
 
 (define not
@@ -37,7 +37,7 @@
       (record (true (refl Bool true)) (false (refl Bool false))))))
 
 (define isJust
-  (lambda (T (Type0))
+  (lambda (T (Type 0))
     (lambda (m (Maybe T))
       (caseOn (lambda (m (Maybe T)) Bool) m
         (record
@@ -68,19 +68,19 @@
 
 (namedTest "isJust"
   (namedTest "typechecks"
-    (hasType (Pi (T (Type0)) (Pi (m (Maybe T)) Bool)) (isJust)))
+    (hasType (Pi (T (Type 0)) (Pi (m (Maybe T)) Bool)) (isJust)))
   (namedTest "specializes"
     (hasType (Pi (m (Maybe Unit)) Bool) (isJust Unit)))
   (namedTest "reduces"
     (defEq (isJust Unit (nothing Unit)) (false))
     (defEq (isJust Unit (just Unit unit)) (true))
 
-    (defEq (lambda (T (Type0)) (isJust T (nothing T))) (lambda (T (Type0)) false))
-    (defEq (lambda (T (Type0)) (lambda (t T) (isJust T (just T t)))) (lambda (T (Type0)) (lambda (t T) true)))))
+    (defEq (lambda (T (Type 0)) (isJust T (nothing T))) (lambda (T (Type 0)) false))
+    (defEq (lambda (T (Type 0)) (lambda (t T) (isJust T (just T t)))) (lambda (T (Type 0)) (lambda (t T) true)))))
 
 
 (namedTest "isJust"
-  (parameter T (Type0)
+  (parameter T (Type 0)
     (namedTest "typechecks"
       (hasType (Pi (m (Maybe T)) Bool) (isJust T)))
     (namedTest "reduces"
