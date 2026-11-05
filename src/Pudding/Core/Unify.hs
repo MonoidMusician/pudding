@@ -332,7 +332,10 @@ validateOrNot should = \case
     pure $ fst (ctx @@: idx)
   TGlobal _ name -> do
     M.lookupDefn name >>= \case
-      Nothing -> M.fatal $ "Undefined global " <> show name
+      Nothing -> do
+        Globals { globalDefns = defns } <- M.askGlobals
+        M.fatal $ "Undefined global " <> show name <>
+          if Map.size defns == 0 then " (global context is empty)" else ""
       Just (GlobalDefn _ (GlobalTerm _ ty) _) -> pure ty
   THole _ _fresh _ -> M.fatal "typeof hole not implemented"
   TUniv meta univ -> pure $ EUniv meta univ -- FIXME universe

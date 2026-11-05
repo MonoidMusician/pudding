@@ -31,6 +31,9 @@ import qualified Hedgehog.Internal.Runner as HG.Runner
 import qualified Hedgehog.Internal.Seed as HG.Seed
 import qualified Hedgehog.Internal.Tree as HG.Tree
 
+quick :: Bool
+quick = True
+
 solverUnitTest :: TestSuite
 solverUnitTest = TestSuite "SolverUnitTest" do
   pure ()
@@ -211,7 +214,7 @@ expectProp mseed prop = do
 levelAlgebra :: Test r ()
 levelAlgebra = do
   recordSuccessRate "Solvable (length 80)" \wasSolvable -> do
-    hedgeTest 2000 "LevelAlgebra" do
+    hedgeTest (if quick then 200 else 2000) "LevelAlgebra" do
       rels <- HG.forAll genRels
       case (quickConstraints rels, quickSolve rels) of
         (Constraints Nothing _, solution) -> do
@@ -240,7 +243,7 @@ levelAlgebraHasSolution = do
     Nothing -> Gen.sample seedConsistent
     Just seed -> maybe (error "failed gen") (pure . HG.Tree.treeValue) $
       HG.Gen.evalGen 30 (HG.Seed.from seed) seedConsistent
-  hedgeTest' (HG.Seed.from <$> hedgeSeed) 6000 "HasSolution" do
+  hedgeTest' (HG.Seed.from <$> hedgeSeed) (if quick then 600 else 6000) "HasSolution" do
     rels <- HG.forAll $ genConsistent totalOrder $ Range.linear 0 100
     _ <- liftIO $ evaluate $ force rels
     liftIO $ modifyIORef' recorded (rels++)
@@ -259,8 +262,8 @@ levelAlgebraHasSolution = do
             solveLength relSize
             let rels = Vector.toList $ Vector.slice relStart relSize vectored
             verify rels
-  testWithParams 200 1000
-  testWithParams 1000 200
+  if quick then testWithParams 50 100 else testWithParams 200 1000
+  if quick then testWithParams 100 50 else testWithParams 1000 200
   where
   verify :: [Relationship meta] -> HG.PropertyT IO ()
   verify rels =

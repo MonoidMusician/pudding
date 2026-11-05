@@ -73,6 +73,7 @@ class Monad m => WithConfig m where
 class Monad m => Scoping m where
   -- this may incorporate updated globals each time
   askCtx :: m EvalTypeCtx
+  withCtx :: forall r. EvalTypeCtx -> m r -> m r
   bindVar :: forall r. Binder -> ("type" @:: Eval, "value" @:: Eval) -> m r -> m r
 
 bindNeut :: forall m r. Scoping m => Metadata -> Binder -> ("type" @:: Eval) -> (Level -> Eval -> m r) -> m r
@@ -230,18 +231,23 @@ instance (WithConfig m, Monoid w) => WithConfig (WriterT w m) where getConfig = 
 
 instance Scoping m => Scoping (StateT s m) where
   askCtx = lift askCtx
+  withCtx = mapStateT . withCtx
   bindVar bdr tyval = mapStateT (bindVar bdr tyval)
 instance Scoping m => Scoping (ReaderT r m) where
   askCtx = lift askCtx
+  withCtx = mapReaderT . withCtx
   bindVar bdr tyval = mapReaderT (bindVar bdr tyval)
 instance Scoping m => Scoping (ExceptT e m) where
   askCtx = lift askCtx
+  withCtx = mapExceptT . withCtx
   bindVar bdr tyval = mapExceptT (bindVar bdr tyval)
 instance (Scoping m, Monoid w) => Scoping (WriterT w m) where
   askCtx = lift askCtx
+  withCtx = mapWriterT . withCtx
   bindVar bdr tyval = mapWriterT (bindVar bdr tyval)
 instance Scoping m => Scoping (FreshT m) where
   askCtx = lift askCtx
+  withCtx = mapFreshT . withCtx
   bindVar bdr tyval = mapFreshT (bindVar bdr tyval)
 
 

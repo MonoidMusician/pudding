@@ -1,7 +1,7 @@
 module FileTest (plumTest) where
 
 import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Reader.Class (MonadReader(local))
+import Control.Monad.Reader.Class (MonadReader(local), asks)
 import Control.Monad.Trans.Class (MonadTrans(lift))
 import Control.Monad.Trans.Cont (ContT (ContT))
 import Data.Foldable (sequenceA_)
@@ -16,6 +16,7 @@ import Testing
 import qualified Data.Text as T
 import qualified Data.Text.IO.Utf8 as Text
 import qualified Text.Parsec as P
+import qualified Pudding.Core.Eval as Eval
 
 plumTest :: TestSuite
 plumTest = TestSuite "PlumTests" do
@@ -88,7 +89,7 @@ plumContents :: Parser (Test () ())
 plumContents = uncont <$> plumStatements
 
 -- Bare globals, and local parameters with lazily booted globals
-type RunningEnv = (Globals, Ctx (Name, Term))
+type RunningEnv = (Globals, EvalTypeCtx)
 -- Turn reader into state, basically
 type PlumTest = ContT () (Test RunningEnv) ()
 
@@ -103,7 +104,7 @@ intoEnv (name, entry) = ContT \cont ->
   where
   envppend (prev, Ctx _ params) =
     let globals = addGlobal prev name entry in
-    (globals, Ctx (unsafeRunProver $ bootGlobals globals) params)
+    (globals, Ctx (unsafeRunProver Nil $ bootGlobals globals) params)
 
 inEnv :: EvalTest () -> PlumTest
 inEnv wrapped = lift $
@@ -111,5 +112,6 @@ inEnv wrapped = lift $
 
 addParam :: Name -> Term -> Test RunningEnv a -> Test RunningEnv a
 addParam name ty inner = do
-  local (fmap \ctx -> ctx :> (BVar (Meta (canonicalName name)), (name, ty))) do
+  tyE <- Eval.eval <$> asks (fmap snd . snd) <*> pure ty
+  local (fmap \ctx -> ctx :> (BVar (Meta (canonicalName name)), (tyE, neutralVar (Level (size ctx))))) do
     inner

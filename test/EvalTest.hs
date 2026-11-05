@@ -7,7 +7,7 @@ import qualified Data.Text as T
 import Control.Lens (review)
 import Control.Monad.Reader.Class (MonadReader (reader, ask), asks, local)
 import Data.Foldable (fold)
-import Data.Functor (void)
+import Data.Functor (void, (<&>))
 import Data.Pair (Pair(..))
 import Data.Text (Text)
 import GHC.Stack (HasCallStack)
@@ -26,15 +26,15 @@ import qualified Pudding.Core.Parser as Parse
 -- NamedDefaults requires GHC 9.12.1
 default (Text)
 
-type EvalTestCtx = Ctx (Name, "type" @:: Term)
-type EvalTest = Test EvalTestCtx
+type EvalTest = Test EvalTypeCtx
 
 addVar ::
-  (MonadIO m, MonadReader (Ctx (Name, Term)) m) =>
+  (MonadIO m, MonadReader EvalTypeCtx m) =>
   Text -> Term -> m a -> m a
 addVar nameText ty inner = do
   name <- liftIO $ internalize globalTable nameText
-  local (\ctx -> ctx :> (BVar (Meta (canonicalName name)), (name, ty))) do
+  tyE <- Eval.eval <$> asks (fmap snd) <*> pure ty
+  local (\ctx -> ctx :> (BVar (Meta (canonicalName name)), (tyE, neutralVar (Level (size ctx))))) do
     inner
 
 addVars :: [("name" @:: Text, "type" @:: Term)] -> EvalTest a -> EvalTest a
@@ -92,11 +92,13 @@ evalTest = TestSuite "EvalTest" $ withTestContext do
     type0 = TUniv mempty $ ULevel (Fresh 0) (Fresh 1)
   testCase "Globals" do
     globals <- asks ctxGlobals
-    _ <- flip Map.traverseWithKey (globalDefns globals) \_name -> \case
-      -- GlobalDefn _ (GlobalTerm ty _) (GlobalTerm tm _) -> do
-      --   liftIO $ putStrLn $ T.unpack $ nameText name <> " : " <> formatCore Ansi ty
-      --   liftIO $ putStrLn $ T.unpack $ nameText name <> " := " <> formatCore Ansi tm
-      --   liftIO $ putStrLn $ T.unpack $ formatCore Ansi $ typecheckUnder [] ty
+    expect (Map.size (globalDefns globals) > 0) "Global definitions not empty"
+    expect (Map.size (globalTypes globals) > 0) "Global types not empty"
+    _ <- flip Map.traverseWithKey (globalDefns globals) \name -> \case
+      GlobalDefn _ (GlobalTerm ty _) (GlobalTerm tm _) -> do
+        liftIO $ putStrLn $ T.unpack $ nameText name <> " : " <> formatCore Ansi ty
+        liftIO $ putStrLn $ T.unpack $ nameText name <> " := " <> formatCore Ansi tm
+        -- liftIO $ putStrLn $ T.unpack $ formatCore Ansi $ typecheckUnder [] ty
       _ -> pure ()
     testCase "Id" do
       expectType "Id1" "(Pi (t (Type 0 1)) (Type 0 1))"
@@ -205,7 +207,7 @@ evalTest = TestSuite "EvalTest" $ withTestContext do
 
 parseTerm :: Text -> EvalTest Term
 parseTerm s = do
-  names <- asks \ctx -> review stack (nameText . fst . snd <$> ctxStack ctx)
+  names <- asks \ctx -> review stack (ctxStack ctx <&> \(BVar (Meta name), _) -> nameText $ chosenName name)
   name <- testCaseName
   r <- liftIO $ runParserScope Parse.term names (show name) s
   assertRight r
@@ -216,11 +218,13 @@ evalNorm term = do
   normed <- reader \ctx -> Eval.quote (void ctx) evaled
   pure (evaled, normed)
 
-typecheck :: Term -> EvalTest Term
-typecheck term = testNF $ unsafeRunProver $ validateQuote term
+typecheck :: HasCallStack => Term -> EvalTest Term
+typecheck term = do
+  ctx <- ask
+  testNF $ unsafeRunProver ctx $ validateQuote term
 
-conversionCheck :: HasCallStack => Ctx () -> Eval -> Eval -> Bool
-conversionCheck _ e1 e2 = True <$ unsafeRunProver $
+conversionCheck :: HasCallStack => EvalTypeCtx -> Eval -> Eval -> Bool
+conversionCheck ctx e1 e2 = True <$ unsafeRunProver ctx $
   subsume (UnifyMode RSubsumesL IdentitySubsumption StillInjective) (e1 :# e2)
 
 defEqTo :: forall i1 i2. Convert i1 Eval => Convert i2 Eval => "term1" @:: i1 -> "term2" @:: i2 -> EvalTest ()
@@ -228,7 +232,7 @@ defEqTo i1 i2 = do
   (e1 :: Eval) <- convert i1
   (e2 :: Eval) <- convert i2
   ctx <- ask
-  expect (conversionCheck (void ctx) e1 e2) $ fold
+  expect (conversionCheck ctx e1 e2) $ fold
     [ "Terms are equal under the conversion check:"
     , "\n", T.unpack $ formatCore Ansi $ Eval.quote (void ctx) e1
     , "\n", T.unpack $ formatCore Ansi $ Eval.quote (void ctx) e2
@@ -245,7 +249,7 @@ normalizesTo i1 i2 = do
   (e2, t3) <- evalNorm t2
   expectEquiv wrapper t2 t3 -- Already normalized?
   expectEquiv wrapper t1 t3 -- Still equal to normalized version...
-  expect (conversionCheck (void ctx) e1 e2) "Conversion check should succeed for equivalent terms"
+  expect (conversionCheck ctx e1 e2) "Conversion check should succeed for equivalent terms"
 
 expectType :: "term" @:: Text -> "type" @:: Text -> EvalTest ()
 expectType tm ty = do

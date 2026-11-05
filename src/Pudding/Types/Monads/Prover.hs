@@ -207,6 +207,8 @@ instance WithConfig Prover where
 
 instance Scoping Prover where
   askCtx = Prover do asks proofCtx
+  withCtx newCtx (Prover inner) = Prover do
+    inner & local \ctx -> ctx { proofCtx = newCtx }
   bindVar b tyval (Prover inner) = Prover do
     inner & local \ctx -> ctx { proofCtx = proofCtx ctx :> (b, tyval) }
 
