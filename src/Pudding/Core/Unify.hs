@@ -4,40 +4,41 @@
 -- |
 -- | Currently it does not have any features for unification: that needs
 -- | some monad design first.
+{-# LANGUAGE RecursiveDo #-}
 {-# OPTIONS_GHC -Werror=incomplete-patterns #-}
 {- HLINT ignore "Redundant <$>" -}
 module Pudding.Core.Unify where
 
-import Pudding.Core.Types
-import Pudding.Core.Eval
-import qualified Data.Map as Map
-import Data.Foldable (foldl')
+import Control.DeepSeq (NFData)
+import Control.Lens (view)
+import Control.Monad ((<=<), forM)
+import Control.Monad.Fix
+import Control.Monad.Reader.Class (ask, MonadReader (local))
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Cont (ContT (ContT))
+import Control.Monad.Trans.Reader (ReaderT (runReaderT))
+import Data.Align (Semialign(alignWith))
+import Data.Distributive (Distributive(distribute))
+import Data.Foldable (foldl', fold)
 import Data.Function ((&))
 import Data.Functor ((<&>), void)
 import Data.Functor.Classes (Eq1(liftEq))
-import GHC.StableName (StableName)
-import qualified Data.List as List
-import qualified Data.Vector as Vector
-import GHC.Stack (HasCallStack)
-import Data.These (These(..))
-import Data.Semialign.Indexed (SemialignWithIndex (ialignWith))
-import qualified Pudding.Types.Stack as Stack
-import Data.Align (Semialign(alignWith))
-import GHC.Generics (Generic)
-import Control.DeepSeq (NFData)
-import Pudding.Types.Monads (Proving, bindNeut, Constraining (constrainULevel))
-import Control.Lens (view)
 import Data.Pair (Pair(..))
-import qualified Pudding.Types.Monads as M
-import Data.Distributive (Distributive(distribute))
+import Data.Semialign.Indexed (SemialignWithIndex (ialignWith))
+import Data.These (These(..))
+import GHC.Generics (Generic)
+import GHC.StableName (StableName)
+import GHC.Stack (HasCallStack)
+import Pudding.Core.Eval
+import Pudding.Core.Types
 import Pudding.Semantics.Universes.Evidence (Relation(Equal, LessThanEqual))
+import Pudding.Types.Monads (Proving, bindNeut, Constraining (constrainULevel))
 import qualified Data.FastEq as FastEq
-import Control.Monad.Trans.Cont (ContT (ContT))
-import Control.Monad.Trans.Reader (ReaderT (runReaderT))
-import Control.Monad.Reader.Class (ask, MonadReader (local))
-import Control.Monad.Trans.Class (lift)
-import Control.Monad ((<=<))
-
+import qualified Data.List as List
+import qualified Data.Map as Map
+import qualified Data.Vector as Vector
+import qualified Pudding.Types.Monads as M
+import qualified Pudding.Types.Stack as Stack
 
 
 -- validate :: "term" @:: Term -> "type" @:: Eval
@@ -61,58 +62,54 @@ quickTermType = validateOrNot False
 
 
 -- Typecheck and share partial evaluation of globals
---
+
 -- TODO: make sure definitions are acyclic!
--- bootGlobals, bootGlobalDefns, bootGlobalTypes :: HasCallStack => Globals -> m Globals
--- bootGlobals = bootGlobalDefns <=< bootGlobalTypes
+bootGlobals, bootGlobalDefns, bootGlobalTypes :: (MonadFix m, Proving m)
+  => HasCallStack => Globals -> m Globals
+bootGlobals = bootGlobalDefns <=< bootGlobalTypes
 
--- bootGlobalDefns globals = newGlobals
---   where
---   newGlobals = globals
---     { globalDefns = globalDefns globals <&> \case
---         GlobalDefn _ _ (GlobalTerm defn _) ->
---           let !ty = typeofGlobal defn in
---           GlobalDefn (arityOfTerm defn) ty (globalTerm defn)
---     }
---   ctx :: forall t. Ctx t
---   ctx = ctxOfGlobals newGlobals
---   globalTerm :: Term -> GlobalTerm
---   globalTerm tm = GlobalTerm tm (evalGlobal tm)
---   evalGlobal :: Term -> Eval
---   evalGlobal = undeferred . eval ctx
---   typeofGlobal :: Term -> GlobalTerm
---   typeofGlobal tm =
---     let !ty = validate tm in
---     GlobalTerm (quote (void ctx) ty) (undeferred ty)
+bootGlobalDefns globals = mdo
+  newDefns <- forM (globalDefns globals) \case
+    GlobalDefn _ _ (GlobalTerm defn _) -> do
+      ty <- typeofGlobal defn
+      return $ GlobalDefn (arityOfTerm defn) ty (globalTerm defn)
+  let newGlobals = globals { globalDefns = newDefns }
+  let ctx = ctxOfGlobals newGlobals
+  let globalTerm tm = GlobalTerm tm (evalGlobal tm)
+  let evalGlobal = undeferred . eval ctx
+  let typeofGlobal tm = do
+        ty <- validate tm
+        return $ GlobalTerm (quote (void ctx) ty) (undeferred ty)
+  return newGlobals
 
--- bootGlobalTypes globals =
---   globals { globalDefns = globalDefns globals `disjointUnion` constructors (globalTypes globals) }
---   where
---   disjointUnion = Map.union
---   -- disjointUnion = Map.unionWithKey \k _ _ -> error $ "Duplicate global: " <> show k
---   fakeGlobal tm = GlobalDefn (arityOfTerm tm) undefined (GlobalTerm tm undefined)
---   constructors = fold . Map.mapWithKey \typeName -> \case
---     GlobalTypeInfo { typeParams, typeIndices, typeConstrs } -> fold
---       -- The type constructor: take all of the parameters and the indices,
---       -- and then make the fully applied type constructor term.
---       [ Map.singleton typeName $ fakeGlobal $
---           abstract (Vector.toList typeParams <> Vector.toList typeIndices) $
---             TTyCtor mempty typeName (toVars (Vector.length typeIndices) typeParams) (toVars 0 typeIndices)
---       -- The term constructors: take all of the parameters and constructor
---       -- arguments, then make the fully applied inductive constructor. (Note
---       -- that the type indices are inferred from the parameters and arguments.)
---       , flip Map.mapWithKey typeConstrs \ctorName (ConstructorInfo { ctorArguments }) -> fakeGlobal $
---           abstract (Vector.toList typeParams <> Vector.toList ctorArguments) $
---             TTmCtor mempty (typeName, ctorName) (toVars (Vector.length ctorArguments) typeParams) (toVars 0 ctorArguments)
---       ]
---   -- Form repeated lambdas to turn the raw constructor into a curried function
---   abstract ((p, b, paramType) : more) focus =
---     TLambda mempty p b paramType $ Scoped $ abstract more focus
---   abstract [] focus = focus
+bootGlobalTypes globals =
+  pure $ globals { globalDefns = globalDefns globals `disjointUnion` constructors (globalTypes globals) }
+  where
+  disjointUnion = Map.union
+  -- disjointUnion = Map.unionWithKey \k _ _ -> error $ "Duplicate global: " <> show k
+  fakeGlobal tm = GlobalDefn (arityOfTerm tm) undefined (GlobalTerm tm undefined)
+  constructors = fold . Map.mapWithKey \typeName -> \case
+    GlobalTypeInfo { typeParams, typeIndices, typeConstrs } -> fold
+      -- The type constructor: take all of the parameters and the indices,
+      -- and then make the fully applied type constructor term.
+      [ Map.singleton typeName $ fakeGlobal $
+          abstract (Vector.toList typeParams <> Vector.toList typeIndices) $
+            TTyCtor mempty typeName (toVars (Vector.length typeIndices) typeParams) (toVars 0 typeIndices)
+      -- The term constructors: take all of the parameters and constructor
+      -- arguments, then make the fully applied inductive constructor. (Note
+      -- that the type indices are inferred from the parameters and arguments.)
+      , flip Map.mapWithKey typeConstrs \ctorName (ConstructorInfo { ctorArguments }) -> fakeGlobal $
+          abstract (Vector.toList typeParams <> Vector.toList ctorArguments) $
+            TTmCtor mempty (typeName, ctorName) (toVars (Vector.length ctorArguments) typeParams) (toVars 0 ctorArguments)
+      ]
+  -- Form repeated lambdas to turn the raw constructor into a curried function
+  abstract ((p, b, paramType) : more) focus =
+    TLambda mempty p b paramType $ Scoped $ abstract more focus
+  abstract [] focus = focus
 
---   toVars :: forall i. Int -> Vector.Vector i -> Vector.Vector Term
---   toVars skipped = mapWithLevel \(_, Index idx) _ ->
---     TVar mempty $ Index $ idx + skipped
+  toVars :: forall i. Int -> Vector.Vector i -> Vector.Vector Term
+  toVars skipped = mapWithLevel \(_, Index idx) _ ->
+    TVar mempty $ Index $ idx + skipped
 
 --------------------------------------------------------------------------------
 -- Conversion checking: the algorithm for definitional equality / unification --

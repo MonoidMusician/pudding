@@ -4,22 +4,24 @@ module EvalTest where
 import Control.Monad.IO.Class (liftIO, MonadIO)
 import qualified Data.Text as T
 
-import Pudding.Core.Unify ( validateQuoteNeutrals, conversionCheck )
+import Control.Lens (review)
+import Control.Monad.Reader.Class (MonadReader (reader, ask), asks, local)
+import Data.Foldable (fold)
+import Data.Functor (void)
+import Data.Pair (Pair(..))
+import Data.Text (Text)
+import GHC.Stack (HasCallStack)
+import Pudding (parseAndBootGlobals, unsafeRunProver)
 import Pudding.Core.Parser ( runParserScope, globalTable )
+import Pudding.Core.Printer (PrinterState(..), formatCore, Style (Ansi), format, printCore)
 import Pudding.Core.Types
+import Pudding.Core.Unify (subsume, validateQuote)
 import Pudding.Types.Name (canonicalName)
 import Testing
-import Pudding (parseAndBootGlobals)
-import Data.Text (Text)
-import Data.Foldable (fold)
-import Pudding.Core.Printer (PrinterState(..), formatCore, Style (Ansi), format, printCore)
-import Control.Monad.Reader.Class (MonadReader (reader, ask), asks, local)
-import Control.Lens (review)
-import qualified Pudding.Core.Eval as Eval
-import Data.Functor (void)
-import qualified Pudding.Core.Parser as Parse
 import qualified Data.Map as Map
 import qualified Data.Vector as Vector
+import qualified Pudding.Core.Eval as Eval
+import qualified Pudding.Core.Parser as Parse
 
 -- NamedDefaults requires GHC 9.12.1
 default (Text)
@@ -90,7 +92,7 @@ evalTest = TestSuite "EvalTest" $ withTestContext do
     type0 = TUniv mempty $ ULevel (Fresh 0) (Fresh 1)
   testCase "Globals" do
     globals <- asks ctxGlobals
-    _ <- flip Map.traverseWithKey (globalDefns globals) \name -> \case
+    _ <- flip Map.traverseWithKey (globalDefns globals) \_name -> \case
       -- GlobalDefn _ (GlobalTerm ty _) (GlobalTerm tm _) -> do
       --   liftIO $ putStrLn $ T.unpack $ nameText name <> " : " <> formatCore Ansi ty
       --   liftIO $ putStrLn $ T.unpack $ nameText name <> " := " <> formatCore Ansi tm
@@ -215,11 +217,11 @@ evalNorm term = do
   pure (evaled, normed)
 
 typecheck :: Term -> EvalTest Term
-typecheck term = do
-  ctx <- ask
-  let globals = ctxGlobals ctx
-  let localTypes = review stack (snd . snd <$> ctxStack ctx)
-  testNF $ validateQuoteNeutrals globals localTypes term
+typecheck term = testNF $ unsafeRunProver $ validateQuote term
+
+conversionCheck :: HasCallStack => Ctx () -> Eval -> Eval -> Bool
+conversionCheck _ e1 e2 = True <$ unsafeRunProver $
+  subsume (UnifyMode RSubsumesL IdentitySubsumption StillInjective) (e1 :# e2)
 
 defEqTo :: forall i1 i2. Convert i1 Eval => Convert i2 Eval => "term1" @:: i1 -> "term2" @:: i2 -> EvalTest ()
 defEqTo i1 i2 = do

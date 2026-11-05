@@ -1,21 +1,21 @@
 module FileTest (plumTest) where
 
 import Control.Monad.IO.Class (liftIO)
-import Data.Foldable (sequenceA_)
-import Data.Text (Text)
-import qualified Data.Text as T
-import qualified Text.Parsec as P
-
-import Pudding.Core.Parser
-import Pudding.Core.Types
-import Testing
-import EvalTest
-import Pudding.Core.Unify (bootGlobals)
+import Control.Monad.Reader.Class (MonadReader(local))
 import Control.Monad.Trans.Class (MonadTrans(lift))
 import Control.Monad.Trans.Cont (ContT (ContT))
-import qualified Data.Text.IO.Utf8 as Text
-import Control.Monad.Reader.Class (MonadReader(local))
+import Data.Foldable (sequenceA_)
+import Data.Text (Text)
+import EvalTest
+import Pudding (unsafeRunProver)
+import Pudding.Core.Parser
+import Pudding.Core.Types
+import Pudding.Core.Unify (bootGlobals)
 import Pudding.Types.Name (canonicalName)
+import Testing
+import qualified Data.Text as T
+import qualified Data.Text.IO.Utf8 as Text
+import qualified Text.Parsec as P
 
 plumTest :: TestSuite
 plumTest = TestSuite "PlumTests" do
@@ -103,7 +103,7 @@ intoEnv (name, entry) = ContT \cont ->
   where
   envppend (prev, Ctx _ params) =
     let globals = addGlobal prev name entry in
-    (globals, Ctx (bootGlobals globals) params)
+    (globals, Ctx (unsafeRunProver $ bootGlobals globals) params)
 
 inEnv :: EvalTest () -> PlumTest
 inEnv wrapped = lift $

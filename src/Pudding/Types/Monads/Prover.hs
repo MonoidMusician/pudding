@@ -5,6 +5,7 @@ import qualified Pudding.Types.Monads as M
 import Pudding.Core.Types
 import Pudding.Core.Unify as U
 import Pudding.Core.Eval as E
+import Control.Monad.Fix (MonadFix)
 import Control.Monad.Trans.RWS.Strict (RWST (runRWST))
 import Control.Monad.Reader.Class (asks, MonadReader (local))
 import Control.Monad.Writer.Class (tell, listen)
@@ -30,7 +31,7 @@ import Control.Monad.IO.Class (MonadIO (liftIO))
 type Equation = Pair Eval
 
 newtype Prover t = Prover (RWST ProverR ProverW ProverS IO t)
-  deriving newtype (Functor, Applicative, Monad)
+  deriving newtype (Functor, Applicative, Monad, MonadFix)
 
 data ProverS = ProverS
   { freshest :: {-# UNPACK #-} !Fresh
