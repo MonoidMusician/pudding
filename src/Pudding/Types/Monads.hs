@@ -20,6 +20,7 @@ import qualified Data.Map as Map
 import qualified Control.Monad.Trans.State.Strict as StateT
 import Data.Tuple (swap)
 import qualified Control.Monad.Trans.Except as ExceptT
+import Data.Vector (Vector)
 
 -----------------
 -- Memoization --
@@ -106,15 +107,19 @@ class Scoping m => Evaling m where
   -- unification variables
   -- may be a no-op, may be constant (reader-like),
   -- or may be the full stateful apparatus
-  currentSolution :: Fresh -> m (Maybe Eval)
+  currentSolutions :: m (Fresh -> Maybe (Eval, Vector Eval -> Eval))
   progressGlobal :: Eval -> m Eval
+  forceGlobal :: Eval -> m (Maybe Eval)
 
-
+currentSolution :: Evaling m => Fresh -> m (Maybe (Eval, Vector Eval -> Eval))
+currentSolution var = do
+  sols <- currentSolutions
+  pure $ sols var
 
 -- Writer-like
 
 type ULevelEvidence = ()
-class Constraining m where
+class Monad m => Constraining m where
   type Constraints m
   constrain :: Constraints m -> m ()
   constraintsFrom :: m a -> m (Constraints m, a)
@@ -254,28 +259,33 @@ instance Scoping m => Scoping (FreshT m) where
 instance Evaling m => Evaling (StateT s m) where
   eval = lift . eval
   quote = lift . quote
-  currentSolution = lift . currentSolution
+  currentSolutions = lift currentSolutions
   progressGlobal = lift . progressGlobal
+  forceGlobal = lift . forceGlobal
 instance Evaling m => Evaling (ReaderT r m) where
   eval = lift . eval
   quote = lift . quote
-  currentSolution = lift . currentSolution
+  currentSolutions = lift currentSolutions
   progressGlobal = lift . progressGlobal
+  forceGlobal = lift . forceGlobal
 instance Evaling m => Evaling (ExceptT e m) where
   eval = lift . eval
   quote = lift . quote
-  currentSolution = lift . currentSolution
+  currentSolutions = lift currentSolutions
   progressGlobal = lift . progressGlobal
+  forceGlobal = lift . forceGlobal
 instance (Evaling m, Monoid w) => Evaling (WriterT w m) where
   eval = lift . eval
   quote = lift . quote
-  currentSolution = lift . currentSolution
+  currentSolutions = lift currentSolutions
   progressGlobal = lift . progressGlobal
+  forceGlobal = lift . forceGlobal
 instance Evaling m => Evaling (FreshT m) where
   eval = lift . eval
   quote = lift . quote
-  currentSolution = lift . currentSolution
+  currentSolutions = lift currentSolutions
   progressGlobal = lift . progressGlobal
+  forceGlobal = lift . forceGlobal
 
 
 instance (Monad m, Constraining m) => Constraining (StateT s m) where

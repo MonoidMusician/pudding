@@ -25,6 +25,7 @@ import Data.Maybe (isJust)
 import Data.Void (Void)
 import Data.Typeable (Typeable)
 import qualified Data.Typeable as Typeable
+import Data.Pair (Pair)
 
 --------------------------------------------------------------------------------
 -- Main semantic types!                                                       --
@@ -267,6 +268,8 @@ data Eval
   | ELift Metadata Eval
   | EQuote Metadata Eval
   deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
+
+type Equation = Pair Eval
 
 -- A Neutral is stuck on a variable (or hole), with some projections and eliminators applied to it.
 -- (This is the Normalization part of NbE: inserting variables to evaluate open terms.)

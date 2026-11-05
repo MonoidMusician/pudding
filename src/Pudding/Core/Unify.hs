@@ -9,6 +9,7 @@
 {- HLINT ignore "Redundant <$>" -}
 module Pudding.Core.Unify where
 
+import Control.Arrow (Arrow(first))
 import Control.DeepSeq (NFData)
 import Control.Lens (view)
 import Control.Monad ((<=<), forM)
@@ -23,6 +24,7 @@ import Data.Foldable (foldl', fold)
 import Data.Function ((&))
 import Data.Functor ((<&>), void)
 import Data.Functor.Classes (Eq1(liftEq))
+import Data.Maybe (fromMaybe)
 import Data.Pair (Pair(..))
 import Data.Semialign.Indexed (SemialignWithIndex (ialignWith))
 import Data.These (These(..))
@@ -39,6 +41,7 @@ import qualified Data.Map as Map
 import qualified Data.Vector as Vector
 import qualified Pudding.Types.Monads as M
 import qualified Pudding.Types.Stack as Stack
+
 
 
 -- validate :: "term" @:: Term -> "type" @:: Eval
@@ -218,11 +221,48 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
     pure (ERecordTy mU fieldsL' :# ERecordTy mU fieldsR', Nothing)
   ELift _ tyL :# ELift _ tyR ->
     -- Take the subsumption of the underlying types and splice–quote it
-    subsumpAdapter (tyL :# tyR) \f -> adaptLam \inner ->
+    subsumpAdapter (ELift mempty) (tyL :# tyR) \f -> adaptLam \inner ->
       EQuote mempty $ doApp f $ doPrj inner (NSplice mempty)
-  EQuote _ tmL :# EQuote _ tmR -> cc (tmL :# tmR) <&> (, Nothing)
+  EQuote _ tmL :# EQuote _ tmR -> subsume mode (tmL :# tmR) <&> first (fmap (EQuote mempty))
 
-  _ -> error "Oops"
+  -- Handle some eta conversions (but not unit-type eta, which needs to be
+  -- type-directed)
+  EPair _ ty _ _ :# _ -> subsume mode (evalL :# etaPair ty evalR)
+  _ :# EPair _ ty _ _ -> subsume mode (etaPair ty evalL :# evalR)
+  ERecordTm _ fieldsL :# _ -> subsume mode (evalL :# etaRecord fieldsL evalR)
+  _ :# ERecordTm _ fieldsR -> subsume mode (etaRecord fieldsR evalL :# evalR)
+  ELambda _ _ bdr ty body :# _ ->
+    M.bindNeut mempty bdr ty \_ !arg ->
+      subsume mode (instantiateClosure body arg :# doApp evalR arg)
+  _ :# ELambda _ _ bdr ty body ->
+    M.bindNeut mempty bdr ty \_ !arg ->
+      subsume mode (doApp evalL arg :# instantiateClosure body arg)
+
+  -- Splicing is a definitional isomorphism
+  ENeut (Neutral focusL (prjsL :> NSplice _)) :# ENeut (Neutral focusR (prjsR :> NSplice _)) ->
+    subsume mode (ENeut (Neutral focusL prjsL) :# ENeut (Neutral focusR prjsR))
+
+  -- The default case of neutrals (variables) is easy to check: check projections
+  -- pairwise. Dealing with lazily inlined globals requires checking via
+  -- inlining if the normal approach failed to unify them. Finally, dealing with
+  -- holes will require some particular thought.
+  ENeut (Neutral focusL prjsL) :# ENeut (Neutral focusR prjsR)
+    | checkFocus focusL focusR
+    -- We do care that this is fast, so check that everything matches up
+    -- before recursing into arguments
+    , checkPrjs (\_ _ -> True) (prjsL, prjsR)
+    , checkPrjs cc (prjsL, prjsR)
+      -> True
+    -- otherwise fall through
+
+  -- Finally we are left with alternate strategies
+
+  -- TODO: holes
+  -- If one or both sides are globals, they can still match by inlining
+  _ -> conversionCheckGlobal
+
+  -- TODO: Finally we handle eta for subsingleton types
+  _ -> error "Conversion check failed"
 
   where
   -- Concatenate metadata (this is what the monoid instance is designed for!)
@@ -240,11 +280,11 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
   cc :: Pair Eval -> m (Pair Eval)
   cc pair = fst <$> subsume modeCC pair
 
-  subsumpAdapter :: Pair Eval -> (Eval -> m Eval) -> m (Pair Eval, Maybe r)
-  subsumpAdapter pair adapt = subsume mode pair >>= \case
+  subsumpAdapter :: (Eval -> Eval) -> Pair Eval -> (Eval -> m Eval) -> m (Pair Eval, Maybe r)
+  subsumpAdapter recons pair adapt = subsume mode pair >>= \case
     (tys, Just coe) | GenerateSubsumption <- shouldSubsume mode -> do
       coe' <- adapt coe
-      pure (tys, Just coe')
+      pure (recons <$> tys, Just coe')
     r -> pure r
 
   adaptLam :: (Eval -> Eval) -> m Eval
@@ -292,6 +332,9 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
   -- Force the terms pairwise if possible
   deferred namesL namesR (EDeferred (Deferred _ _ _ mnameL tmL) :# EDeferred (Deferred _ _ _ mnameR tmR)) match nomatch =
     deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) (tmL :# tmR) match nomatch
+  -- Check for holes at each step
+
+  -- _
   deferred namesL namesR (EDeferred (Deferred _ _ _ mnameL tmL) :# tmR) match nomatch | mnameR <- Nothing =
     deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) (tmL :# tmR) match nomatch
   deferred namesL namesR (tmL :# EDeferred (Deferred _ _ _ mnameR tmR)) match nomatch | mnameL <- Nothing =
@@ -299,6 +342,39 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
   -- No stable names matched, force the terms and do regular conversion checking
   deferred _ _ (tmL :# tmR) _ nomatch = nomatch (tmL :# tmR)
 
+
+  -- Check what the neutral is blocked on: if it is a neutral variable,
+  -- they *must* be the same variable (à la skolem variables)
+  checkFocus focusL focusR = case (focusL, focusR) of
+    (NVar _ lvlL, NVar _ lvlR) -> lvlL == lvlR
+    (NHole _ holeL ctxL, NHole _ holeR ctxR) -> holeL == holeR
+    -- We also check globals separately if it fails
+    (NGlobal _ _ nameL, NGlobal _ _ nameR) -> nameL == nameR
+    (_, _) -> False -- FIXME: handle holes via unification!!
+  checkPrjs shouldCC = \case
+    (moreL :> NApp _ _ argL, moreR :> NApp _ _ argR) ->
+      shouldCC argL argR && checkPrjs shouldCC (moreL, moreR)
+    (moreL :> NFst _, moreR :> NFst _) ->
+      checkPrjs shouldCC (moreL, moreR)
+    (moreL :> NSnd _, moreR :> NSnd _) ->
+      checkPrjs shouldCC (moreL, moreR)
+    (moreL :> NSplice _, moreR :> NSplice _) ->
+      checkPrjs shouldCC (moreL, moreR)
+    (moreL :> NField _ fieldL, moreR :> NField _ fieldR) ->
+      fieldL == fieldR && checkPrjs shouldCC (moreL, moreR)
+    (Nil, Nil) -> True
+    -- Differing lengths or differing projections
+    (_, _) -> False
+
+  conversionCheckGlobal = do
+    forcedL <- M.forceGlobal evalL
+    forcedR <- M.forceGlobal evalR
+    case (forcedL, forcedR) of
+      -- If we do not make progress on either as a global, then conversion checking
+      -- fails: they were different constructors in the AST and semantically
+      (Nothing, Nothing) -> error "Conversion checking failed"
+      -- Retry with one or both being inlined now
+      _ -> subsume mode (fromMaybe evalL forcedL :# fromMaybe evalR forcedR)
 
 
 -- Conversion checking is the algorithm for definitional equality used during

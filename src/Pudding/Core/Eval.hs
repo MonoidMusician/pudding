@@ -46,6 +46,7 @@ import qualified Data.Aeson as AE
 import Data.ByteString.Lazy.UTF8 (toString)
 import GHC.StableName (StableName, makeStableName)
 import GHC.IO.Unsafe (unsafePerformIO)
+import Data.Vector (Vector)
 
 eval :: EvalCtx -> Term -> Eval
 eval = flip evaling
@@ -166,13 +167,26 @@ progressGlobal ctx e@(ENeut (Neutral (NGlobal arity _ _name) prjs))
 progressGlobal _ e = e
 
 -- Just evaluate a neutral global
-forceGlobal :: forall t. HasCallStack => Ctx t -> Eval -> Maybe Eval
+forceGlobal :: forall t. Ctx t -> Eval -> Maybe Eval
 forceGlobal ctx (ENeut (Neutral (NGlobal _ _ name) prjs)) =
   case Map.lookup name (globalDefns $ ctxGlobals ctx) of
     Just (GlobalDefn _ _ (GlobalTerm _ evaled)) ->
       Just (progressGlobal ctx (doPrjs evaled prjs))
     _ -> Nothing
 forceGlobal _ _ = Nothing
+
+forceNeutral :: forall t. Ctx t -> (Fresh -> Maybe (Eval, Vector Eval -> Eval)) -> Eval -> Maybe Eval
+forceNeutral ctx sols (ENeut (Neutral (NHole _ which provided) prjs)) =
+  case sols which of
+    Just (_raw, subst) -> Just $
+      fromMaybe <*> forceNeutral ctx sols $ doPrjs (subst provided) prjs
+    _ -> Nothing
+forceNeutral ctx sols (ENeut (Neutral (NGlobal _ _ name) prjs)) =
+  case Map.lookup name (globalDefns $ ctxGlobals ctx) of
+    Just (GlobalDefn _ _ (GlobalTerm _ evaled)) -> Just $
+      fromMaybe <*> forceNeutral ctx sols $ doPrjs evaled prjs
+    _ -> Nothing
+forceNeutral _ _ _ = Nothing
 
 withForced :: forall t r. Ctx t -> (Eval -> r) -> Eval -> r
 withForced c f e = f $ fromMaybe e $ forceGlobal c e

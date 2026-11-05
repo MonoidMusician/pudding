@@ -28,8 +28,6 @@ import qualified Pudding.Semantics.Universes.Fused as Fused
 import Data.Maybe (fromMaybe)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 
-type Equation = Pair Eval
-
 newtype Prover t = Prover (RWST ProverR ProverW ProverS IO t)
   deriving newtype (Functor, Applicative, Monad, MonadFix)
 
@@ -80,7 +78,7 @@ aftEqns d =
 -- Solve a variable fully and return constraints it is involved in,
 -- so they can be checked/solved in turn.
 --
--- Assumes that it has the correct type.
+-- Assumes that it has the correct type and that it refines the previous solution.
 solveFully :: Fresh -> Eval -> Prover AfterSolve
 solveFully (Fresh !i) !val = do
   st <- Prover get
@@ -220,12 +218,15 @@ instance Evaling Prover where
   quote val = do
     ctx <- M.askQuoteCtx
     pure $ E.quote ctx val
-  currentSolution (Fresh which) = Prover do
+  currentSolutions = Prover do
     -- TODO: return Nothing if the var is not solved?
-    gets (fmap uvTerm . IntMap.lookup which . uvState)
+    gets ((\vars (Fresh which) -> uvTerm <$> IntMap.lookup which vars) . uvState)
   progressGlobal val = do
     ctx <- M.askCtx
     pure $ E.progressGlobal ctx val
+  forceGlobal val = do
+    ctx <- M.askCtx
+    pure $ E.forceGlobal ctx val
 
 
 instance Typing Prover where
