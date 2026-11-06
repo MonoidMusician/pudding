@@ -110,6 +110,7 @@ class Scoping m => Evaling m where
   currentSolutions :: m (Fresh -> Maybe (Eval, Vector Eval -> Eval))
   progressGlobal :: Eval -> m Eval
   forceGlobal :: Eval -> m (Maybe Eval)
+  forceNeutral :: Eval -> m (Maybe Eval)
 
 currentSolution :: Evaling m => Fresh -> m (Maybe (Eval, Vector Eval -> Eval))
 currentSolution var = do
@@ -128,7 +129,7 @@ class Monad m => Constraining m where
 
 -- State/IO-like
 class Constraining m => Unifying m where
-  unsafeSolve :: Fresh -> Eval -> m Eval
+  unsafeSolve :: Fresh -> Eval -> m ()
 
 class Monad m => Checkpointing m where
   type Checkpoint m
@@ -262,30 +263,35 @@ instance Evaling m => Evaling (StateT s m) where
   currentSolutions = lift currentSolutions
   progressGlobal = lift . progressGlobal
   forceGlobal = lift . forceGlobal
+  forceNeutral = lift . forceNeutral
 instance Evaling m => Evaling (ReaderT r m) where
   eval = lift . eval
   quote = lift . quote
   currentSolutions = lift currentSolutions
   progressGlobal = lift . progressGlobal
   forceGlobal = lift . forceGlobal
+  forceNeutral = lift . forceNeutral
 instance Evaling m => Evaling (ExceptT e m) where
   eval = lift . eval
   quote = lift . quote
   currentSolutions = lift currentSolutions
   progressGlobal = lift . progressGlobal
   forceGlobal = lift . forceGlobal
+  forceNeutral = lift . forceNeutral
 instance (Evaling m, Monoid w) => Evaling (WriterT w m) where
   eval = lift . eval
   quote = lift . quote
   currentSolutions = lift currentSolutions
   progressGlobal = lift . progressGlobal
   forceGlobal = lift . forceGlobal
+  forceNeutral = lift . forceNeutral
 instance Evaling m => Evaling (FreshT m) where
   eval = lift . eval
   quote = lift . quote
   currentSolutions = lift currentSolutions
   progressGlobal = lift . progressGlobal
   forceGlobal = lift . forceGlobal
+  forceNeutral = lift . forceNeutral
 
 
 instance (Monad m, Constraining m) => Constraining (StateT s m) where

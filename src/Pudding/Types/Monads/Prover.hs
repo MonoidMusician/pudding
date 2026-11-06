@@ -12,7 +12,7 @@ import Control.Monad.Writer.Class (tell, listen)
 import Control.Monad.State.Class (get, gets, state, put, modify')
 import GHC.Generics (Generic, Generically(..))
 import Data.Function ((&))
-import Data.Functor ((<&>))
+import Data.Functor ((<&>), void)
 import Pudding.Types.Config (Config)
 import qualified Pudding.Semantics.Universes.Fused as Universes
 import Data.IntMap.Strict (IntMap)
@@ -27,6 +27,7 @@ import Control.Lens (review)
 import qualified Pudding.Semantics.Universes.Fused as Fused
 import Data.Maybe (fromMaybe)
 import Control.Monad.IO.Class (MonadIO (liftIO))
+import qualified Data.Vector as Vector
 
 newtype Prover t = Prover (RWST ProverR ProverW ProverS IO t)
   deriving newtype (Functor, Applicative, Monad, MonadFix)
@@ -45,15 +46,22 @@ data ProverS = ProverS
 uvsOf :: Either Eval Term -> IntSet
 uvsOf = summarize $ trivialSummarize
   { onNeutFocus = \case
-      NHole _ (Fresh n) _ -> IntSet.singleton n
-      _ -> IntSet.empty
+      NHole _ (Fresh n) _ -> Append $ IntSet.singleton n
+      _ -> Append mempty
+  }
+
+freeVarsOf :: Either Eval Term -> IntSet
+freeVarsOf = summarize $ trivialSummarize
+  { onNeutFocus = \case
+      NVar _ (Level lvl) -> Append $ IntSet.singleton lvl
+      _ -> Append mempty
   }
 
 data UnivarState = UVState
   -- the original context of the hole. TODO: globals? TODO: let?
   { uvCtx :: !EvalTypeCtx
-  -- which variables are possibly relevant, versus known to be irrelevant (False)
-  , uvRelevant :: !(Ctx Bool)
+  -- which variables (Levels) are known to be irrelevant
+  , uvIrrelevant :: !IntSet
   -- the value for the term itself and its type
   , uvTerm :: !("tm" @:: Eval)
   , uvType :: "ty" @:: Eval -- ^ lazy
@@ -95,11 +103,15 @@ solveFully (Fresh !i) !val = do
   case IntMap.lookup i $ uvState st of
     Nothing -> do
       ctx <- Prover $ asks proofCtx
-      ty <- U.quickTermType =<< M.quote val
+      tm <- M.quote val
+      ty <- U.quickTermType tm
       let
         entry = UVState
           { uvCtx = ctx
-          , uvRelevant = error "TODO: free vars for uvRelevant"
+          , uvIrrelevant =
+              if size ctx == 0
+              then mempty
+              else freeVarsOf $ Left val
           , uvTerm = val
           , uvType = ty
           , uvEqns = Nil
@@ -109,11 +121,13 @@ solveFully (Fresh !i) !val = do
         { uvState = IntMap.insert i entry $ uvState st }
       pure $ AfterSolve { aftHeadEqns = Nil, aftGlobalEqns = globalEqns }
     Just current -> do
-      ctx <- Prover $ asks proofCtx
       let
         updated = current
-          { uvCtx = ctx
-          , uvRelevant = error "TODO: free vars for uvRelevant"
+          { uvIrrelevant =
+              -- If all variables are irrelevant already, no need to check
+              if IntSet.size (uvIrrelevant current) == size (uvCtx current)
+              then uvIrrelevant current
+              else freeVarsOf $ Left val
           , uvTerm = val
           }
         hydrate locals prjs = ENeut $ Neutral
@@ -211,6 +225,22 @@ instance Scoping Prover where
     inner & local \ctx -> ctx { proofCtx = proofCtx ctx :> (b, tyval) }
 
 
+uvSolution :: UnivarState -> (Eval, Vector Eval -> Eval)
+uvSolution current
+  -- If every variable is irrelevant, the term does not depend on its local context
+  | IntSet.size (uvIrrelevant current) == size (uvCtx current) =
+      (uvTerm current, const (uvTerm current))
+  | otherwise =
+      (uvTerm current, \newLocals ->
+        -- TODO: check if newLocals is all neutral or referentially equal?
+        let
+          -- Replace the locals in the stored context
+          ctx = uvCtx current & mapCtx \_ (Level i) _old ->
+            newLocals Vector.! i
+        -- TODO: traverse Eval directly
+        in E.eval ctx $ E.quote (void ctx) $ uvTerm current
+      )
+
 instance Evaling Prover where
   eval tm = do
     ctx <- M.askEvalCtx
@@ -220,13 +250,17 @@ instance Evaling Prover where
     pure $ E.quote ctx val
   currentSolutions = Prover do
     -- TODO: return Nothing if the var is not solved?
-    gets ((\vars (Fresh which) -> uvTerm <$> IntMap.lookup which vars) . uvState)
+    gets ((\vars (Fresh which) -> uvSolution <$> IntMap.lookup which vars) . uvState)
   progressGlobal val = do
     ctx <- M.askCtx
     pure $ E.progressGlobal ctx val
   forceGlobal val = do
     ctx <- M.askCtx
     pure $ E.forceGlobal ctx val
+  forceNeutral val = do
+    ctx <- M.askCtx
+    sols <- currentSolutions
+    pure $ E.forceNeutral ctx sols val
 
 
 instance Typing Prover where
@@ -242,7 +276,7 @@ instance Typing Prover where
 instance Unifying Prover where
   unsafeSolve var val = do
     _ <- solveFully var val
-    M.currentSolution var <&> fromMaybe val
+    pure ()
 
 instance Proving Prover where
   subsume = U.subsume

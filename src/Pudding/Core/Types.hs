@@ -282,6 +282,9 @@ data Neutral = Neutral
   }
   deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
 
+pattern ENeutral :: NeutFocus -> Stack NeutPrj -> Eval
+pattern ENeutral blocking spine = ENeut (Neutral blocking spine)
+
 data NeutFocus
   = NVar Metadata !Level
   | NHole Metadata !Fresh (Vector Eval) -- needs some scoping information(?)
@@ -290,6 +293,12 @@ data NeutFocus
   -- also be evaluated during conversion checking
   | NGlobal !("arity" @:: Int) Metadata Name
   deriving (Generic, NFData, AE.ToJSON, AE.FromJSON)
+
+pattern ENeutralVar :: Metadata -> Level -> Stack NeutPrj -> Eval
+pattern ENeutralVar meta var spine = ENeut (Neutral (NVar meta var) spine)
+
+pattern ENeutralHole :: Metadata -> Fresh -> Vector Eval -> Stack NeutPrj -> Eval
+pattern ENeutralHole meta hole locals spine = ENeut (Neutral (NHole meta hole locals) spine)
 
 data NeutPrj
   = NApp Metadata !Plicit ("arg" @:: Eval)
@@ -674,10 +683,10 @@ instance HasMetadata Neutral where
 instance HasMetadata NeutFocus where
   traverseMetadata1Depth _ f (NVar old lvl) = (\new -> NVar new lvl) <$> f old
   traverseMetadata1Depth _ f (NGlobal arity old name) = (\new -> NGlobal arity new name) <$> f old
-  traverseMetadata1Depth d f (NHole old hole scope) =
+  traverseMetadata1Depth d f (NHole old hole locals) =
     (\new -> NHole new hole)
       <$> f old
-      <.*> traverse (traverseMetadataDepth d (apply f)) scope
+      <.*> traverse (traverseMetadataDepth d (apply f)) locals
 
 instance HasMetadata NeutPrj where
   traverseMetadata1Depth d f = \case
@@ -713,7 +722,7 @@ data Visit m
 data Summarize m = Summarize
   { onEval :: Eval -> Visit m
   , onNeutPrj :: NeutPrj -> Visit m
-  , onNeutFocus :: NeutFocus -> m
+  , onNeutFocus :: NeutFocus -> Visit m
   , onTerm :: Term -> Visit m
   }
 trivialSummarize :: forall m. Monoid m => Summarize m
@@ -721,7 +730,7 @@ trivialSummarize = Summarize
   { onEval = const $ Append mempty
   , onTerm = const $ Append mempty
   , onNeutPrj = const $ Append mempty
-  , onNeutFocus = const mempty
+  , onNeutFocus = const $ Append mempty
   }
 
 data Shift t r m = Shift
@@ -775,7 +784,11 @@ summarize (Summarize { onEval, onNeutPrj, onNeutFocus, onTerm }) =
     TSplice _ t -> summTerm t
 
   handleNeutral :: Stack NeutPrj -> NeutFocus -> m
-  handleNeutral Nil focus = onNeutFocus focus
+  handleNeutral Nil focus =
+    visit (onNeutFocus focus)
+      case focus of
+        NHole _ _ locals -> foldMap summEval locals
+        _ -> mempty
   handleNeutral (prjs :> prj) focus =
     let
       immediate = neutPrjChildren prj

@@ -168,7 +168,7 @@ progressGlobal _ e = e
 
 -- Just evaluate a neutral global
 forceGlobal :: forall t. Ctx t -> Eval -> Maybe Eval
-forceGlobal ctx (ENeut (Neutral (NGlobal _ _ name) prjs)) =
+forceGlobal ctx (ENeutral (NGlobal _ _ name) prjs) =
   case Map.lookup name (globalDefns $ ctxGlobals ctx) of
     Just (GlobalDefn _ _ (GlobalTerm _ evaled)) ->
       Just (progressGlobal ctx (doPrjs evaled prjs))
@@ -176,12 +176,15 @@ forceGlobal ctx (ENeut (Neutral (NGlobal _ _ name) prjs)) =
 forceGlobal _ _ = Nothing
 
 forceNeutral :: forall t. Ctx t -> (Fresh -> Maybe (Eval, Vector Eval -> Eval)) -> Eval -> Maybe Eval
-forceNeutral ctx sols (ENeut (Neutral (NHole _ which provided) prjs)) =
+forceNeutral ctx sols (ENeutral (NHole _ which locals) prjs) =
   case sols which of
-    Just (_raw, subst) -> Just $
-      fromMaybe <*> forceNeutral ctx sols $ doPrjs (subst provided) prjs
+    -- Unsolved
+    Just (ENeutral (NHole _ which2 _) _, _)
+      | which == which2 -> Nothing
+    Just (_raw, substAt) -> Just $
+      fromMaybe <*> forceNeutral ctx sols $ doPrjs (substAt locals) prjs
     _ -> Nothing
-forceNeutral ctx sols (ENeut (Neutral (NGlobal _ _ name) prjs)) =
+forceNeutral ctx sols (ENeutral (NGlobal _ _ name) prjs) =
   case Map.lookup name (globalDefns $ ctxGlobals ctx) of
     Just (GlobalDefn _ _ (GlobalTerm _ evaled)) -> Just $
       fromMaybe <*> forceNeutral ctx sols $ doPrjs evaled prjs
@@ -365,7 +368,7 @@ eval2termWith forceGlobals handleClosure = \case
     let
       base = case focus of
         NVar meta lvl -> TVar meta (index ctx lvl)
-        NHole meta hole scope -> THole meta hole (traverse e2t scope ctx)
+        NHole meta hole locals -> THole meta hole (traverse e2t locals ctx)
         NGlobal _ _ name
           | forceGlobals
           , Just (GlobalDefn _ _ (GlobalTerm term _)) <-

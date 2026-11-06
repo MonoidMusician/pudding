@@ -25,9 +25,10 @@ import Data.Function ((&))
 import Data.Functor ((<&>), void)
 import Data.Functor.Classes (Eq1(liftEq))
 import Data.Maybe (fromMaybe)
-import Data.Pair (Pair(..))
+import Data.Pair (Pair(..), pattern Pair)
 import Data.Semialign.Indexed (SemialignWithIndex (ialignWith))
 import Data.These (These(..))
+import Data.Void (Void)
 import GHC.Generics (Generic)
 import GHC.StableName (StableName)
 import GHC.Stack (HasCallStack)
@@ -42,6 +43,9 @@ import qualified Data.Vector as Vector
 import qualified Pudding.Types.Monads as M
 import qualified Pudding.Types.Stack as Stack
 
+
+type Transform m t = t -> m t
+type Crosscheck m t = Transform m (Pair t)
 
 
 -- validate :: "term" @:: Term -> "type" @:: Eval
@@ -137,6 +141,10 @@ bootGlobalTypes globals =
 subsume :: forall m r. Proving m => UnifyMode r -> Pair Eval -> m ("unified" @:: Pair Eval, "coercion" @:: Maybe r)
 subsume _ (!evalL :# !evalR) | evalL FastEq.===? evalR = pure (evalL :# evalR, Nothing)
 subsume mode (!evalL :# !evalR) = case evalL :# evalR of
+  -- ENeutralHole {} :# ENeutralHole {} -> _
+  -- ENeutralHole {} :# _ -> _
+  -- _ :# ENeutralHole {} -> _
+
   -- We unravel `EDeferred` slowly, to check if any names match up, before
   -- continuing with the main cases.
   EDeferred {} :# _ -> deferred [] [] (evalL :# evalR) (evalL :# evalR, Nothing) (subsume mode)
@@ -151,14 +159,14 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
       LSubsumesR -> (uLevel univR, LessThanEqual, uLevel univL, ())
     pure $ bified (EUniv mU univL :# EUniv mU univR)
   ELambda _ pL bdrL tyL bodyL :# ELambda _ pR bdrR tyR bodyR -> do
-    (ty@tyL' :# tyR') <- cc (tyL :# tyR)
+    (ty@tyL' :# tyR') <- cc unifying (tyL :# tyR)
     let bdrU = unifyBdr bdrL bdrR
-    (bodyL' :# bodyR') <- ccClo bdrU ty (bodyL :# bodyR)
+    (bodyL' :# bodyR') <- ccClo unifying bdrU ty (bodyL :# bodyR)
     pure $ bified (ELambda mU pL bdrU tyL' bodyL' :# ELambda mU pR bdrU tyR' bodyR')
   EPi _ pL bdrL tyL bodyL :# EPi _ pR bdrR tyR bodyR -> do
-    (ty@tyL' :# tyR') <- cc (tyL :# tyR)
+    (ty@tyL' :# tyR') <- cc unifying (tyL :# tyR)
     let bdrU = unifyBdr bdrL bdrR
-    (bodyL' :# bodyR') <- ccClo bdrU ty (bodyL :# bodyR)
+    (bodyL' :# bodyR') <- ccClo unifying bdrU ty (bodyL :# bodyR)
     pure (EPi mU pL bdrU tyL' bodyL' :# EPi mU pR bdrU tyR' bodyR', Nothing)
 
     -- |- h : I2 -> I1
@@ -181,9 +189,9 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
     --   pure ((EPi mU pL bdrU tyL' bodyL', EPi mU pR bdrU tyR' bodyR'), mcoe)
 
   ESigma _ pL bdrL tyL bodyL :# ESigma _ pR bdrR tyR bodyR -> do
-    (ty@tyL' :# tyR') <- cc (tyL :# tyR)
+    (ty@tyL' :# tyR') <- cc unifying (tyL :# tyR)
     let bdrU = unifyBdr bdrL bdrR
-    (bodyL' :# bodyR') <- ccClo bdrU ty (bodyL :# bodyR)
+    (bodyL' :# bodyR') <- ccClo unifying bdrU ty (bodyL :# bodyR)
     pure (ESigma mU pL bdrU tyL' bodyL' :# ESigma mU pR bdrU tyR' bodyR', Nothing)
 
     -- |- f : I1 -> I2
@@ -192,36 +200,36 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
     --   |- (f x, h x p) : Σ (y : I2). O2[y]
 
   EPair _ tyL leftL rightL :# EPair _ tyR leftR rightR -> do
-    (leftL' :# leftR') <- cc (leftL :# leftR)
-    (rightL' :# rightR') <- cc (rightL :# rightR)
+    (leftL' :# leftR') <- cc unifying (leftL :# leftR)
+    (rightL' :# rightR') <- cc unifying (rightL :# rightR)
     pure (EPair mU tyL leftL' rightL' :# EPair mU tyR leftR' rightR', Nothing)
 
   ETyCtor _ nameL paramsL indicesL :# ETyCtor _ nameR paramsR indicesR -> do
     check $ nameL == nameR
     check $ List.length paramsL == List.length paramsR
     check $ List.length indicesL == List.length indicesR
-    (paramsL' :# paramsR') <- distribute <$> alignCC (paramsL :# paramsR)
-    (indicesL' :# indicesR') <- distribute <$> alignCC (indicesL :# indicesR)
+    (paramsL' :# paramsR') <- distribute <$> alignCC unifying (paramsL :# paramsR)
+    (indicesL' :# indicesR') <- distribute <$> alignCC unifying (indicesL :# indicesR)
     pure (ETyCtor mU nameL paramsL' indicesL' :# ETyCtor mU nameL paramsR' indicesR', Nothing)
   ETmCtor _ nameL paramsL argsL :# ETmCtor _ nameR paramsR argsR -> do
     check $ nameL == nameR
     check $ List.length paramsL == List.length paramsR
     check $ List.length argsL == List.length argsR
-    (paramsL' :# paramsR') <- distribute <$> alignCC (paramsL :# paramsR)
-    (argsL' :# argsR') <- distribute <$> alignCC (argsL :# argsR)
+    (paramsL' :# paramsR') <- distribute <$> alignCC unifying (paramsL :# paramsR)
+    (argsL' :# argsR') <- distribute <$> alignCC unifying (argsL :# argsR)
     pure (ETmCtor mU nameL paramsL' argsL' :# ETmCtor mU nameL paramsR' argsR', Nothing)
   ERecordTy _ fieldsL :# ERecordTy _ fieldsR -> do
     check $ Map.keys fieldsL == Map.keys fieldsR
     -- TODO: subsumption
-    (fieldsL' :# fieldsR') <- distribute <$> alignCC (fieldsL :# fieldsR)
+    (fieldsL' :# fieldsR') <- distribute <$> alignCC unifying (fieldsL :# fieldsR)
     pure (ERecordTy mU fieldsL' :# ERecordTy mU fieldsR', Nothing)
   ERecordTm _ fieldsL :# ERecordTm _ fieldsR -> do
     check $ Map.keys fieldsL == Map.keys fieldsR
-    (fieldsL' :# fieldsR') <- distribute <$> alignCC (fieldsL :# fieldsR)
+    (fieldsL' :# fieldsR') <- distribute <$> alignCC unifying (fieldsL :# fieldsR)
     pure (ERecordTy mU fieldsL' :# ERecordTy mU fieldsR', Nothing)
-  ELift _ tyL :# ELift _ tyR ->
+  ELift mL tyL :# ELift mR tyR ->
     -- Take the subsumption of the underlying types and splice–quote it
-    subsumpAdapter (ELift mempty) (tyL :# tyR) \f -> adaptLam \inner ->
+    subsumpAdapter (ELift <$> Pair mL mR) (tyL :# tyR) \f -> adaptLam \inner ->
       EQuote mempty $ doApp f $ doPrj inner (NSplice mempty)
   EQuote _ tmL :# EQuote _ tmR -> subsume mode (tmL :# tmR) <&> first (fmap (EQuote mempty))
 
@@ -238,31 +246,32 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
     M.bindNeut mempty bdr ty \_ !arg ->
       subsume mode (doApp evalL arg :# instantiateClosure body arg)
 
-  -- Splicing is a definitional isomorphism
-  ENeut (Neutral focusL (prjsL :> NSplice _)) :# ENeut (Neutral focusR (prjsR :> NSplice _)) ->
-    subsume mode (ENeut (Neutral focusL prjsL) :# ENeut (Neutral focusR prjsR))
+  -- Some projections, like splice, are definitional isomorphisms
+  -- and can be unsnoc'ed
+  ENeutral focusL (prjsL :> prjL) :# ENeutral focusR (prjsR :> prjR)
+    | matchingDefIso (prjL :# prjR) ->
+    subsume mode (ENeutral focusL prjsL :# ENeutral focusR prjsR)
 
   -- The default case of neutrals (variables) is easy to check: check projections
   -- pairwise. Dealing with lazily inlined globals requires checking via
   -- inlining if the normal approach failed to unify them. Finally, dealing with
   -- holes will require some particular thought.
-  ENeut (Neutral focusL prjsL) :# ENeut (Neutral focusR prjsR)
-    | checkFocus focusL focusR
+  ENeutral focusL prjsL :# ENeutral focusR prjsR
+    | checkFocus (focusL :# focusR)
     -- We do care that this is fast, so check that everything matches up
-    -- before recursing into arguments
-    , checkPrjs (\_ _ -> True) (prjsL, prjsR)
-    , checkPrjs cc (prjsL, prjsR)
-      -> True
-    -- otherwise fall through
+    -- shallowly before recursing into arguments
+    , checkPrjs (prjsL :# prjsR)
+    -> do
+      -- FIXME: try/catch
+      bified <$> unifyNeutrals (focusL :# focusR) (prjsL :# prjsR)
 
   -- Finally we are left with alternate strategies
 
   -- TODO: holes
   -- If one or both sides are globals, they can still match by inlining
-  _ -> conversionCheckGlobal
-
   -- TODO: Finally we handle eta for subsingleton types
-  _ -> error "Conversion check failed"
+  _ -> forceNeutrals
+
 
   where
   -- Concatenate metadata (this is what the monoid instance is designed for!)
@@ -270,21 +279,24 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
 
   -- The mode for recursing in conversion checking mode
   -- under an injective constructor
-  modeCC = UnifyMode Invariant IdentitySubsumption (stillInjective mode)
+  unifying = UnifyMode Invariant IdentitySubsumption (stillInjective mode)
+  -- The mode for conversion checking, non-injective
+  -- (just check equality)
+  equating = unifying { stillInjective = NotInjective }
   -- Contravariant mode, just flip the relation of left and right
---   modeContra = case unifyDir mode of
---     LSubsumesR -> UnifyMode RSubsumesL (shouldSubsume mode) (stillInjective mode)
---     RSubsumesL -> UnifyMode LSubsumesR (shouldSubsume mode) (stillInjective mode)
---     Invariant  -> UnifyMode Invariant  (shouldSubsume mode) (stillInjective mode)
+  _modeContra = case unifyDir mode of
+    LSubsumesR -> mode { unifyDir = RSubsumesL }
+    RSubsumesL -> mode { unifyDir = LSubsumesR }
+    Invariant  -> mode { unifyDir = Invariant  }
 
-  cc :: Pair Eval -> m (Pair Eval)
-  cc pair = fst <$> subsume modeCC pair
+  cc :: UnifyMode Void -> Pair Eval -> m (Pair Eval)
+  cc mode2 pair = fst <$> subsume mode2 pair
 
-  subsumpAdapter :: (Eval -> Eval) -> Pair Eval -> (Eval -> m Eval) -> m (Pair Eval, Maybe r)
+  subsumpAdapter :: Pair (Eval -> Eval) -> Pair Eval -> (Eval -> m Eval) -> m (Pair Eval, Maybe r)
   subsumpAdapter recons pair adapt = subsume mode pair >>= \case
     (tys, Just coe) | GenerateSubsumption <- shouldSubsume mode -> do
       coe' <- adapt coe
-      pure (recons <$> tys, Just coe')
+      pure (recons <*> tys, Just coe')
     r -> pure r
 
   adaptLam :: (Eval -> Eval) -> m Eval
@@ -297,10 +309,10 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
         _ -> evalL
     pure $ mkHOAS ctx bdr inputTy f
 
-  ccClo :: Binder -> "type" @:: Eval -> Pair Closure -> m (Pair Closure)
-  ccClo bdrU ty (bodyL :# bodyR) = do
+  ccClo :: UnifyMode Void -> Binder -> "type" @:: Eval -> Crosscheck m Closure
+  ccClo mode2 bdrU ty (bodyL :# bodyR) = do
     bodys' <- bindNeut mempty bdrU ty \_ var -> do
-      bodys' <- cc $ instantiateClosure <$> (bodyL :# bodyR) <*> pure var
+      bodys' <- cc mode2 $ instantiateClosure <$> (bodyL :# bodyR) <*> pure var
       traverse M.quote bodys'
     saved <- M.askEvalCtx
     pure $ bodys' <&> Closure saved bdrU . Scoped
@@ -312,14 +324,18 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
   ccFailed :: forall any. m any
   ccFailed = M.fatal "Conversion check failed"
 
-  alignCC :: forall f. Eq1 f => Semialign f => Traversable f => Pair (f Eval) -> m (f (Pair Eval))
-  alignCC (itemsL :# itemsR) | not (liftEq (\_ _ -> True) itemsL itemsR) = ccFailed
-  alignCC (itemsL :# itemsR) = sequence (alignWith aligned itemsL itemsR)
+  alignCC ::
+    forall f. Eq1 f => Semialign f => Traversable f =>
+    UnifyMode Void ->
+    Pair (f Eval) -> m (f (Pair Eval))
+  alignCC mode2 (itemsL :# itemsR)
+    | not (liftEq (\_ _ -> True) itemsL itemsR) = ccFailed
+    | otherwise = sequence (alignWith aligned itemsL itemsR)
     where
     aligned = \case
       This _ -> ccFailed
       That _ -> ccFailed
-      These x y -> cc (x :# y)
+      These x y -> cc mode2 (x :# y)
 
   -- Helpers for results
 
@@ -332,7 +348,7 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
   -- Force the terms pairwise if possible
   deferred namesL namesR (EDeferred (Deferred _ _ _ mnameL tmL) :# EDeferred (Deferred _ _ _ mnameR tmR)) match nomatch =
     deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) (tmL :# tmR) match nomatch
-  -- Check for holes at each step
+  -- Check for holes at each step?
 
   -- _
   deferred namesL namesR (EDeferred (Deferred _ _ _ mnameL tmL) :# tmR) match nomatch | mnameR <- Nothing =
@@ -345,30 +361,55 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
 
   -- Check what the neutral is blocked on: if it is a neutral variable,
   -- they *must* be the same variable (à la skolem variables)
-  checkFocus focusL focusR = case (focusL, focusR) of
-    (NVar _ lvlL, NVar _ lvlR) -> lvlL == lvlR
-    (NHole _ holeL ctxL, NHole _ holeR ctxR) -> holeL == holeR
+  checkFocus = \case
+    NVar _ lvlL :# NVar _ lvlR -> lvlL == lvlR
+    NHole _ holeL _localsL :# NHole _ holeR _localsR -> holeL == holeR
     -- We also check globals separately if it fails
-    (NGlobal _ _ nameL, NGlobal _ _ nameR) -> nameL == nameR
-    (_, _) -> False -- FIXME: handle holes via unification!!
-  checkPrjs shouldCC = \case
-    (moreL :> NApp _ _ argL, moreR :> NApp _ _ argR) ->
-      shouldCC argL argR && checkPrjs shouldCC (moreL, moreR)
-    (moreL :> NFst _, moreR :> NFst _) ->
-      checkPrjs shouldCC (moreL, moreR)
-    (moreL :> NSnd _, moreR :> NSnd _) ->
-      checkPrjs shouldCC (moreL, moreR)
-    (moreL :> NSplice _, moreR :> NSplice _) ->
-      checkPrjs shouldCC (moreL, moreR)
-    (moreL :> NField _ fieldL, moreR :> NField _ fieldR) ->
-      fieldL == fieldR && checkPrjs shouldCC (moreL, moreR)
-    (Nil, Nil) -> True
+    NGlobal _ _ nameL :# NGlobal _ _ nameR -> nameL == nameR
+    _ -> False -- FIXME: handle holes via unification!!
+  checkPrjs = \case
+    (moreL :> NApp _ _ _argL) :# (moreR :> NApp _ _ _argR) ->
+      checkPrjs (moreL :# moreR)
+    (moreL :> NFst _) :# (moreR :> NFst _) ->
+      checkPrjs (moreL :# moreR)
+    (moreL :> NSnd _) :# (moreR :> NSnd _) ->
+      checkPrjs (moreL :# moreR)
+    (moreL :> NSplice _) :# (moreR :> NSplice _) ->
+      checkPrjs (moreL :# moreR)
+    (moreL :> NField _ fieldL) :# (moreR :> NField _ fieldR) ->
+      fieldL == fieldR && checkPrjs (moreL :# moreR)
+    Nil :# Nil -> True
     -- Differing lengths or differing projections
-    (_, _) -> False
+    _ -> False
 
-  conversionCheckGlobal = do
-    forcedL <- M.forceGlobal evalL
-    forcedR <- M.forceGlobal evalR
+  unifyNeutrals focus prjs =
+    liftA2 ENeutral <$> unifyFocus focus <*> unifyPrjs prjs
+
+  unifyFocus :: Crosscheck m NeutFocus
+  unifyFocus = \case
+    NHole mL holeL localsL :# NHole mR holeR localsR ->
+      (<*>) (NHole mL holeL :# NHole mR holeR) . distribute <$>
+        alignCC equating (localsL :# localsR)
+    focus -> pure focus
+
+  unifyPrjs :: Crosscheck m (Stack NeutPrj)
+  unifyPrjs ((prjsL :> prjL) :# (prjsR :> prjR)) =
+    liftA2 (:>) <$> unifyPrjs (prjsL :# prjsR) <*> unifyPrj (prjL :# prjR)
+  unifyPrjs _ = pure (pure Nil)
+
+  -- TODO: unify metadata?
+  unifyPrj :: Crosscheck m NeutPrj
+  unifyPrj = \case
+    NApp mL pL argL :# NApp mR pR argR ->
+      (<*>) (NApp mL pL :# NApp mR pR) <$> cc equating (argL :# argR)
+    prj -> pure prj
+
+  -- TODO: keep track of deferred IDs?
+  forceNeutrals = do
+    -- TODO: force according to definition-graph poset?
+    -- (and univar graph poset? idk)
+    forcedL <- M.forceNeutral evalL
+    forcedR <- M.forceNeutral evalR
     case (forcedL, forcedR) of
       -- If we do not make progress on either as a global, then conversion checking
       -- fails: they were different constructors in the AST and semantically
@@ -376,6 +417,11 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
       -- Retry with one or both being inlined now
       _ -> subsume mode (fromMaybe evalL forcedL :# fromMaybe evalR forcedR)
 
+  -- Recognize some definitional isomorphisms that can be unsnoc'ed
+  -- from both projections, if they match
+  matchingDefIso (NSplice _ :# NSplice _) = True
+  -- Maybe identical neutral variables?
+  matchingDefIso _ = False
 
 -- Conversion checking is the algorithm for definitional equality used during
 -- typechecking: specifically it refers to the process of finding out if a term
