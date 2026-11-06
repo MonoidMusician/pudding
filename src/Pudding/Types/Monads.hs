@@ -6,6 +6,7 @@ import GHC.Base (Symbol)
 import Data.Text (Text)
 import Pudding.Core.Types
 import Data.Pair (Pair)
+import Control.Monad ((<=<))
 import Control.Monad.State.Strict (StateT(..), MonadTrans (lift), MonadState (state, get, put), evalStateT, MonadIO, mapStateT)
 import Control.Monad.Reader.Class (MonadReader)
 import Control.Monad.Error.Class (MonadError)
@@ -170,6 +171,9 @@ class Evaling m => Typing m where
   context :: HasCallStack => String -> m r -> m r
   validate :: Term -> m ("type" @:: Eval)
   validEval :: Term -> m ("type" @:: Eval, "value" @:: Eval)
+
+validateQuote :: Typing m => Term -> m ("type" @:: Term)
+validateQuote = quote <=< validate
 
 class (Unifying m, Typing m) => Proving m where
   subsume :: UnifyMode r -> Pair Eval -> m ("unified" @:: Pair Eval, "coercion" @:: Maybe r)
@@ -349,14 +353,19 @@ instance Typing m => Typing (FreshT m) where
 
 instance (Monad m, Unifying m) => Unifying (StateT s m) where
   unsafeSolve = fmap lift . unsafeSolve
+  equate = lift . equate
 instance (Monad m, Unifying m) => Unifying (ReaderT r m) where
   unsafeSolve = fmap lift . unsafeSolve
+  equate = lift . equate
 instance (Monad m, Unifying m) => Unifying (ExceptT e m) where
   unsafeSolve = fmap lift . unsafeSolve
+  equate = lift . equate
 instance (Monad m, Unifying m, Monoid w) => Unifying (WriterT w m) where
   unsafeSolve = fmap lift . unsafeSolve
+  equate = lift . equate
 instance (Monad m, Unifying m) => Unifying (FreshT m) where
   unsafeSolve = fmap lift . unsafeSolve
+  equate = lift . equate
 
 instance Proving m => Proving (StateT s m) where
   subsume = fmap lift . subsume

@@ -7,7 +7,8 @@ import Pudding.Surface.Lexer hiding (demo)
 import qualified Pudding.Surface.Happy as Happy
 
 import qualified Data.Text as T
-import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Name (nameText), Term, GlobalInfo (DefnGlobal), Globals, globalsFrom)
+import Data.Pair (Pair(..))
+import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Name (nameText), Term, GlobalInfo (DefnGlobal), Globals, globalsFrom, Ctx (Ctx), pattern Nil, UnifyMode (UnifyMode), UnifyDir (Invariant), RequestSubsumption (IdentitySubsumption), InjectiveStatus (StillInjective))
 import qualified Text.Parsec as P
 import qualified Data.Text.IO.Utf8 as TIO
 import Control.Monad.Identity (Identity (runIdentity))
@@ -25,7 +26,7 @@ import qualified Text.Parsec as Parsec
 import Data.Maybe (fromMaybe)
 import Pudding.Surface.Parser (CST, Decl(..))
 import Data.Function ((&))
-import Data.Functor ((<&>))
+import Data.Functor ((<&>), void)
 import qualified Data.Show.Reshow as RS
 import qualified System.Directory as Dir
 import Control.Monad (join)
@@ -44,6 +45,8 @@ import Data.IORef (newIORef, modifyIORef', readIORef)
 import Pudding.Surface.Delaborator (delab, runDelab)
 import qualified Pudding.Surface.Delaborator as Delab
 import Pudding.Core.Boot (bootGlobals)
+import qualified Pudding.Types.Monads as M
+import Pudding.Types.Monads.Prover (unsafeRunProver)
 
 data Formats = Formats
   { text :: Text
@@ -222,36 +225,33 @@ delabModule modul = Formats
     maybe "_" nameText name <> " : " <> formatCST f ty <> "\n" <>
     maybe "_" nameText name <> " := " <> formatCST f tm <> "\n\n"
 
--- validateTerm :: Term -> Formats
--- validateTerm = formatsTerm . U.validateQuote Nil
+validateTerm :: Term -> Formats
+validateTerm = formatsTerm . unsafeRunProver Nil . M.validateQuote
 
 validateModule :: (Vector.Vector (Maybe Name, GlobalInfo), Globals) -> Formats
-validateModule (modul, _globals) = Formats
+validateModule (modul, globals) = Formats
   { text = text
   , html = xmlEscape text
   , ansi = fmt Ansi
-  , json = AE.toJSON modul {-modulTyped-}
+  , json = AE.toJSON modulTyped
   }
   where
   text = fmt Plain
---   ctx :: forall ctx. Ctx ctx
---   ctx = Ctx globals Nil
-  -- cc msg tm0 tm1 = if U.conversionCheck ctx tm0 tm1 then () else error msg
-  -- validateGTerm (GlobalTerm tmT tmE) =
-  --   let
-  --     -- FIXME: `force` here does not terminate
-  --     !tyE = U.validate ctx tmT
-  --     !tmE' = tyE `seq` E.eval ctx tmT
-  --   in cc "different eval" tmE tmE' `seq` tyE
-  -- modulTyped = modul <&> fmap \case
-  --   info@(DefnGlobal (GlobalDefn _ (GlobalTerm tyT tyE) (GlobalTerm tmT tmE))) ->
-  --     let
-  --       !inferred = validateGTerm (GlobalTerm tmT tmE)
-  --       !typeOfType = validateGTerm (GlobalTerm tyT tyE)
-  --       !compared = inferred `seq` typeOfType `seq` cc "GlobalDefn wrong type" tyE inferred
-  --     in compared `seq` info
-  --   info -> info
-  fmt f = modul {-modulTyped-} & foldMap \(name, info) ->
+  ctx :: forall ctx. Ctx ctx
+  ctx = Ctx globals Nil
+  cc (_msg :: String) tm0 tm1 = void $
+    M.subsume (UnifyMode Invariant IdentitySubsumption StillInjective) (tm0 :# tm1)
+  validateGTerm (GlobalTerm tmT tmE) = do
+    (!tyE, !tmE') <- M.validEval tmT
+    tyE <$ cc "different eval" tmE tmE'
+  modulTyped = unsafeRunProver ctx $ modul & (traverse . traverse) \case
+    info@(DefnGlobal (GlobalDefn _ (GlobalTerm tyT tyE) (GlobalTerm tmT tmE))) -> do
+      inferred <- validateGTerm (GlobalTerm tmT tmE)
+      _typeOfType <- validateGTerm (GlobalTerm tyT tyE)
+      cc "GlobalDefn wrong type" tyE inferred
+      pure info
+    info -> pure info
+  fmt f = modulTyped & foldMap \(name, info) ->
     case info of
       DefnGlobal (GlobalDefn _ (GlobalTerm ty _) (GlobalTerm _tm _)) ->
         maybe "_" nameText name <> " : " <> formatCore f ty <> "\n\n"
@@ -291,8 +291,8 @@ finishExpr _ _ expr =
     catching "elab" do
       term <- Elab.runElabScoped tbl (Elab.elab Nothing expr)
       pure [stage4ESuccess term] <> fold
-        [ {-extra "validate" $ pure $ StageSuccess (validateTerm term) Nothing
-        , -}extra "delab" $ pure $ StageSuccess (delabTerm term) Nothing
+        [ extra "validate" $ pure $ StageSuccess (validateTerm term) Nothing
+        , extra "delab" $ pure $ StageSuccess (delabTerm term) Nothing
         ]
 
 finishDecls :: [LEXED] -> [Token] -> [Decl] -> IO Stages

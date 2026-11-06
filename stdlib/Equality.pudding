@@ -54,6 +54,6 @@
     congrapply @{I : Type, O : I -> Type} @{f0 & f1 : Π (i : I). O i} (pf : f0 = f1) @{i0 & i1 : I} (pi : i0 = i1) :
         f0 i0 =[ congr O pi ]= f1 i1
     dcongrapply @{I0 & I1 : Type, pI : I0 = I1} @{O0 : I0 -> Type, O1 : I1 -> Type, pO : O0 =[ eqFun pI refl ]= O1}
-        @{f0 : Π (i : I0). O0 i, f1 : Π (i : I1). O1 i, pf : f0 =[ eqPi pI pO ]= f1)
+        @{f0 : Π (i : I0). O0 i, f1 : Π (i : I1). O1 i, pf : f0 =[ eqPi pI pO ]= f1}
         @{i0 : I0, i1 : I1, pi : i0 =[ pI ]= i1} :
         f0 i0 =[ eqAp p0 pi ]= f1 i1
