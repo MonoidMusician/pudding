@@ -13,7 +13,7 @@ import Control.Monad.State.Class (get, gets, state, put, modify')
 import GHC.Generics (Generic, Generically(..))
 import Data.Function ((&))
 import Data.Functor ((<&>), void)
-import Pudding.Types.Config (Config)
+import Pudding.Types.Config (Config, Field (dflt))
 import qualified Pudding.Semantics.Universes.Fused as Universes
 import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as IntMap
@@ -28,6 +28,7 @@ import qualified Pudding.Semantics.Universes.Fused as Fused
 import Data.Maybe (fromMaybe)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import qualified Data.Vector as Vector
+import GHC.IO.Unsafe (unsafePerformIO)
 
 newtype Prover t = Prover (RWST ProverR ProverW ProverS IO t)
   deriving newtype (Functor, Applicative, Monad, MonadFix)
@@ -151,7 +152,7 @@ equateGlobal (l :# r) = do
 
 equateHead :: Equation -> Prover ()
 equateHead (focus :# result) = case focus of
-  ENeut (Neutral (NHole _meta (Fresh i) locals) prjs) -> do
+  ENeutralHole _meta (Fresh i) locals prjs -> do
     st <- Prover get
     updated <- case IntMap.lookup i $ uvState st of
       Nothing -> error "equateHead"
@@ -190,6 +191,9 @@ runProverMonad cfg (Prover act) = do
       , uvConstraintsRev = MonoidalIntMap.empty
       }
   liftIO $ runRWST act r s <&> \(t, _, _) -> t
+
+unsafeRunProver :: EvalTypeCtx -> Prover t -> t
+unsafeRunProver ctx = unsafePerformIO . runProverMonad dflt . withCtx ctx
 
 instance Constraining Prover where
   type Constraints Prover = ProverW
@@ -277,6 +281,13 @@ instance Unifying Prover where
   unsafeSolve var val = do
     _ <- solveFully var val
     pure ()
+
+  equate eqn@(l :# r) = case eqn of
+    ENeutralHole {} :# ENeutralHole {} ->
+      equateHead (l :# r) *> equateHead (r :# l)
+    ENeutralHole {} :# _ -> equateHead (l :# r)
+    _ :# ENeutralHole {} -> equateHead (l :# r)
+    _ -> equateGlobal eqn
 
 instance Proving Prover where
   subsume = U.subsume

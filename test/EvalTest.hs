@@ -11,12 +11,13 @@ import Data.Functor (void, (<&>))
 import Data.Pair (Pair(..))
 import Data.Text (Text)
 import GHC.Stack (HasCallStack)
-import Pudding (parseAndBootGlobals, unsafeRunProver)
+import Pudding (parseAndBootGlobals)
 import Pudding.Core.Parser ( runParserScope, globalTable )
 import Pudding.Core.Printer (PrinterState(..), formatCore, Style (Ansi), format, printCore)
 import Pudding.Core.Types
 import Pudding.Core.Unify (subsume, validateQuote)
 import Pudding.Types.Name (canonicalName)
+import Pudding.Types.Monads.Prover (unsafeRunProver)
 import Testing
 import qualified Data.Map as Map
 import qualified Data.Vector as Vector
@@ -94,12 +95,12 @@ evalTest = TestSuite "EvalTest" $ withTestContext do
     globals <- asks ctxGlobals
     expect (Map.size (globalDefns globals) > 0) "Global definitions not empty"
     expect (Map.size (globalTypes globals) > 0) "Global types not empty"
-    _ <- flip Map.traverseWithKey (globalDefns globals) \name -> \case
-      GlobalDefn _ (GlobalTerm ty _) (GlobalTerm tm _) -> do
-        liftIO $ putStrLn $ T.unpack $ nameText name <> " : " <> formatCore Ansi ty
-        liftIO $ putStrLn $ T.unpack $ nameText name <> " := " <> formatCore Ansi tm
-        -- liftIO $ putStrLn $ T.unpack $ formatCore Ansi $ typecheckUnder [] ty
-      _ -> pure ()
+    -- _ <- flip Map.traverseWithKey (globalDefns globals) \name -> \case
+    --   GlobalDefn _ (GlobalTerm ty _) (GlobalTerm tm _) -> do
+    --     liftIO $ putStrLn $ T.unpack $ nameText name <> " : " <> formatCore Ansi ty
+    --     liftIO $ putStrLn $ T.unpack $ nameText name <> " := " <> formatCore Ansi tm
+    --     -- liftIO $ putStrLn $ T.unpack $ formatCore Ansi $ typecheckUnder [] ty
+    --   _ -> pure ()
     testCase "Id" do
       expectType "Id1" "(Pi (t (Type 0 1)) (Type 0 1))"
     testCase "identity" do

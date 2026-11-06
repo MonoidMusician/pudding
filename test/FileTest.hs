@@ -7,10 +7,9 @@ import Control.Monad.Trans.Cont (ContT (ContT))
 import Data.Foldable (sequenceA_)
 import Data.Text (Text)
 import EvalTest
-import Pudding (unsafeRunProver)
 import Pudding.Core.Parser
 import Pudding.Core.Types
-import Pudding.Core.Unify (bootGlobals)
+import Pudding.Core.Boot (bootGlobals)
 import Pudding.Types.Name (canonicalName)
 import Testing
 import qualified Data.Text as T
@@ -104,7 +103,7 @@ intoEnv (name, entry) = ContT \cont ->
   where
   envppend (prev, Ctx _ params) =
     let globals = addGlobal prev name entry in
-    (globals, Ctx (unsafeRunProver Nil $ bootGlobals globals) params)
+    (globals, Ctx (bootGlobals globals) params)
 
 inEnv :: EvalTest () -> PlumTest
 inEnv wrapped = lift $

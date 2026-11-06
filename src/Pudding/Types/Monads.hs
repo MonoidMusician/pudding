@@ -130,6 +130,7 @@ class Monad m => Constraining m where
 -- State/IO-like
 class Constraining m => Unifying m where
   unsafeSolve :: Fresh -> Eval -> m ()
+  equate :: Equation -> m ()
 
 class Monad m => Checkpointing m where
   type Checkpoint m

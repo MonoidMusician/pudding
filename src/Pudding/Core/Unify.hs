@@ -12,8 +12,7 @@ module Pudding.Core.Unify where
 import Control.Arrow (Arrow(first))
 import Control.DeepSeq (NFData)
 import Control.Lens (view)
-import Control.Monad ((<=<), forM)
-import Control.Monad.Fix
+import Control.Monad ((<=<))
 import Control.Monad.Reader.Class (ask, MonadReader (local))
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Cont (ContT (ContT))
@@ -67,56 +66,6 @@ validateQuote = M.quote <=< validate
 quickTermType :: Proving m => HasCallStack => "term" @:: Term -> m ("type" @:: Eval)
 quickTermType = validateOrNot False
 
-
--- Typecheck and share partial evaluation of globals
-
--- TODO: make sure definitions are acyclic!
-bootGlobals, bootGlobalDefns, bootGlobalTypes :: (MonadFix m, Proving m)
-  => HasCallStack => Globals -> m Globals
-bootGlobals = bootGlobalDefns <=< bootGlobalTypes
-
-bootGlobalDefns globals = mdo
-  newDefns <- forM (globalDefns globals) \case
-    GlobalDefn _ _ (GlobalTerm defn _) -> do
-      ty <- typeofGlobal defn
-      return $ GlobalDefn (arityOfTerm defn) ty (globalTerm defn)
-  let newGlobals = globals { globalDefns = newDefns }
-  let ctx = ctxOfGlobals newGlobals
-  let globalTerm tm = GlobalTerm tm (evalGlobal tm)
-  let evalGlobal = undeferred . eval ctx
-  let typeofGlobal tm = do
-        ty <- validate tm
-        return $ GlobalTerm (quote (void ctx) ty) (undeferred ty)
-  return newGlobals
-
-bootGlobalTypes globals =
-  pure $ globals { globalDefns = globalDefns globals `disjointUnion` constructors (globalTypes globals) }
-  where
-  disjointUnion = Map.union
-  -- disjointUnion = Map.unionWithKey \k _ _ -> error $ "Duplicate global: " <> show k
-  fakeGlobal tm = GlobalDefn (arityOfTerm tm) undefined (GlobalTerm tm undefined)
-  constructors = fold . Map.mapWithKey \typeName -> \case
-    GlobalTypeInfo { typeParams, typeIndices, typeConstrs } -> fold
-      -- The type constructor: take all of the parameters and the indices,
-      -- and then make the fully applied type constructor term.
-      [ Map.singleton typeName $ fakeGlobal $
-          abstract (Vector.toList typeParams <> Vector.toList typeIndices) $
-            TTyCtor mempty typeName (toVars (Vector.length typeIndices) typeParams) (toVars 0 typeIndices)
-      -- The term constructors: take all of the parameters and constructor
-      -- arguments, then make the fully applied inductive constructor. (Note
-      -- that the type indices are inferred from the parameters and arguments.)
-      , flip Map.mapWithKey typeConstrs \ctorName (ConstructorInfo { ctorArguments }) -> fakeGlobal $
-          abstract (Vector.toList typeParams <> Vector.toList ctorArguments) $
-            TTmCtor mempty (typeName, ctorName) (toVars (Vector.length ctorArguments) typeParams) (toVars 0 ctorArguments)
-      ]
-  -- Form repeated lambdas to turn the raw constructor into a curried function
-  abstract ((p, b, paramType) : more) focus =
-    TLambda mempty p b paramType $ Scoped $ abstract more focus
-  abstract [] focus = focus
-
-  toVars :: forall i. Int -> Vector.Vector i -> Vector.Vector Term
-  toVars skipped = mapWithLevel \(_, Index idx) _ ->
-    TVar mempty $ Index $ idx + skipped
 
 --------------------------------------------------------------------------------
 -- Conversion checking: the algorithm for definitional equality / unification --

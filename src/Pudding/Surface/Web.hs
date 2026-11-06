@@ -43,6 +43,7 @@ import qualified Data.Vector as Vector
 import Data.IORef (newIORef, modifyIORef', readIORef)
 import Pudding.Surface.Delaborator (delab, runDelab)
 import qualified Pudding.Surface.Delaborator as Delab
+import Pudding.Core.Boot (bootGlobals)
 
 data Formats = Formats
   { text :: Text
@@ -300,7 +301,7 @@ finishDecls _ _ decls =
     tbl <- initTable
     catching "elab" do
       (forCtx, modul) <- Elab.runElabFull tbl (Elab.elaborateModule decls)
-      let ctx = {- U.bootGlobals $ -} globalsFrom forCtx
+      let ctx = bootGlobals $ globalsFrom forCtx
       pure [stage4DSuccess modul] <> fold
         [ extra "validate" $ pure $ StageSuccess (validateModule (modul, ctx)) Nothing
         , extra "delab" $ pure $ StageSuccess (delabModule modul) Nothing

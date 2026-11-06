@@ -131,6 +131,7 @@ library
         Pudding.Core.Types,
         Pudding.Core.Eval,
         Pudding.Core.Unify,
+        Pudding.Core.Boot,
         Pudding.Core.Parser,
         Pudding.Core.Printer,
         Pudding.Semantics.Universes.Consistency,

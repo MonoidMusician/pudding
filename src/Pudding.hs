@@ -1,13 +1,10 @@
-module Pudding (parseAndBootGlobals, unsafeRunProver) where
+module Pudding (parseAndBootGlobals) where
 
 import Data.Text (Text)
-import GHC.IO (unsafePerformIO)
+import GHC.IO (unsafePerformIO, evaluate)
 import Pudding.Core.Parser (declarations, runParser)
-import Pudding.Core.Types (Globals, EvalTypeCtx)
-import Pudding.Core.Unify (bootGlobals)
-import Pudding.Types.Config (dflt)
-import Pudding.Types.Monads (withCtx)
-import Pudding.Types.Monads.Prover (Prover, runProverMonad)
+import Pudding.Core.Types (Globals)
+import Pudding.Core.Boot (bootGlobals)
 
 
 parseAndBootGlobals :: Text -> Globals
@@ -15,7 +12,4 @@ parseAndBootGlobals source = unsafePerformIO do
   parsed <- runParser declarations "<globals>" source
   case parsed of
     Left err -> error $ show err
-    Right booted -> runProverMonad dflt $ bootGlobals booted
-
-unsafeRunProver :: EvalTypeCtx -> Prover t -> t
-unsafeRunProver ctx = unsafePerformIO . runProverMonad dflt . withCtx ctx
+    Right booted -> evaluate $ bootGlobals booted
