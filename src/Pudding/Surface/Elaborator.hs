@@ -26,7 +26,7 @@ import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), pattern Nil, pattern (:>), (@@?))
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO (liftIO), MonadTrans (lift), MonadState)
-import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti, BFresh, BPair), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo), Closure (Closure, ConstClosure), ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL), UnifyMode (UnifyMode), InjectiveStatus (StillInjective), addGlobal, freshGlobals, pattern ENeutral, pattern ENeutralVar)
+import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti, BFresh, BPair), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar, NGlobal), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo), Closure (Closure, ConstClosure), ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL), UnifyMode (UnifyMode), InjectiveStatus (StillInjective), addGlobal, freshGlobals, pattern ENeutral, pattern ENeutralVar)
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl(..), CST(..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize, Attributes))
@@ -139,7 +139,7 @@ type Scoped = GInit (ReaderT GLScope Prover)
 type Scoping r = Cont1T r Scoped
 -- | Abstract over both
 type ScopeLike m =
-  (MonadState (Map Name (Initializing GlobalInfo)) m, MonadReader GLScope m, M.Scoping m)
+  (MonadState (Map Name (Initializing GlobalInfo)) m, MonadReader GLScope m, M.Evaling m)
 
 
 
@@ -183,13 +183,14 @@ globalQuote e = do
 
 normalize :: HasCallStack => Bool -> Term -> Scoped Term
 normalize ridGlobals t = do
-  c <- fmap snd <$> currentCtx
+  c <- M.askEvalCtx
   pure $ (if ridGlobals then E.selfContained else E.normalizeCtx) c t
 
 withForced :: forall m r. ScopeLike m => HasCallStack => (Eval -> m r) -> Eval -> m r
 withForced f e = do
-  c <- currentCtx
-  E.withForced c f $ E.undeferred e
+  let e' = E.undeferred e
+  e'' <- fromMaybe e' <$> M.forceNeutral e'
+  f e''
 
 
 runElabFull :: forall r. IORef NameTable -> GLM r -> IO (Map Name GlobalInfo, r)
@@ -226,19 +227,6 @@ elaborateModule decls = joinScoped do
       (name,) <$> cachedCreator
     pure $ Vector.fromList loaded
 
--- TODO: memoize
-currentCtx :: forall m. ScopeLike m => m EvalTypeCtx
-currentCtx = do
-  -- Here we want to gather all the things that have actually been defined
-  initialized <- gets $ M.mapMaybe \case
-    Initialized r -> Just r
-    -- Plus the things that are provisionally defined
-    Initializing (Just r) -> Just r
-    _ -> Nothing
-  let currentGlobals = globalsFrom initialized
-  localCtx <- M.askCtx
-  pure $ localCtx { ctxGlobals = currentGlobals }
-
 intoClosure :: Eval -> Closure -> (Eval -> Scoped r) -> Scoped r
 intoClosure argTy clo =
   runCont1pT (intoClosure1 argTy clo)
@@ -257,7 +245,7 @@ parseAttributes = foldMap \case
   RawAttribute [] "normalize" [] -> mempty { aNormalize = Any True }
   _ -> mempty
 
-mayNormalize :: Attributes -> Term -> Scoped Term
+mayNormalize :: HasCallStack => Attributes -> Term -> Scoped Term
 mayNormalize (Attributes { aNormalize = Any True }) = normalize True
 mayNormalize _ = pure
 
@@ -386,10 +374,10 @@ elab mexp = \case
   CVar Nothing idxOrLvl -> synth mexp =<< case idxOrLvl of
     PlainVar -> error "impossible: CVar Nothing PlainVar"
     DBIndex i -> do
-      c <- currentCtx
+      c <- M.askCtx
       pure $ TVar mempty $ index c i
     DBLevel l -> do
-      c <- currentCtx
+      c <- M.askCtx
       pure $ TVar mempty $ index c $ level c l
   CVar (Just (PlainName [] text)) idxOrLvl -> synth mexp =<< do
     name <- mintName glNames text
@@ -628,4 +616,17 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
       when (tyName /= name) do
         error $ "Constructor for wrong datatype: " <> show tyName <> " instead of " <> show name
       pure ([], (params, indices))
+    ENeutralVar _ (Level l) _ -> do
+      ctx <- M.askCtx
+      let
+        showBinder = \case
+          BFresh -> "fresh"
+          BUnused -> "_"
+          BVar (Meta names) -> show $ chosenName names
+          BMulti _ _ -> ":="
+          BPair _ _ -> ","
+      liftIO $ putStrLn $ maybe "none" showBinder $ fmap fst $ ctx @@? l
+      error $ "Bad annotation for constructor " <> show (Level l) <> " "
+    ENeutral (NGlobal _ _ n) _ -> error $ "Bad annotation for constructor " <> show n
+    ENeutral x _ -> error $ "Bad annotation for constructor " <> ctorName x
     v -> error $ "Bad annotation for constructor " <> ctorName v

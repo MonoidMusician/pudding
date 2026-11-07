@@ -543,8 +543,8 @@ validateOrNot should = \case
 
   -- FIXME: make sure globals are never deferred
   force val = do
-    ctx <- M.askEvalCtx
-    pure $ withForced ctx id $ undeferred val
+    let val' = undeferred val
+    fromMaybe val' <$> M.forceNeutral val'
 
   checkFor _ True = pure ()
   checkFor err False = M.fatal err

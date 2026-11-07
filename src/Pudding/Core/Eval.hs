@@ -48,9 +48,9 @@ import GHC.StableName (StableName, makeStableName)
 import GHC.IO.Unsafe (unsafePerformIO)
 import Data.Vector (Vector)
 
-eval :: EvalCtx -> Term -> Eval
+eval :: HasCallStack => EvalCtx -> Term -> Eval
 eval = flip evaling
-quote :: QuoteCtx -> Eval -> Term
+quote :: HasCallStack => QuoteCtx -> Eval -> Term
 quote = flip quoting
 
 -- Turn a `Term` context into an `Eval` context, evaluating from the root
@@ -87,7 +87,7 @@ normalizeNeutrals globals localTypes = normalizeCtx $
   mapCtx (\_ lvl _ty -> neutralVar lvl) $
     ctxOfList globals $ (BFresh,) <$> localTypes
 
-selfContained :: EvalCtx -> Term -> Term
+selfContained :: HasCallStack => EvalCtx -> Term -> Term
 selfContained ctx = flip (eval2termWith True quotingClosure) (void ctx) . eval ctx
 
 ------------------------------
@@ -190,9 +190,6 @@ forceNeutral ctx sols (ENeutral (NGlobal _ _ name) prjs) =
       fromMaybe <*> forceNeutral ctx sols $ doPrjs evaled prjs
     _ -> Nothing
 forceNeutral _ _ _ = Nothing
-
-withForced :: forall t r. Ctx t -> (Eval -> r) -> Eval -> r
-withForced c f e = f $ fromMaybe e $ forceGlobal c e
 
 -- Capture a closure during evaluation
 captureClosure :: Binder -> ScopedTerm -> EvalCtx -> Closure
