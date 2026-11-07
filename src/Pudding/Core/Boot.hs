@@ -38,20 +38,24 @@ bootGlobalTypes globals =
   disjointUnion = Map.union
   -- disjointUnion = Map.unionWithKey \k _ _ -> error $ "Duplicate global: " <> show k
   fakeGlobal tm = GlobalDefn (arityOfTerm tm) undefined (GlobalTerm tm undefined)
-  constructors = fold . Map.mapWithKey \typeName -> \case
-    GlobalTypeInfo { typeParams, typeIndices, typeConstrs } -> fold
-      -- The type constructor: take all of the parameters and the indices,
-      -- and then make the fully applied type constructor term.
-      [ Map.singleton typeName $ fakeGlobal $
-          abstract (Vector.toList typeParams <> Vector.toList typeIndices) $
-            TTyCtor mempty typeName (toVars (Vector.length typeIndices) typeParams) (toVars 0 typeIndices)
-      -- The term constructors: take all of the parameters and constructor
-      -- arguments, then make the fully applied inductive constructor. (Note
-      -- that the type indices are inferred from the parameters and arguments.)
-      , flip Map.mapWithKey typeConstrs \ctorName (ConstructorInfo { ctorArguments }) -> fakeGlobal $
-          abstract (Vector.toList typeParams <> Vector.toList ctorArguments) $
-            TTmCtor mempty (typeName, ctorName) (toVars (Vector.length ctorArguments) typeParams) (toVars 0 ctorArguments)
-      ]
+  constructors = fold . Map.mapWithKey \typeName info ->
+    fakeGlobal <$> typeAuxDefns typeName info
+
+typeAuxDefns :: ("type name" @:: Name) -> GlobalTypeInfo -> Map.Map ("type name" @:: Name) Term
+typeAuxDefns typeName (GlobalTypeInfo { typeParams, typeIndices, typeConstrs }) = fold
+  -- The type constructor: take all of the parameters and the indices,
+  -- and then make the fully applied type constructor term.
+  [ Map.singleton typeName $
+      abstract (Vector.toList typeParams <> Vector.toList typeIndices) $
+        TTyCtor mempty typeName (toVars (Vector.length typeIndices) typeParams) (toVars 0 typeIndices)
+  -- The term constructors: take all of the parameters and constructor
+  -- arguments, then make the fully applied inductive constructor. (Note
+  -- that the type indices are inferred from the parameters and arguments.)
+  , flip Map.mapWithKey typeConstrs \ctorName (ConstructorInfo { ctorArguments }) ->
+      abstract (Vector.toList typeParams <> Vector.toList ctorArguments) $
+        TTmCtor mempty (typeName, ctorName) (toVars (Vector.length ctorArguments) typeParams) (toVars 0 ctorArguments)
+  ]
+  where
   -- Form repeated lambdas to turn the raw constructor into a curried function
   abstract ((p, b, paramType) : more) focus =
     TLambda mempty p b paramType $ Scoped $ abstract more focus

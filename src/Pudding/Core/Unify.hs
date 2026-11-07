@@ -1,6 +1,6 @@
 -- | This is the core module for typechecking and unification. Core terms
 -- | are already intrinsically typed, which can be validated with `validate`,
--- | or just quickly assembled with `quickTermType`.
+-- | or just quickly assembled with `reinfer`.
 -- |
 -- | Currently it does not have any features for unification: that needs
 -- | some monad design first.
@@ -56,14 +56,9 @@ validate = validateOrNot True
 -- Validate and quote back to a term
 validateQuote :: Proving m => HasCallStack => "term" @:: Term -> m ("type" @:: Term)
 validateQuote = M.quote <=< validate
--- Validate in a context of neutrals
--- validateQuoteNeutrals :: HasCallStack => Globals -> ["type" @:: Term] -> "term" @:: Term -> "type" @:: Term
--- validateQuoteNeutrals globals localTypes = validateQuote $
---   mapCtx (\_ lvl ty -> (ty, neutralVar lvl)) $ evalCtx $
---     ctxOfList globals $ (BFresh,) <$> localTypes
 -- Do not validate, but just assemble the type
-quickTermType :: Proving m => HasCallStack => "term" @:: Term -> m ("type" @:: Eval)
-quickTermType = validateOrNot False
+reinfer :: Proving m => HasCallStack => "term" @:: Term -> m ("type" @:: Eval)
+reinfer = validateOrNot False
 
 
 --------------------------------------------------------------------------------

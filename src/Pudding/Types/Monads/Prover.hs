@@ -25,7 +25,6 @@ import Data.Vector (Vector)
 import Data.Pair (Pair(..), pattern Pair)
 import Control.Lens (review)
 import qualified Pudding.Semantics.Universes.Fused as Fused
-import Data.Maybe (fromMaybe)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import qualified Data.Vector as Vector
 import GHC.IO.Unsafe (unsafePerformIO)
@@ -35,6 +34,8 @@ newtype Prover t = Prover (RWST ProverR ProverW ProverS IO t)
 
 data ProverS = ProverS
   { freshest :: {-# UNPACK #-} !Fresh
+  -- | Override the globals in the context
+  , proofGlobals :: Maybe Globals
   , uvState :: !(IntMap UnivarState)
   -- | indexed by univar ID?
   , uvDeferred :: !(IntMap (Prover ()))
@@ -105,7 +106,7 @@ solveFully (Fresh !i) !val = do
     Nothing -> do
       ctx <- Prover $ asks proofCtx
       tm <- M.quote val
-      ty <- U.quickTermType tm
+      ty <- U.reinfer tm
       let
         entry = UVState
           { uvCtx = ctx
@@ -185,6 +186,7 @@ runProverMonad cfg (Prover act) = do
       }
     s = ProverS
       { freshest = Fresh 0
+      , proofGlobals = Nothing
       , uvState = IntMap.empty
       , uvDeferred = IntMap.empty
       , uvConstraints = IntMap.empty
@@ -222,7 +224,12 @@ instance WithConfig Prover where
 
 
 instance Scoping Prover where
-  askCtx = Prover do asks proofCtx
+  askCtx = Prover do
+    ctx <- asks proofCtx
+    globals <- gets proofGlobals
+    case globals of
+      Nothing -> pure ctx
+      Just override -> pure ctx { ctxGlobals = override }
   withCtx newCtx (Prover inner) = Prover do
     inner & local \ctx -> ctx { proofCtx = newCtx }
   bindVar b tyval (Prover inner) = Prover do
@@ -276,6 +283,7 @@ instance Typing Prover where
     ty <- U.validate tm
     val <- M.eval tm
     pure (ty, val)
+  reinfer = U.reinfer
 
 instance Unifying Prover where
   unsafeSolve var val = do

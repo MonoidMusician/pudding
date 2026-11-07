@@ -178,6 +178,7 @@ class Evaling m => Typing m where
   context :: HasCallStack => String -> m r -> m r
   validate :: HasCallStack => Term -> m ("type" @:: Eval)
   validEval :: HasCallStack => Term -> m ("type" @:: Eval, "value" @:: Eval)
+  reinfer :: HasCallStack => Term -> m ("type" @:: Eval)
 
 validateQuote :: Typing m => HasCallStack => Term -> m ("type" @:: Term)
 validateQuote = quote <=< validate
@@ -368,31 +369,37 @@ instance Typing m => Typing (StateT s m) where
   context msg = mapStateT (context msg)
   validate = lift . validate
   validEval = lift . validEval
+  reinfer = lift . reinfer
 instance Typing m => Typing (ReaderT r m) where
   fatal = lift . fatal
   context msg = mapReaderT (context msg)
   validate = lift . validate
   validEval = lift . validEval
+  reinfer = lift . reinfer
 instance Typing m => Typing (ExceptT e m) where
   fatal = lift . fatal
   context msg = mapExceptT (context msg)
   validate = lift . validate
   validEval = lift . validEval
+  reinfer = lift . reinfer
 instance (Typing m, Monoid w) => Typing (WriterT w m) where
   fatal = lift . fatal
   context msg = mapWriterT (context msg)
   validate = lift . validate
   validEval = lift . validEval
+  reinfer = lift . reinfer
 instance Typing m => Typing (FreshT m) where
   fatal = lift . fatal
   context msg = mapFreshT (context msg)
   validate = lift . validate
   validEval = lift . validEval
+  reinfer = lift . reinfer
 instance Typing m => Typing (Cont1T c m) where
   fatal = lift . fatal
   context msg = mapCont1T (context msg)
   validate = lift . validate
   validEval = lift . validEval
+  reinfer = lift . reinfer
 
 instance (Monad m, Unifying m) => Unifying (StateT s m) where
   unsafeSolve = fmap lift . unsafeSolve

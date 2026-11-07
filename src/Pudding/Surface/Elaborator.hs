@@ -24,17 +24,16 @@ import Data.Text (Text)
 import Pudding.Types.Name (Name(..), internalize, NameTable, canonicalName)
 import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::))
 import Pudding.Types.Metadata
-import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), StackLike(size), pattern Nil, pattern (:>), (@@?))
+import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), pattern Nil, pattern (:>), (@@?))
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift), MonadState)
-import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals, ctxStack), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo), Closure (Closure, ConstClosure), ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL), UnifyMode (UnifyMode), InjectiveStatus (StillInjective))
+import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo), Closure (Closure, ConstClosure), ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL), UnifyMode (UnifyMode), InjectiveStatus (StillInjective), addGlobal, freshGlobals)
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl(..), CST(..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize, Attributes))
 import Data.Foldable (foldlM, for_)
 import Data.Functor.Compose (Compose (Compose))
-import Control.Monad.Reader.Class (MonadReader (local, ask), asks)
+import Control.Monad.Reader.Class (MonadReader (local), asks)
 import Data.List.NonEmpty (NonEmpty(..))
-import qualified Pudding.Core.Unify as U
 import qualified Pudding.Core.Eval as E
 import Pudding.Surface.Lexer (VariableDB(..), NameForm(..), VariableName)
 import Data.Maybe (fromMaybe)
@@ -48,12 +47,13 @@ import GHC.Stack (HasCallStack)
 import qualified Data.List as List
 import Data.Monoid (Any(Any))
 import qualified Data.Foldable as F
-import Pudding.Types.Monads (Freshener(freshen))
+import Pudding.Types.Monads (Freshener(freshen), eval, quote, reinfer)
 import qualified Pudding.Types.Monads as M
 import Data.Pair (Pair(..))
-import Pudding.Types.Monads.Prover (Prover, runProverMonad)
+import Pudding.Types.Monads.Prover (Prover (Prover), runProverMonad, ProverS (proofGlobals))
 import Pudding.Types.Config (Field(dflt))
 import Pudding.Types.Monads.Cont1T (Cont1T, adaptCont, unsafeRunCont1T, unsafeEvalCont1T, localizeCont)
+import Pudding.Core.Boot (typeAuxDefns)
 
 class Applicative m => TwoPhase m where
   twoPhases :: m (m r) -> m r
@@ -145,15 +145,17 @@ type ScopeLike m =
 willInitGLM :: Text -> (Name -> Scoped GlobalInfo) -> GLM (Name, Scoped GlobalInfo)
 willInitGLM text creator = Compose $ mintName id text <&>
   -- TODO: better way than clearLocals?
-  \name -> (name,) <$> willInit name (clearLocals (creator name))
+  \name -> (name,) <$> willInit name do
+    result <- clearLocals (creator name)
+    lift . lift $ Prover $ modify' \s -> s
+      { proofGlobals = Just $ addGlobal (fromMaybe freshGlobals $ proofGlobals s) name result }
+    pure result
 
 clearLocals :: Scoped r -> Scoped r
 clearLocals inner = do
   let clearGL gl = gl { glLocals = M.empty }
-  local clearGL do
-    -- Grab updated globals
-    ctx <- currentCtx
-    M.withCtx (ctx { ctxStack = Nil }) inner
+  -- Globals are in persistent state
+  local clearGL $ M.withCtx Nil inner
 
 -- | For `@example`, for example
 willUseGLM :: Scoped r -> GLM r
@@ -168,21 +170,6 @@ initedGLM n = do
 joinScoped :: GLM (Scoped r) -> GLM r
 joinScoped (Compose stage0) = Compose $ stage0 <&>
   \(GGather outs ins) -> GGather outs $ join <$> ins
-
-eval :: HasCallStack => Term -> Scoped Eval
-eval t = do
-  c <- fmap snd <$> currentCtx
-  pure $ E.eval c t
-
-quote :: HasCallStack => Eval -> Scoped Term
-quote e = do
-  c <- void <$> currentCtx
-  pure $ E.quote c e
-
-reinfer :: HasCallStack => Term -> Scoped Eval
-reinfer t = do
-  c <- currentCtx
-  M.withCtx c $ U.quickTermType t
 
 globalEval :: HasCallStack => Term -> Scoped GlobalTerm
 globalEval t = do
@@ -491,6 +478,11 @@ elabMultiBinder tyE = traverse (elabBinder1 tyE)
 localize :: MonadReader r m => a -> (r -> r) -> Cont1T c m a
 localize c f = c <$ adaptCont (local f)
 
+addProofGlobal :: Name -> GlobalInfo -> Scoped ()
+addProofGlobal name decl =
+  lift . lift $ Prover $ modify' \s -> s
+    { proofGlobals = Just $ addGlobal (fromMaybe freshGlobals $ proofGlobals s) name decl }
+
 
 elaborateDataType :: Name -> [CBinderGroup] -> [CBinderGroup] -> Maybe CST -> [(VariableName, "arguments" @:: [CBinderGroup], "result" @:: Maybe CST)] -> Scoped GlobalTypeInfo
 elaborateDataType name rawParams rawIndices mdest rawConstrs = do
@@ -505,8 +497,12 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
       fst <$> peelToUniv e
     let termIndices = explicitTermIndices <> implicitTermIndices
     pure (Vector.fromList termParams, Vector.fromList termIndices)
+
+  -- Provisionally initialize an empty inductive datatype
   let prelim = GlobalTypeInfo newParams newIndices M.empty
   modify' $ M.insert name $ Initializing $ Just $ TypeGlobal prelim
+  addProofGlobal name $ TypeGlobal prelim
+
   constructors <- for rawConstrs \(cname, argTypes, resultType) -> do
     ctor <- case cname of
       (Just (PlainName [] text), PlainVar) -> mintName glNames text
@@ -532,7 +528,19 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
       -- Dbg.traceM $ show $ C.Print.formatCoreFrom C.Print.Plain (size ctx) <$> view (from stack) ctx''
       -- Dbg.traceM $ show $ C.Print.formatCoreFrom C.Print.Plain (size ctx) <$> ctorIndices
       pure $ ConstructorInfo ctorArguments ctorIndices
-  pure $ GlobalTypeInfo newParams newIndices (M.fromList constructors)
+
+  -- Now the full info is available for the inductive type
+  let final = GlobalTypeInfo newParams newIndices (M.fromList constructors)
+
+  -- Add its auxiliary definitions to the booted globals as well
+  for_ (M.mapWithKey (,) $ typeAuxDefns name final) \(auxName, tm) -> do
+    ty <- M.reinfer tm
+    defn <- GlobalDefn (arityOfTerm tm)
+      <$> globalQuote ty
+      <*> globalEval  tm
+    addProofGlobal auxName $ DefnGlobal defn
+
+  pure final
   where
   multiCons plicit bounders tyT =
     foldr (\(i, b) -> (:) (plicit, b, E.shift i tyT))
