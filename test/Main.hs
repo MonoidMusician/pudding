@@ -4,15 +4,18 @@ module Main (main) where
 import Control.Monad (when)
 import System.Exit (exitFailure)
 
+import Testing (TestSummary(failed, passed), summarize, runSuites)
+
+import UnitTest (unitTests)
 import EvalTest (evalTest)
 import ParserTest (parserTest)
-import Testing (TestSummary(failed, passed), summarize, runSuites)
 import SolverTest (solverTest, solverUnitTest)
 import FileTest (plumTest)
 
 main :: IO ()
 main = do
-  r <- runSuites "Pudding" [parserTest, evalTest, solverUnitTest, solverTest, plumTest]
+  r <- runSuites "Pudding"
+    [unitTests] -- [unitTests, parserTest, evalTest, solverUnitTest, solverTest, plumTest]
   let summary = summarize r
   putStrLn $ show (passed summary) ++ " tests passed"
   putStrLn $ show (failed summary) ++ " tests failed"

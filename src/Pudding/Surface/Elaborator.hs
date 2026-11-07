@@ -45,7 +45,7 @@ import qualified Data.Vector as Vector
 import Control.Monad (join, when)
 import GHC.Stack (HasCallStack)
 import qualified Data.List as List
-import Data.Monoid (Any(Any))
+import Data.Monoid (Any(Any), Endo (Endo))
 import qualified Data.Foldable as F
 import Pudding.Types.Monads (Freshener(freshen), eval, quote, reinfer)
 import qualified Pudding.Types.Monads as M
@@ -374,6 +374,7 @@ elab mexp = \case
 
   CVar (Just (PlainName [] text)) PlainVar -> synth mexp =<< do
     name <- mintName glNames text
+    here <- asks id
     asks (M.lookup name . glLocals) >>= \case
       Just (_ :> e) -> quote e
       _ -> asks (M.lookup name . glGlobals) >>= \case
@@ -381,7 +382,7 @@ elab mexp = \case
           TypeGlobal (GlobalTypeInfo _ _ _) ->
             TGlobal mempty name
           DefnGlobal (GlobalDefn _ _ _) -> TGlobal mempty name
-        _ -> error $ "Missing name: " <> show name
+        _ -> error $ "Missing name: " <> show name <> " " <> show (M.keys (glLocals here)) <> " " <> show (M.keys (glGlobals here))
   CVar Nothing idxOrLvl -> synth mexp =<< case idxOrLvl of
     PlainVar -> error "impossible: CVar Nothing PlainVar"
     DBIndex i -> do
@@ -441,16 +442,18 @@ elab mexp = \case
 elabBinders ::
   (Plicit -> Binder -> Term -> ScopedTerm -> Term) ->
   NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST) -> CST -> Scoped Term
-elabBinders cons binders body = foldr addBinder (elab Nothing body) binders
+elabBinders cons binders body = do
+  runCont1pT (foldMap addBinder binders) \(Endo wrap) ->
+    wrap <$> elab Nothing body
   where
-  addBinder :: (Plicit, NonEmpty CBinder, Maybe CST) -> Scoped Term -> Scoped Term
-  addBinder (plicit, binder, mty) inner = do
+  addBinder :: (Plicit, NonEmpty CBinder, Maybe CST) -> Cont1T r Scoped (Endo Term)
+  addBinder (plicit, binder, mty) = do
     tyT <- case mty of
       Nothing -> error "Missing type for lambda/pi/sigma"
-      Just ty -> elab Nothing ty
+      Just ty -> lift $ elab Nothing ty
     tyE <- eval tyT
-    runCont1pT (elabMultiBinder tyE binder) \binderB ->
-      multiCons plicit binderB tyT <$> inner
+    elabMultiBinder tyE binder <&> \binderB ->
+      Endo (multiCons plicit binderB tyT)
   multiCons plicit bounders tyT inner =
     foldr (\(i, b) -> cons plicit b (E.shift i tyT) . Scoped)
       inner

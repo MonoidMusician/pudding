@@ -302,3 +302,6 @@ instance Proving Prover where
 
 instance MonadIO Prover where
   liftIO = Prover . liftIO
+
+instance Monoid t => Monoid (Prover t) where mempty = pure mempty
+instance Semigroup t => Semigroup (Prover t) where (<>) = liftA2 (<>)

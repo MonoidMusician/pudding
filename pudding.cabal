@@ -188,6 +188,7 @@ test-suite pudding-test
 
     -- Modules included in this executable, other than Main.
     other-modules:
+        UnitTest,
         EvalTest,
         ParserTest,
         SolverTest,
