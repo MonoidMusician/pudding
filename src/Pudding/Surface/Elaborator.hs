@@ -180,7 +180,9 @@ quote e = do
   pure $ E.quote c e
 
 reinfer :: HasCallStack => Term -> Scoped Eval
-reinfer = U.quickTermType
+reinfer t = do
+  c <- currentCtx
+  M.withCtx c $ U.quickTermType t
 
 globalEval :: HasCallStack => Term -> Scoped GlobalTerm
 globalEval t = do

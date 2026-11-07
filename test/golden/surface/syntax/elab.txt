@@ -1,15 +1,15 @@
-T : (Type0 1)
-T := (Type0 0)
+T : Type
+T := Type
 
-Id : (Π (_0 (Type0 0)) 
-  (Type0 0))
-Id := (λ (_0 (Type0 0)) 
+Id : (Π (_0 Type) 
+  Type)
+Id := (λ (_0 Type) 
   _0)
 
-id : (Π (_0 (Type0 0)) 
+id : (Π (_0 Type) 
   (Π (_1 _0) 
     _0))
-id := (λ (_0 (Type0 0)) 
+id := (λ (_0 Type) 
   (λ (_1 _0) 
     _1))
 

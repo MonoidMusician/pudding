@@ -1,23 +1,23 @@
-T : (Type0 1)
-T := (Type0 0)
+T : Type
+T := Type
 
-_ : (Π (_0 (Type0 0)) 
-  (Type0 0))
+_ : (Π (_0 Type) 
+  Type)
 _ := (λ (_0 T) 
   _0)
 
-_ : (Π (_0 (Type0 0)) 
-  (Type0 0))
+_ : (Π (_0 Type) 
+  Type)
 _ := (λ (_0 T) 
   _0)
 
-_ : (Π (_0 (Type0 0)) 
-  (Type0 1))
+_ : (Π (_0 Type) 
+  Type)
 _ := (λ (_0 T) 
   T)
 
-_ : (Π (_0 (Type0 0)) 
-  (Type0 1))
+_ : (Π (_0 Type) 
+  Type)
 _ := (λ (_0 T) 
   T)
 

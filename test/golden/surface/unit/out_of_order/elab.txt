@@ -1,9 +1,9 @@
-X : (Type0 1)
-X := (Type0 0)
+X : Type
+X := Type
 
-Y : (Type0 1)
+Y : Type
 Y := Z
 
-Z : (Type0 1)
+Z : Type
 Z := X
 

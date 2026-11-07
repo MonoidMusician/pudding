@@ -11,8 +11,8 @@
                             "sourcePos": []
                         },
                         {
-                            "contents": 1,
-                            "tag": "UBase"
+                            "uLevel": 1,
+                            "uStage": 0
                         }
                     ],
                     "tag": "TUniv"
@@ -24,8 +24,8 @@
                             "sourcePos": []
                         },
                         {
-                            "contents": 0,
-                            "tag": "UBase"
+                            "uLevel": 1,
+                            "uStage": 0
                         }
                     ],
                     "tag": "TUniv"
@@ -46,8 +46,8 @@
                             "sourcePos": []
                         },
                         {
-                            "contents": 1,
-                            "tag": "UBase"
+                            "uLevel": 1,
+                            "uStage": 0
                         }
                     ],
                     "tag": "TUniv"
@@ -78,8 +78,8 @@
                             "sourcePos": []
                         },
                         {
-                            "contents": 1,
-                            "tag": "UBase"
+                            "uLevel": 1,
+                            "uStage": 0
                         }
                     ],
                     "tag": "TUniv"

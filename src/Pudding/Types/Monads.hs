@@ -176,14 +176,14 @@ instance Checkpointing m => Checkpointing (FreshT m) where
 class Evaling m => Typing m where
   fatal :: HasCallStack => String -> m any
   context :: HasCallStack => String -> m r -> m r
-  validate :: Term -> m ("type" @:: Eval)
-  validEval :: Term -> m ("type" @:: Eval, "value" @:: Eval)
+  validate :: HasCallStack => Term -> m ("type" @:: Eval)
+  validEval :: HasCallStack => Term -> m ("type" @:: Eval, "value" @:: Eval)
 
-validateQuote :: Typing m => Term -> m ("type" @:: Term)
+validateQuote :: Typing m => HasCallStack => Term -> m ("type" @:: Term)
 validateQuote = quote <=< validate
 
 class (Unifying m, Typing m) => Proving m where
-  subsume :: UnifyMode r -> Pair Eval -> m ("unified" @:: Pair Eval, "coercion" @:: Maybe r)
+  subsume :: HasCallStack => UnifyMode r -> Pair Eval -> m ("unified" @:: Pair Eval, "coercion" @:: Maybe r)
 
 -- MonadMask
 -- class MonadError e m => Proving e m | m -> e where
