@@ -4,7 +4,6 @@
 -- |
 -- | Currently it does not have any features for unification: that needs
 -- | some monad design first.
-{-# LANGUAGE RecursiveDo #-}
 {-# OPTIONS_GHC -Werror=incomplete-patterns #-}
 {- HLINT ignore "Redundant <$>" -}
 module Pudding.Core.Unify where
@@ -15,7 +14,6 @@ import Control.Lens (view)
 import Control.Monad ((<=<))
 import Control.Monad.Reader.Class (ask, MonadReader (local))
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Cont (ContT (ContT))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.Align (Semialign(alignWith))
 import Data.Distributive (Distributive(distribute))
@@ -41,6 +39,7 @@ import qualified Data.Map as Map
 import qualified Data.Vector as Vector
 import qualified Pudding.Types.Monads as M
 import qualified Pudding.Types.Stack as Stack
+import Pudding.Types.Monads.Cont1T (Cont1T, adaptCont, unsafeRunCont1T)
 
 
 type Transform m t = t -> m t
@@ -389,7 +388,7 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
 --------------------------------------------------------------------------------
 
 -- External telescope
-type ExTeleScoping m r = ContT r (ReaderT EvalCtx m)
+type ExTeleScoping m r = Cont1T r (ReaderT EvalCtx m)
 
 -- Infer the type of the term, either checking the whole tree as it goes if
 -- `should = True`, or just doing the minimal work to return the inferred
@@ -599,16 +598,16 @@ validateOrNot should = \case
           valueTy <- validateOrNot should value
           cc (mismatchError <> " " <> show i) valueTy tyEval
         -- Now we extend `typeCtx` with the new value (laziness is nice here)
-        ContT $ local (:> (binder, eval (toEvalCtx ctorCtx) value)) . ($ ())
+        adaptCont $ local (:> (binder, eval (toEvalCtx ctorCtx) value))
         -- Proceed with the next index `i+1`
         validateTelescope mismatchError (i+1) valueVector typeVector
       _ -> pure ()
 
   startTelescoping :: forall r. ExTeleScoping m r r -> m r
-  startTelescoping (ContT act) = do
+  startTelescoping act = do
     ctx <- M.askCtx
     let start = ctxOfGlobals $ ctxGlobals ctx
-    runReaderT (act pure) start
+    runReaderT (unsafeRunCont1T act pure) start
 
   toEvalCtx = mapCtx (\_ _ (_, tm) -> tm)
 

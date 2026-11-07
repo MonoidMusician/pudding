@@ -128,6 +128,7 @@ library
         Pudding.Types.Monads,
         Pudding.Types.Monads.Verifier,
         Pudding.Types.Monads.Prover,
+        Pudding.Types.Monads.Cont1T,
         Pudding.Core.Types,
         Pudding.Core.Eval,
         Pudding.Core.Unify,

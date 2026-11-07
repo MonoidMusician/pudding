@@ -26,7 +26,7 @@ import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), StackLike(size), pattern Nil, pattern (:>), (@@?))
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift), MonadState)
-import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals, ctxStack), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo), Closure, ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL), UnifyMode (UnifyMode), InjectiveStatus (StillInjective))
+import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals, ctxStack), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo), Closure (Closure, ConstClosure), ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL), UnifyMode (UnifyMode), InjectiveStatus (StillInjective))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl(..), CST(..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize, Attributes))
@@ -41,7 +41,6 @@ import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import Control.Arrow (Arrow(first))
 import qualified Data.List.NonEmpty as NE
-import Control.Monad.Trans.Cont (ContT(ContT, runContT), evalContT)
 import Data.Traversable (for)
 import qualified Data.Vector as Vector
 import Control.Monad (join, when)
@@ -54,6 +53,7 @@ import qualified Pudding.Types.Monads as M
 import Data.Pair (Pair(..))
 import Pudding.Types.Monads.Prover (Prover, runProverMonad)
 import Pudding.Types.Config (Field(dflt))
+import Pudding.Types.Monads.Cont1T (Cont1T, adaptCont, unsafeRunCont1T, unsafeEvalCont1T, localizeCont)
 
 class Applicative m => TwoPhase m where
   twoPhases :: m (m r) -> m r
@@ -114,7 +114,6 @@ data GLScope = GLScope
   { glNames :: IORef NameTable
   , glGlobals :: Map Name (Scoped GlobalInfo)
   , glLocals :: Map Name (Stack Eval)
-  , glCtx :: EvalTypeCtx
   }
 
 mintName :: forall r m. MonadIO m => MonadReader r m => (r -> IORef NameTable) -> Text -> m Name
@@ -136,10 +135,10 @@ type GLM = Compose (ReaderT (IORef NameTable) IO) (GGather Scoped)
 -- | also the local context that is pushed under binders and such.
 type Scoped = GInit (ReaderT GLScope Prover)
 -- | Continuation monad, so `traverse` can adjust locals
-type Scoping r = ContT r Scoped
+type Scoping r = Cont1T r Scoped
 -- | Abstract over both
 type ScopeLike m =
-  (MonadState (Map Name (Initializing GlobalInfo)) m, MonadReader GLScope m)
+  (MonadState (Map Name (Initializing GlobalInfo)) m, MonadReader GLScope m, M.Scoping m)
 
 
 
@@ -149,7 +148,12 @@ willInitGLM text creator = Compose $ mintName id text <&>
   \name -> (name,) <$> willInit name (clearLocals (creator name))
 
 clearLocals :: Scoped r -> Scoped r
-clearLocals = local \gl -> gl { glLocals = M.empty, glCtx = (glCtx gl) { ctxStack = Nil } }
+clearLocals inner = do
+  let clearGL gl = gl { glLocals = M.empty }
+  local clearGL do
+    -- Grab updated globals
+    ctx <- currentCtx
+    M.withCtx (ctx { ctxStack = Nil }) inner
 
 -- | For `@example`, for example
 willUseGLM :: Scoped r -> GLM r
@@ -215,13 +219,13 @@ runElabFull tbl (Compose stage0) = do
   -- Keep track of all the globals in state, and provide the default
   -- global context with no locals, plus the name table to mint more names
   (r, _) <- runProverMonad dflt $ runReaderT (runStateT stage2 (Uninitialized <$ items))
-    (GLScope tbl items M.empty Nil)
+    (GLScope tbl items M.empty)
   pure r
 
 runElabScoped :: IORef NameTable -> Scoped r -> IO r
 runElabScoped tbl stage2 = do
   fmap fst $ runProverMonad dflt $ runReaderT (runStateT stage2 M.empty) $
-    GLScope tbl M.empty M.empty Nil
+    GLScope tbl M.empty M.empty
 
 
 
@@ -243,15 +247,20 @@ currentCtx = do
     Initializing (Just r) -> Just r
     _ -> Nothing
   let currentGlobals = globalsFrom initialized
-  localCtx <- asks glCtx
+  localCtx <- M.askCtx
   pure $ localCtx { ctxGlobals = currentGlobals }
 
 intoClosure :: Eval -> Closure -> (Eval -> Scoped r) -> Scoped r
-intoClosure argTy clo cb = do
-  outer <- ask
-  let neutral = Neutral (NVar mempty (Level (size (glCtx outer)))) Nil
-  local (const $ outer { glCtx = glCtx outer :> (BUnused, (argTy, ENeut neutral)) }) do
-    cb $ E.instantiateClosure clo $ ENeut neutral
+intoClosure argTy clo =
+  unsafeRunCont1T (intoClosure1 argTy clo)
+
+intoClosure1 :: Eval -> Closure -> Cont1T r Scoped Eval
+intoClosure1 argTy clo = do
+  let
+    bdr = case clo of
+      Closure _ b _ -> b
+      ConstClosure _ -> BUnused
+  snd <$> M.bindNeut1 mempty bdr argTy
 
 parseAttributes :: [RawAttribute] -> Attributes
 parseAttributes = foldMap \case
@@ -302,7 +311,7 @@ elaborateDecl = \case
 -- | Elaborate a type (optional) and a term of that type, into a "global"
 -- | definition which caches the term and type as both `Term` and `Eval`.
 -- | (The definition does not have to be global, just the wrapper is called that.)
-elaborateDefn :: Attributes -> Maybe CST -> CST -> Scoped GlobalDefn
+elaborateDefn :: HasCallStack => Attributes -> Maybe CST -> CST -> Scoped GlobalDefn
 elaborateDefn attrs mty tm = do
   -- lift . lift . evaluate . force =<< do
     mty' <- for mty \ty -> do
@@ -450,48 +459,40 @@ elabBinders cons binders body = foldr addBinder (elab Nothing body) binders
       Nothing -> error "Missing type for lambda/pi/sigma"
       Just ty -> elab Nothing ty
     tyE <- eval tyT
-    runContT (elabMultiBinderCont tyE binder) \binderB ->
+    unsafeRunCont1T (elabMultiBinder tyE binder) \binderB ->
       multiCons plicit binderB tyT <$> inner
   multiCons plicit bounders tyT inner =
     foldr (\(i, b) -> cons plicit b (E.shift i tyT) . Scoped)
       inner
       (zip [0..] (NE.toList bounders))
 
-elabBinder1 :: ("ty" @:: Eval) -> CBinder -> Scoped (Binder, GLScope -> GLScope)
+elabBinder1 :: ("ty" @:: Eval) -> CBinder -> Cont1T r Scoped Binder
 elabBinder1 tyE = \case
   CVar (Just (PlainName [] text)) PlainVar -> do
     name <- mintName glNames text
     let binder = BVar (Meta (canonicalName name))
-    pure $ (binder, ) $ \outer ->
-      let neutral = Neutral (NVar mempty (Level (size (glCtx outer)))) Nil
-          addVar = name & M.alter do Just . (:> ENeut neutral) . fromMaybe Nil
-      in outer { glLocals = addVar (glLocals outer), glCtx = glCtx outer :> (binder, (tyE, ENeut neutral)) }
-  CPlaceholder -> do
-    pure $ (BUnused,) $ \outer ->
-      let neutral = Neutral (NVar mempty (Level (size (glCtx outer)))) Nil
-      in outer { glCtx = glCtx outer :> (BUnused, (tyE, ENeut neutral)) }
-  CAssign l r -> do
-    (b1, f1) <- elabBinder1 tyE l
-    (b2, f2) <- elabBinder1 tyE r
-    pure (BMulti b1 b2, f2 . f1)
+    (_, neutral) <- M.bindNeut1 mempty binder tyE
+    localizeCont \outer ->
+      let addVar = name & M.alter do Just . (:> neutral) . fromMaybe Nil
+      in outer { glLocals = addVar (glLocals outer) }
+    pure binder
+  CPlaceholder ->
+    BUnused <$ M.bindNeut1 mempty BUnused tyE
+  CAssign l r -> BMulti
+    <$> elabBinder1 tyE l
+    <*> elabBinder1 tyE r
   _ -> error "Bad/unsupported binder"
 
-elabMultiBinderCont :: ("ty" @:: Eval) -> NonEmpty CBinder -> ContT c Scoped (NonEmpty Binder)
-elabMultiBinderCont tyE = traverse (elabBinder1Cont tyE)
+elabMultiBinder :: ("ty" @:: Eval) -> NonEmpty CBinder -> Cont1T c Scoped (NonEmpty Binder)
+elabMultiBinder tyE = traverse (elabBinder1 tyE)
 
-localize :: MonadReader r m => a -> (r -> r) -> ContT c m a
-localize c f = ContT \k -> local f (k c)
-
-elabBinder1Cont :: ("ty" @:: Eval) -> CBinder -> ContT c Scoped Binder
-elabBinder1Cont tyE b = do
-  (c, f) <- lift $ elabBinder1 tyE b
-  ContT \k -> do
-    local f $ k c
+localize :: MonadReader r m => a -> (r -> r) -> Cont1T c m a
+localize c f = c <$ adaptCont (local f)
 
 
 elaborateDataType :: Name -> [CBinderGroup] -> [CBinderGroup] -> Maybe CST -> [(VariableName, "arguments" @:: [CBinderGroup], "result" @:: Maybe CST)] -> Scoped GlobalTypeInfo
 elaborateDataType name rawParams rawIndices mdest rawConstrs = do
-  (newParams, newIndices) <- evalContT do
+  (newParams, newIndices) <- unsafeEvalCont1T do
     termParams <- processBinders rawParams $
       error "Missing type for datatype parameter"
     explicitTermIndices <- processBinders rawIndices $
@@ -508,7 +509,7 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
     ctor <- case cname of
       (Just (PlainName [] text), PlainVar) -> mintName glNames text
       _ -> error "Bad constructor name"
-    (ctor,) <$> evalContT do
+    (ctor,) <$> unsafeEvalCont1T do
       explicitArguments <- processBinders argTypes $
         error "Missing type for constructor argument"
       (implicitArguments, (params, indices)) <- do
@@ -522,7 +523,7 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
         _ -> error "Bad constructor parameter: must be a plain variable, in order"
       let ctorArguments = Vector.fromList $ List.drop (Vector.length params) $ explicitArguments <> implicitArguments
       ctorIndices <- lift $ traverse quote indices
-      -- ctx <- asks glCtx
+      -- ctx <- M.askCtx
       -- ctx' <- lift $ traverse (quote . snd . snd) $ ctxStack ctx
       -- Dbg.traceM $ show $ C.Print.formatCoreFrom C.Print.Plain (size ctx) <$> view (from stack) ctx'
       -- ctx'' <- lift $ traverse (quote . fst . snd) $ ctxStack ctx
@@ -542,7 +543,7 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
         Nothing -> nope
         Just ty -> elab Nothing ty
       tyE <- lift $ eval tyT
-      multiCons plicit <$> elabMultiBinderCont tyE binder <*> pure tyT
+      multiCons plicit <$> elabMultiBinder tyE binder <*> pure tyT
   peelToUniv :: Eval -> Scoped ([(Plicit, Binder, Term)], ULevel)
   peelToUniv = withForced \case
     EPi _ plicit binder indexTy inner -> do
@@ -555,7 +556,7 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
   peelToTyCtor = withForced \case
     EPi _ plicit binder indexTy inner -> do
       idx <- lift $ quote indexTy
-      peeled <- ContT $ intoClosure indexTy inner
+      peeled <- intoClosure1 indexTy inner
       first ((plicit, binder, idx) :) <$> peelToTyCtor peeled
     ETyCtor _ tyName params indices -> do
       when (tyName /= name) do

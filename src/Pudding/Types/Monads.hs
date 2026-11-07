@@ -22,6 +22,8 @@ import qualified Control.Monad.Trans.State.Strict as StateT
 import Data.Tuple (swap)
 import qualified Control.Monad.Trans.Except as ExceptT
 import Data.Vector (Vector)
+import Control.Monad.Trans.Cont (ContT, mapContT)
+import Pudding.Types.Monads.Cont1T (Cont1T (Cont1T), mapCont1T, unsafeRunCont1T, adaptCont)
 
 -----------------
 -- Memoization --
@@ -80,9 +82,14 @@ class Monad m => Scoping m where
 
 bindNeut :: forall m r. Scoping m => Metadata -> Binder -> ("type" @:: Eval) -> (Level -> Eval -> m r) -> m r
 bindNeut meta bdr ty inner = do
+  unsafeRunCont1T (bindNeut1 meta bdr ty)
+    (uncurry inner)
+
+bindNeut1 :: forall m r. Scoping m => Metadata -> Binder -> ("type" @:: Eval) -> Cont1T r m (Level, Eval)
+bindNeut1 meta bdr ty = do
   lvl <- Level <$> ctxSize
   let neut = ENeut (Neutral (NVar meta lvl) Nil)
-  bindVar bdr (ty, neut) (inner lvl neut)
+  (lvl, neut) <$ adaptCont (bindVar bdr (ty, neut))
 
 ctxSize :: Scoping m => m Int
 ctxSize = size <$> askCtx
@@ -233,11 +240,15 @@ instance Freshener m => Freshener (StateT s m) where freshen = lift freshen
 instance Freshener m => Freshener (ReaderT r m) where freshen = lift freshen
 instance Freshener m => Freshener (ExceptT e m) where freshen = lift freshen
 instance (Freshener m, Monoid w) => Freshener (WriterT w m) where freshen = lift freshen
+instance Freshener m => Freshener (ContT c m) where freshen = lift freshen
+instance Freshener m => Freshener (Cont1T c m) where freshen = lift freshen
 
 instance WithConfig m => WithConfig (StateT s m) where getConfig = lift getConfig
 instance WithConfig m => WithConfig (ReaderT r m) where getConfig = lift getConfig
 instance WithConfig m => WithConfig (ExceptT e m) where getConfig = lift getConfig
 instance (WithConfig m, Monoid w) => WithConfig (WriterT w m) where getConfig = lift getConfig
+instance WithConfig m => WithConfig (ContT c m) where getConfig = lift getConfig
+instance WithConfig m => WithConfig (Cont1T c m) where getConfig = lift getConfig
 
 
 instance Scoping m => Scoping (StateT s m) where
@@ -260,6 +271,14 @@ instance Scoping m => Scoping (FreshT m) where
   askCtx = lift askCtx
   withCtx = mapFreshT . withCtx
   bindVar bdr tyval = mapFreshT (bindVar bdr tyval)
+instance Scoping m => Scoping (ContT c m) where
+  askCtx = lift askCtx
+  withCtx = mapContT . withCtx
+  bindVar bdr tyval = mapContT (bindVar bdr tyval)
+instance Scoping m => Scoping (Cont1T c m) where
+  askCtx = lift askCtx
+  withCtx = mapCont1T . withCtx
+  bindVar bdr tyval = mapCont1T (bindVar bdr tyval)
 
 
 instance Evaling m => Evaling (StateT s m) where
@@ -297,6 +316,20 @@ instance Evaling m => Evaling (FreshT m) where
   progressGlobal = lift . progressGlobal
   forceGlobal = lift . forceGlobal
   forceNeutral = lift . forceNeutral
+instance Evaling m => Evaling (ContT c m) where
+  eval = lift . eval
+  quote = lift . quote
+  currentSolutions = lift currentSolutions
+  progressGlobal = lift . progressGlobal
+  forceGlobal = lift . forceGlobal
+  forceNeutral = lift . forceNeutral
+instance Evaling m => Evaling (Cont1T c m) where
+  eval = lift . eval
+  quote = lift . quote
+  currentSolutions = lift currentSolutions
+  progressGlobal = lift . progressGlobal
+  forceGlobal = lift . forceGlobal
+  forceNeutral = lift . forceNeutral
 
 
 instance (Monad m, Constraining m) => Constraining (StateT s m) where
@@ -324,6 +357,11 @@ instance (Monad m, Constraining m) => Constraining (FreshT m) where
   constrain = lift . constrain
   constraintsFrom (FreshT act) = FreshT (constraintsFrom act)
   constrainULevel = lift . constrainULevel
+instance (Monad m, Constraining m) => Constraining (Cont1T c m) where
+  type Constraints (Cont1T c m) = Constraints m
+  constrain = lift . constrain
+  constraintsFrom (Cont1T act) = Cont1T \m -> (\(x, (y, z)) -> (y, (x, z))) <$> constraintsFrom (act m)
+  constrainULevel = lift . constrainULevel
 
 instance Typing m => Typing (StateT s m) where
   fatal = lift . fatal
@@ -350,6 +388,11 @@ instance Typing m => Typing (FreshT m) where
   context msg = mapFreshT (context msg)
   validate = lift . validate
   validEval = lift . validEval
+instance Typing m => Typing (Cont1T c m) where
+  fatal = lift . fatal
+  context msg = mapCont1T (context msg)
+  validate = lift . validate
+  validEval = lift . validEval
 
 instance (Monad m, Unifying m) => Unifying (StateT s m) where
   unsafeSolve = fmap lift . unsafeSolve
@@ -366,6 +409,9 @@ instance (Monad m, Unifying m, Monoid w) => Unifying (WriterT w m) where
 instance (Monad m, Unifying m) => Unifying (FreshT m) where
   unsafeSolve = fmap lift . unsafeSolve
   equate = lift . equate
+instance (Monad m, Unifying m) => Unifying (Cont1T c m) where
+  unsafeSolve = fmap lift . unsafeSolve
+  equate = lift . equate
 
 instance Proving m => Proving (StateT s m) where
   subsume = fmap lift . subsume
@@ -376,4 +422,6 @@ instance Proving m => Proving (ExceptT e m) where
 instance (Proving m, Monoid w) => Proving (WriterT w m) where
   subsume = fmap lift . subsume
 instance Proving m => Proving (FreshT m) where
+  subsume = fmap lift . subsume
+instance Proving m => Proving (Cont1T c m) where
   subsume = fmap lift . subsume
