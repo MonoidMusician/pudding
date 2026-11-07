@@ -29,9 +29,20 @@ willBe val act msg =
 unitTests :: TestSuite
 unitTests = TestSuite "UnitTests" do
   testCase "Cont1T" do
-    "associativity test" & willBe "01234" do
+    "simplest test" & willBe "01" do
+      snoc "0"
+      lift \items -> fold items <> "1"
+    "double snoc" & willBe "012" do
+      snoc "0"
+      snoc "1"
+      lift \items -> fold items <> "2"
+    "associativity test" & willBe "012" do
+      snoc "0" *> snoc "1"
+      lift \items -> fold items <> "2"
+    "full associativity test" & willBe "012345" do
       (snoc "0" *> snoc "1") <* (snoc "2" <* snoc "3")
-      lift \items -> fold items <> "4"
+      snoc "4"
+      lift \items -> fold items <> "5"
     "interleaving test" & willBe "->0101234" do
       snoc "0" *> snoc "1"
       onResult \r _ -> "-" <> r
@@ -39,7 +50,7 @@ unitTests = TestSuite "UnitTests" do
       snoc "2" <* snoc "3"
       onResult \r _ -> ">" <> r
       lift \items -> fold x <> fold items <> "4"
-    "awa" & willBe "asdf" do
+    "awa" & willBe "az" do
       adaptOnResult \c -> local (:> "a") do
         c <&> (, \r l -> fold l <> r)
       lift \items -> fold items <> "z"

@@ -105,7 +105,7 @@ instance Monad m => Monad (Cont1T r m) where
   Cont1T act1 >>= g = Cont1T \m -> do
     (acc1, x) <- act1 m
     act2 <- case g x of Cont1T act2 -> useMemoizer m (act2 m)
-    tweaks m acc1 (first . posttweak) act2
+    first (acc1 <>) <$> tweaks m acc1 (const id) act2
 
 runCont1TIO :: MonadIO m => Cont1T r m t -> (t -> m r) -> m r
 runCont1TIO = runCont1T memoizerIO
