@@ -112,8 +112,8 @@ runCont1T m (Cont1T act) f = do
   continuation <- useMemoizer m (f v)
   tweak m acc continuation
 
-unsafeRunCont1T :: Monad m => Cont1T r m t -> (t -> m r) -> m r
-unsafeRunCont1T = runCont1T noMemoizer
+runCont1pT :: Monad m => Cont1T r m t -> (t -> m r) -> m r
+runCont1pT = runCont1T noMemoizer
 
 
 evalCont1T :: Monad m => Memoizer m -> Cont1T r m r -> m r
@@ -121,8 +121,8 @@ evalCont1T m (Cont1T act) = do
   (acc, v) <- act m
   tweak m acc (pure v)
 
-unsafeEvalCont1T :: Monad m => Cont1T r m r -> m r
-unsafeEvalCont1T = evalCont1T noMemoizer
+evalCont1pT :: Monad m => Cont1T r m r -> m r
+evalCont1pT = evalCont1T noMemoizer
 
 
 -- Provide a function to adapt the linear continuation

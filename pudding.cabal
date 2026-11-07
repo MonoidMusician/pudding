@@ -150,6 +150,7 @@ library
         Data.Show.Reshow,
         Data.Pair,
         Data.Conserve,
+        Data.Generics.Constructor,
 
     -- Modules included in this library but not exported.
     -- other-modules:

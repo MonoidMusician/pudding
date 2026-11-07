@@ -32,6 +32,7 @@ bootGlobalDefns globals =
         return $ GlobalTerm (quote (void ctx) ty) (undeferred ty)
   in newGlobals
 
+-- Add all the auxiliary definitions for all the auxiliary types
 bootGlobalTypes globals =
   globals { globalDefns = globalDefns globals `disjointUnion` constructors (globalTypes globals) }
   where
@@ -39,10 +40,14 @@ bootGlobalTypes globals =
   -- disjointUnion = Map.unionWithKey \k _ _ -> error $ "Duplicate global: " <> show k
   fakeGlobal tm = GlobalDefn (arityOfTerm tm) undefined (GlobalTerm tm undefined)
   constructors = fold . Map.mapWithKey \typeName info ->
-    fakeGlobal <$> typeAuxDefns typeName info
+    fakeGlobal <$> Map.fromList (typeAuxDefns typeName info)
 
-typeAuxDefns :: ("type name" @:: Name) -> GlobalTypeInfo -> Map.Map ("type name" @:: Name) Term
-typeAuxDefns typeName (GlobalTypeInfo { typeParams, typeIndices, typeConstrs }) = fold
+-- Auxiliary definitions for inductive types: add the type constructor and the
+-- inductive constructors as terms to the global environment.
+--
+-- (This returns a list so that the type constructor comes first)
+typeAuxDefns :: ("type name" @:: Name) -> GlobalTypeInfo -> [("type name" @:: Name, Term)]
+typeAuxDefns typeName (GlobalTypeInfo { typeParams, typeIndices, typeConstrs }) = foldMap Map.toList
   -- The type constructor: take all of the parameters and the indices,
   -- and then make the fully applied type constructor term.
   [ Map.singleton typeName $

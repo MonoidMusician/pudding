@@ -39,7 +39,7 @@ import qualified Data.Map as Map
 import qualified Data.Vector as Vector
 import qualified Pudding.Types.Monads as M
 import qualified Pudding.Types.Stack as Stack
-import Pudding.Types.Monads.Cont1T (Cont1T, adaptCont, unsafeRunCont1T)
+import Pudding.Types.Monads.Cont1T (Cont1T, adaptCont, runCont1pT)
 
 
 type Transform m t = t -> m t
@@ -491,7 +491,7 @@ validateOrNot should = \case
             -- all bound as well
             indexValues = eval ctxArgs <$> ctorIndices
           pure $ ETyCtor mempty typeName paramValues indexValues
-      _ -> M.fatal "Bad constructor name"
+      _ -> M.fatal $ "Bad constructor name " <> show typeName
   TCase _ motive cases scrutinee -> do
     might do
       ctx <- M.askCtx
@@ -602,7 +602,7 @@ validateOrNot should = \case
   startTelescoping act = do
     ctx <- M.askCtx
     let start = ctxOfGlobals $ ctxGlobals ctx
-    runReaderT (unsafeRunCont1T act pure) start
+    runReaderT (runCont1pT act pure) start
 
   toEvalCtx = mapCtx (\_ _ (_, tm) -> tm)
 

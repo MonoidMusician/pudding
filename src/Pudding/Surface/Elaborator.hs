@@ -21,12 +21,12 @@ import Data.Function ((&))
 import Data.Map (Map)
 import Data.Map qualified as M
 import Data.Text (Text)
-import Pudding.Types.Name (Name(..), internalize, NameTable, canonicalName)
+import Pudding.Types.Name (Name(..), internalize, NameTable, canonicalName, CanonicalName (chosenName))
 import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), pattern Nil, pattern (:>), (@@?))
-import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO, MonadTrans (lift), MonadState)
-import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo), Closure (Closure, ConstClosure), ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL), UnifyMode (UnifyMode), InjectiveStatus (StillInjective), addGlobal, freshGlobals)
+import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO (liftIO), MonadTrans (lift), MonadState)
+import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti, BFresh, BPair), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo), Closure (Closure, ConstClosure), ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL), UnifyMode (UnifyMode), InjectiveStatus (StillInjective), addGlobal, freshGlobals, pattern ENeutral, pattern ENeutralVar)
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl(..), CST(..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize, Attributes))
@@ -52,8 +52,9 @@ import qualified Pudding.Types.Monads as M
 import Data.Pair (Pair(..))
 import Pudding.Types.Monads.Prover (Prover (Prover), runProverMonad, ProverS (proofGlobals))
 import Pudding.Types.Config (Field(dflt))
-import Pudding.Types.Monads.Cont1T (Cont1T, adaptCont, unsafeRunCont1T, unsafeEvalCont1T, localizeCont)
+import Pudding.Types.Monads.Cont1T (Cont1T, adaptCont, runCont1pT, evalCont1pT, localizeCont)
 import Pudding.Core.Boot (typeAuxDefns)
+import Data.Generics.Constructor (ctorName)
 
 class Applicative m => TwoPhase m where
   twoPhases :: m (m r) -> m r
@@ -147,8 +148,7 @@ willInitGLM text creator = Compose $ mintName id text <&>
   -- TODO: better way than clearLocals?
   \name -> (name,) <$> willInit name do
     result <- clearLocals (creator name)
-    lift . lift $ Prover $ modify' \s -> s
-      { proofGlobals = Just $ addGlobal (fromMaybe freshGlobals $ proofGlobals s) name result }
+    addProofGlobal name result
     pure result
 
 clearLocals :: Scoped r -> Scoped r
@@ -241,7 +241,7 @@ currentCtx = do
 
 intoClosure :: Eval -> Closure -> (Eval -> Scoped r) -> Scoped r
 intoClosure argTy clo =
-  unsafeRunCont1T (intoClosure1 argTy clo)
+  runCont1pT (intoClosure1 argTy clo)
 
 intoClosure1 :: Eval -> Closure -> Cont1T r Scoped Eval
 intoClosure1 argTy clo = do
@@ -249,7 +249,8 @@ intoClosure1 argTy clo = do
     bdr = case clo of
       Closure _ b _ -> b
       ConstClosure _ -> BUnused
-  snd <$> M.bindNeut1 mempty bdr argTy
+  (_lvl, neut) <- M.bindNeut1 mempty bdr argTy
+  pure $ E.instantiateClosure clo neut
 
 parseAttributes :: [RawAttribute] -> Attributes
 parseAttributes = foldMap \case
@@ -289,7 +290,7 @@ elaborateDecl = \case
         asks (M.lookup tyName . glGlobals) >>= \case
           Just tyDef -> tyDef >>= \case
             TypeGlobal (GlobalTypeInfo _ _ _ctors) -> do
-              ctx <- currentCtx
+              ctx <- M.askCtx
               pure $ DefnGlobal $ fromMaybe (error "wat") $ M.lookup ctorName $ globalDefns $ ctxGlobals ctx
             _ -> error "Impossible"
           Nothing -> error "Impossible!"
@@ -448,7 +449,7 @@ elabBinders cons binders body = foldr addBinder (elab Nothing body) binders
       Nothing -> error "Missing type for lambda/pi/sigma"
       Just ty -> elab Nothing ty
     tyE <- eval tyT
-    unsafeRunCont1T (elabMultiBinder tyE binder) \binderB ->
+    runCont1pT (elabMultiBinder tyE binder) \binderB ->
       multiCons plicit binderB tyT <$> inner
   multiCons plicit bounders tyT inner =
     foldr (\(i, b) -> cons plicit b (E.shift i tyT) . Scoped)
@@ -478,48 +479,89 @@ elabMultiBinder tyE = traverse (elabBinder1 tyE)
 localize :: MonadReader r m => a -> (r -> r) -> Cont1T c m a
 localize c f = c <$ adaptCont (local f)
 
+
+-- Add an entry to the Globals, stored in the Prover part of the stack.
+-- `willInitGLM` already uses this for when something is fully initialized,
+-- but partial initialization is done manually, and inductive types add
+-- additional declarations to globals too.
 addProofGlobal :: Name -> GlobalInfo -> Scoped ()
 addProofGlobal name decl =
   lift . lift $ Prover $ modify' \s -> s
     { proofGlobals = Just $ addGlobal (fromMaybe freshGlobals $ proofGlobals s) name decl }
 
+addTypeAuxDefns :: HasCallStack => Name -> GlobalTypeInfo -> Scoped ()
+addTypeAuxDefns name final =
+  for_ (typeAuxDefns name final) \(auxName, tm) -> do
+    ty <- M.reinfer tm
+    defn <- GlobalDefn (arityOfTerm tm)
+      <$> globalQuote ty
+      <*> globalEval  tm
+    addProofGlobal auxName $ DefnGlobal defn
 
+
+
+
+-- Elaborating an inductive type is a multi-step process
 elaborateDataType :: Name -> [CBinderGroup] -> [CBinderGroup] -> Maybe CST -> [(VariableName, "arguments" @:: [CBinderGroup], "result" @:: Maybe CST)] -> Scoped GlobalTypeInfo
 elaborateDataType name rawParams rawIndices mdest rawConstrs = do
-  (newParams, newIndices) <- unsafeEvalCont1T do
+  -- First we need to process two groups of binders, to determine the parameters
+  -- and indices of the inductive type
+  (newParams, newIndices) <- evalCont1pT do
+    -- Parameters are listed first; enter that telescoping context
     termParams <- processBinders rawParams $
       error "Missing type for datatype parameter"
+    -- Indices may be listed next
     explicitTermIndices <- processBinders rawIndices $
       error "Missing type for datatype index"
+    -- Finally the type may reduce to a Pi type, providing more indices
     implicitTermIndices <- fromMaybe [] <$> for mdest \dest -> lift do
       term <- elabType dest
       e <- eval term
+      -- But it must end in a universe, like `Type`
       fst <$> peelToUniv e
     let termIndices = explicitTermIndices <> implicitTermIndices
     pure (Vector.fromList termParams, Vector.fromList termIndices)
 
-  -- Provisionally initialize an empty inductive datatype
+  -- Provisionally initialize an empty inductive datatype, so that it exists
+  -- with the correct type while checking each constructor
   let prelim = GlobalTypeInfo newParams newIndices M.empty
+  -- This is the only place that `Initializing $ Just` is used
   modify' $ M.insert name $ Initializing $ Just $ TypeGlobal prelim
   addProofGlobal name $ TypeGlobal prelim
+  addTypeAuxDefns name prelim
 
+  -- Now loop over the constructors, in order.
+  -- (Order matters for the user, not semantically)
   constructors <- for rawConstrs \(cname, argTypes, resultType) -> do
+    -- It must be a plain name
     ctor <- case cname of
       (Just (PlainName [] text), PlainVar) -> mintName glNames text
       _ -> error "Bad constructor name"
-    (ctor,) <$> unsafeEvalCont1T do
+    -- Process binders, this time representing the parameters then arguments
+    -- of the constructor: the parameters are boringly repeated, as they must be,
+    -- while the arguments represent the actual data that the constructor holds,
+    -- which becomes available for pattern matching.
+    (ctor,) <$> evalCont1pT do
+      -- Explicit binders
       explicitArguments <- processBinders argTypes $
         error "Missing type for constructor argument"
+      -- Again, it can result in a pi type with more binders
       (implicitArguments, (params, indices)) <- do
         fromMaybe mempty <$> for resultType \r -> do
           rT <- lift $ elabType r
           rE <- lift $ eval rT
+          -- But it must end with the type constructor that names the type,
+          -- instantiated with all parameters and indices
           peelToTyCtor rE
+      -- Check that the parameters are boringly correct
       for_ (zip [0..] (Vector.toList params)) \case
         (i, ENeut (Neutral (NVar _ (Level j)) Nil)) | i == j -> pure ()
         (i, ENeut (Neutral (NVar _ (Level j)) Nil)) -> error $ "Bad constructor parameter " <> show ctor <> ": " <> show i <> " /= " <> show j
         _ -> error "Bad constructor parameter: must be a plain variable, in order"
+      -- Get the arguments, coming after the parameters
       let ctorArguments = Vector.fromList $ List.drop (Vector.length params) $ explicitArguments <> implicitArguments
+      -- Because the indices are coming from an evaluated type, they need to be quoted back
+      -- TODO: might be nice to preserve the original terms, in simple cases
       ctorIndices <- lift $ traverse quote indices
       -- ctx <- M.askCtx
       -- ctx' <- lift $ traverse (quote . snd . snd) $ ctxStack ctx
@@ -527,18 +569,17 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
       -- ctx'' <- lift $ traverse (quote . fst . snd) $ ctxStack ctx
       -- Dbg.traceM $ show $ C.Print.formatCoreFrom C.Print.Plain (size ctx) <$> view (from stack) ctx''
       -- Dbg.traceM $ show $ C.Print.formatCoreFrom C.Print.Plain (size ctx) <$> ctorIndices
+
+      -- Crystallize this information into the heartless core language
       pure $ ConstructorInfo ctorArguments ctorIndices
 
   -- Now the full info is available for the inductive type
   let final = GlobalTypeInfo newParams newIndices (M.fromList constructors)
 
+  addProofGlobal name $ TypeGlobal final
   -- Add its auxiliary definitions to the booted globals as well
-  for_ (M.mapWithKey (,) $ typeAuxDefns name final) \(auxName, tm) -> do
-    ty <- M.reinfer tm
-    defn <- GlobalDefn (arityOfTerm tm)
-      <$> globalQuote ty
-      <*> globalEval  tm
-    addProofGlobal auxName $ DefnGlobal defn
+  -- (This requires the above line, to see the update immediately)
+  addTypeAuxDefns name final
 
   pure final
   where
@@ -561,7 +602,19 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
       first ((plicit, binder, idx) :) <$>
         intoClosure indexTy inner peelToUniv
     EUniv _ univ -> pure ([], univ)
-    _ -> error "Bad annotation for datatype"
+    ENeutralVar _ (Level l) _ -> do
+      ctx <- M.askCtx
+      let
+        showBinder = \case
+          BFresh -> "fresh"
+          BUnused -> "_"
+          BVar (Meta names) -> show $ chosenName names
+          BMulti _ _ -> ":="
+          BPair _ _ -> ","
+      liftIO $ putStrLn $ maybe "none" showBinder $ fmap fst $ ctx @@? l
+      error $ "Bad annotation for datatype " <> show (Level l) <> " "
+    ENeutral x _ -> error $ "Bad annotation for datatype " <> ctorName x
+    v -> error $ "Bad annotation for datatype " <> ctorName v
   peelToTyCtor :: forall c. Eval -> Scoping c ([(Plicit, Binder, Term)], ("params" @:: Vector.Vector Eval, "indices" @:: Vector.Vector Eval))
   peelToTyCtor = withForced \case
     EPi _ plicit binder indexTy inner -> do
@@ -570,6 +623,6 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
       first ((plicit, binder, idx) :) <$> peelToTyCtor peeled
     ETyCtor _ tyName params indices -> do
       when (tyName /= name) do
-        error "Constructor for wrong datatype"
+        error $ "Constructor for wrong datatype: " <> show tyName <> " instead of " <> show name
       pure ([], (params, indices))
-    _ -> error "Bad annotation for constructor"
+    v -> error $ "Bad annotation for constructor " <> ctorName v

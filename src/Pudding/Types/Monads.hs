@@ -23,7 +23,7 @@ import Data.Tuple (swap)
 import qualified Control.Monad.Trans.Except as ExceptT
 import Data.Vector (Vector)
 import Control.Monad.Trans.Cont (ContT, mapContT)
-import Pudding.Types.Monads.Cont1T (Cont1T (Cont1T), mapCont1T, unsafeRunCont1T, adaptCont)
+import Pudding.Types.Monads.Cont1T (Cont1T (Cont1T), mapCont1T, runCont1pT, adaptCont)
 
 -----------------
 -- Memoization --
@@ -82,7 +82,7 @@ class Monad m => Scoping m where
 
 bindNeut :: forall m r. Scoping m => Metadata -> Binder -> ("type" @:: Eval) -> (Level -> Eval -> m r) -> m r
 bindNeut meta bdr ty inner = do
-  unsafeRunCont1T (bindNeut1 meta bdr ty)
+  runCont1pT (bindNeut1 meta bdr ty)
     (uncurry inner)
 
 bindNeut1 :: forall m r. Scoping m => Metadata -> Binder -> ("type" @:: Eval) -> Cont1T r m (Level, Eval)
