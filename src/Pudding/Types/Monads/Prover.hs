@@ -6,7 +6,7 @@ import Pudding.Core.Types
 import Pudding.Core.Unify as U
 import Pudding.Core.Eval as E
 import Control.Monad.Fix (MonadFix)
-import Control.Monad.Trans.RWS.Strict (RWST (runRWST))
+import Control.Monad.Trans.RWS.Strict (RWST (runRWST, RWST))
 import Control.Monad.Reader.Class (asks, MonadReader (local))
 import Control.Monad.Writer.Class (tell, listen)
 import Control.Monad.State.Class (get, gets, state, put, modify')
@@ -28,6 +28,10 @@ import qualified Pudding.Semantics.Universes.Fused as Fused
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import qualified Data.Vector as Vector
 import GHC.IO.Unsafe (unsafePerformIO)
+import Control.Monad.Error.Class (MonadError (throwError, catchError))
+import Control.Exception (throw)
+import Pudding.Types.Monads.Errors (ProverE)
+import GHC.IO (catchException)
 
 newtype Prover t = Prover (RWST ProverR ProverW ProverS IO t)
   deriving newtype (Functor, Applicative, Monad, MonadFix)
@@ -305,3 +309,9 @@ instance MonadIO Prover where
 
 instance Monoid t => Monoid (Prover t) where mempty = pure mempty
 instance Semigroup t => Semigroup (Prover t) where (<>) = liftA2 (<>)
+
+instance MonadError ProverE Prover where
+  throwError = Prover . liftIO . throw
+  catchError (Prover act) handler = Prover $ RWST \r s ->
+    catchException @ProverE (runRWST act r s)
+      \e -> runRWST (case handler e of Prover act2 -> act2) r s

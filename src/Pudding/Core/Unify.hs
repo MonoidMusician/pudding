@@ -40,6 +40,9 @@ import qualified Data.Vector as Vector
 import qualified Pudding.Types.Monads as M
 import qualified Pudding.Types.Stack as Stack
 import Pudding.Types.Monads.Cont1T (Cont1T, adaptCont, runCont1pT)
+import Control.Monad.Error.Class (MonadError(catchError, throwError))
+import Pudding.Types.Monads.Errors (ProverE(ProverE))
+import qualified Data.Text as T
 
 
 type Transform m t = t -> m t
@@ -204,9 +207,12 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
     -- We do care that this is fast, so check that everything matches up
     -- shallowly before recursing into arguments
     , checkPrjs (prjsL :# prjsR)
-    -> do
-      -- FIXME: try/catch
-      bified <$> unifyNeutrals (focusL :# focusR) (prjsL :# prjsR)
+    ->
+      catchError
+        do bified <$> unifyNeutrals (focusL :# focusR) (prjsL :# prjsR)
+        \err ->
+          catchError forceNeutrals
+            \_ignored -> throwError err
 
   -- Finally we are left with alternate strategies
 
@@ -265,7 +271,10 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
   check _ = pure ()
 
   ccFailed :: forall any. m any
-  ccFailed = M.fatal "Conversion check failed"
+  ccFailed = do
+    tmL <- M.printCore =<< M.quote evalL
+    tmR <- M.printCore =<< M.quote evalR
+    throwError $ ProverE $ "Conversion check failed " <> tmL <> " /// " <> tmR
 
   alignCC ::
     forall f. Eq1 f => Semialign f => Traversable f =>
@@ -356,7 +365,7 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
     case (forcedL, forcedR) of
       -- If we do not make progress on either as a global, then conversion checking
       -- fails: they were different constructors in the AST and semantically
-      (Nothing, Nothing) -> error "Conversion checking failed"
+      (Nothing, Nothing) -> ccFailed
       -- Retry with one or both being inlined now
       _ -> subsume mode (fromMaybe evalL forcedL :# fromMaybe evalR forcedR)
 
@@ -547,7 +556,7 @@ validateOrNot should = \case
     fromMaybe val' <$> M.forceNeutral val'
 
   checkFor _ True = pure ()
-  checkFor err False = M.fatal err
+  checkFor err False = throwError $ ProverE err
 
   validateScoped :: Binder -> "arg type" @:: Term -> ScopedTerm -> m ("arg type" @:: Eval, "body type" @:: Eval)
   validateScoped bdr ty (Scoped body) = do

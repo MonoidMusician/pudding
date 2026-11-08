@@ -24,6 +24,8 @@ import qualified Control.Monad.Trans.Except as ExceptT
 import Data.Vector (Vector)
 import Control.Monad.Trans.Cont (ContT, mapContT)
 import Pudding.Types.Monads.Cont1T (Cont1T (Cont1T), mapCont1T, runCont1pT, adaptCont)
+import Pudding.Types.Monads.Errors (ProverE)
+import qualified Pudding.Core.Printer as Printer
 
 -----------------
 -- Memoization --
@@ -87,12 +89,12 @@ bindNeut meta bdr ty inner = do
 
 bindNeut1 :: forall m r. Scoping m => Metadata -> Binder -> ("type" @:: Eval) -> Cont1T r m (Level, Eval)
 bindNeut1 meta bdr ty = do
-  lvl <- Level <$> ctxSize
+  lvl <- Level <$> ctxDepth
   let neut = ENeut (Neutral (NVar meta lvl) Nil)
   (lvl, neut) <$ adaptCont (bindVar bdr (ty, neut))
 
-ctxSize :: Scoping m => m Int
-ctxSize = size <$> askCtx
+ctxDepth :: Scoping m => m Int
+ctxDepth = size <$> askCtx
 
 askEvalCtx :: Scoping m => m EvalCtx
 askEvalCtx = fmap snd <$> askCtx
@@ -108,6 +110,11 @@ lookupType name = Map.lookup name . globalTypes <$> askGlobals
 
 lookupDefn :: Scoping m => ("defn name" @:: Name) -> m (Maybe GlobalDefn)
 lookupDefn name = Map.lookup name . globalDefns <$> askGlobals
+
+printCore :: Scoping m => Term -> m Text
+printCore term = do
+  depth <- ctxDepth
+  pure $ Printer.formatCoreFrom Printer.Plain depth term
 
 class Scoping m => Evaling m where
   eval  :: Term -> m Eval
@@ -183,7 +190,7 @@ class Evaling m => Typing m where
 validateQuote :: Typing m => HasCallStack => Term -> m ("type" @:: Term)
 validateQuote = quote <=< validate
 
-class (Unifying m, Typing m) => Proving m where
+class (Unifying m, Typing m, MonadError ProverE m) => Proving m where
   subsume :: HasCallStack => UnifyMode r -> Pair Eval -> m ("unified" @:: Pair Eval, "coercion" @:: Maybe r)
 
 -- MonadMask
@@ -424,8 +431,8 @@ instance Proving m => Proving (StateT s m) where
   subsume = fmap lift . subsume
 instance Proving m => Proving (ReaderT r m) where
   subsume = fmap lift . subsume
-instance Proving m => Proving (ExceptT e m) where
-  subsume = fmap lift . subsume
+-- instance Proving m => Proving (ExceptT e m) where
+--   subsume = fmap lift . subsume
 instance (Proving m, Monoid w) => Proving (WriterT w m) where
   subsume = fmap lift . subsume
 instance Proving m => Proving (FreshT m) where

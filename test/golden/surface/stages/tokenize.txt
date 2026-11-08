@@ -71,7 +71,7 @@
   []
   "q"
   [ Splote [] "s" [ VariableName ( Just ( PlainName [] "f" ) ) PlainVar ]
-  , VariableName ( Just ( PlainName [] "x" ) ) PlainVar
+  , Splote [] "s" [ VariableName ( Just ( PlainName [] "x" ) ) PlainVar ]
   ]
 , SAscribe
 , QualifiedOp ( PlainOp [] "%" )

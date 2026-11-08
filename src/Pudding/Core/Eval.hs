@@ -176,6 +176,8 @@ forceGlobal ctx (ENeutral (NGlobal _ _ name) prjs) =
 forceGlobal _ _ = Nothing
 
 forceNeutral :: forall t. Ctx t -> (Fresh -> Maybe (Eval, Vector Eval -> Eval)) -> Eval -> Maybe Eval
+forceNeutral ctx sols val@(EDeferred {}) = Just $
+  fromMaybe <*> forceNeutral ctx sols $ undeferred val
 forceNeutral ctx sols (ENeutral (NHole _ which locals) prjs) =
   case sols which of
     -- Unsolved

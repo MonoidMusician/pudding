@@ -100,7 +100,7 @@
       ( CQuote
         ( CApps
           ( CSplice ( CVar ( Just ( PlainName [] "f" ) ) PlainVar ) )
-          ( CVar ( Just ( PlainName [] "x" ) ) PlainVar :| [] )
+          ( CSplice ( CVar ( Just ( PlainName [] "x" ) ) PlainVar ) :| [] )
         )
       )
       ( CLift ( CSplice ( CVar ( Just ( PlainName [] "O" ) ) PlainVar ) ) )

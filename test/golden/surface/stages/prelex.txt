@@ -163,7 +163,11 @@
 , NAME "f"
 , BUILTIN "]"
 , WHITESPACE
+, OP "$"
+, NAME "s"
+, BUILTIN "["
 , NAME "x"
+, BUILTIN "]"
 , WHITESPACE
 , BUILTIN "]"
 , WHITESPACE

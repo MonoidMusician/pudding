@@ -11,8 +11,8 @@
                             "sourcePos": []
                         },
                         {
-                            "contents": 1,
-                            "tag": "UMeta"
+                            "uLevel": 1,
+                            "uStage": 0
                         }
                     ],
                     "tag": "TUniv"
@@ -30,8 +30,8 @@
                                     "sourcePos": []
                                 },
                                 {
-                                    "contents": 0,
-                                    "tag": "UBase"
+                                    "uLevel": 1,
+                                    "uStage": 0
                                 }
                             ],
                             "tag": "TUniv"
@@ -47,7 +47,7 @@
         "Id",
         {
             "contents": [
-                0,
+                1,
                 {
                     "contents": [
                         {
@@ -71,8 +71,8 @@
                                     "sourcePos": []
                                 },
                                 {
-                                    "contents": 0,
-                                    "tag": "UBase"
+                                    "uLevel": 3,
+                                    "uStage": 2
                                 }
                             ],
                             "tag": "TUniv"
@@ -84,8 +84,8 @@
                                     "sourcePos": []
                                 },
                                 {
-                                    "contents": 0,
-                                    "tag": "UBase"
+                                    "uLevel": 3,
+                                    "uStage": 2
                                 }
                             ],
                             "tag": "TUniv"
@@ -116,8 +116,8 @@
                                     "sourcePos": []
                                 },
                                 {
-                                    "contents": 0,
-                                    "tag": "UBase"
+                                    "uLevel": 3,
+                                    "uStage": 2
                                 }
                             ],
                             "tag": "TUniv"
@@ -162,8 +162,8 @@
                             "sourcePos": []
                         },
                         {
-                            "contents": 0,
-                            "tag": "UMeta"
+                            "uLevel": 3,
+                            "uStage": 2
                         }
                     ],
                     "tag": "TUniv"
@@ -215,7 +215,7 @@
         null,
         {
             "contents": [
-                0,
+                1,
                 {
                     "contents": [
                         {
@@ -324,7 +324,7 @@
         null,
         {
             "contents": [
-                0,
+                1,
                 {
                     "contents": [
                         {
@@ -462,7 +462,7 @@
         "ap",
         {
             "contents": [
-                0,
+                4,
                 {
                     "contents": [
                         {
@@ -492,8 +492,8 @@
                                             "sourcePos": []
                                         },
                                         {
-                                            "contents": 0,
-                                            "tag": "UBase"
+                                            "uLevel": 5,
+                                            "uStage": 4
                                         }
                                     ],
                                     "tag": "TUniv"
@@ -530,8 +530,8 @@
                                                     "sourcePos": []
                                                 },
                                                 {
-                                                    "contents": 0,
-                                                    "tag": "UBase"
+                                                    "uLevel": 5,
+                                                    "uStage": 4
                                                 }
                                             ],
                                             "tag": "TUniv"
@@ -728,8 +728,8 @@
                                             "sourcePos": []
                                         },
                                         {
-                                            "contents": 0,
-                                            "tag": "UBase"
+                                            "uLevel": 5,
+                                            "uStage": 4
                                         }
                                     ],
                                     "tag": "TUniv"
@@ -766,8 +766,8 @@
                                                     "sourcePos": []
                                                 },
                                                 {
-                                                    "contents": 0,
-                                                    "tag": "UBase"
+                                                    "uLevel": 5,
+                                                    "uStage": 4
                                                 }
                                             ],
                                             "tag": "TUniv"
@@ -1009,7 +1009,7 @@
         "unap",
         {
             "contents": [
-                0,
+                3,
                 {
                     "contents": [
                         {
@@ -1039,8 +1039,8 @@
                                             "sourcePos": []
                                         },
                                         {
-                                            "contents": 0,
-                                            "tag": "UBase"
+                                            "uLevel": 7,
+                                            "uStage": 6
                                         }
                                     ],
                                     "tag": "TUniv"
@@ -1077,8 +1077,8 @@
                                                     "sourcePos": []
                                                 },
                                                 {
-                                                    "contents": 0,
-                                                    "tag": "UBase"
+                                                    "uLevel": 7,
+                                                    "uStage": 6
                                                 }
                                             ],
                                             "tag": "TUniv"
@@ -1269,8 +1269,8 @@
                                             "sourcePos": []
                                         },
                                         {
-                                            "contents": 0,
-                                            "tag": "UBase"
+                                            "uLevel": 7,
+                                            "uStage": 6
                                         }
                                     ],
                                     "tag": "TUniv"
@@ -1307,8 +1307,8 @@
                                                     "sourcePos": []
                                                 },
                                                 {
-                                                    "contents": 0,
-                                                    "tag": "UBase"
+                                                    "uLevel": 7,
+                                                    "uStage": 6
                                                 }
                                             ],
                                             "tag": "TUniv"

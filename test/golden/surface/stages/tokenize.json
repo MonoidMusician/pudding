@@ -1534,7 +1534,7 @@
                 13,
                 75,
                 13,
-                88
+                92
             ],
             "./test/golden/surface/stages"
         ],
@@ -1602,25 +1602,48 @@
                                     13,
                                     85,
                                     13,
-                                    86
+                                    90
                                 ],
                                 "./test/golden/surface/stages"
                             ],
                             {
                                 "contents": {
                                     "contents": [
-                                        {
-                                            "contents": [
-                                                [],
-                                                "x"
-                                            ],
-                                            "tag": "PlainName"
-                                        },
-                                        {
-                                            "tag": "PlainVar"
-                                        }
+                                        [],
+                                        "s",
+                                        [
+                                            [
+                                                [
+                                                    [
+                                                        13,
+                                                        88,
+                                                        13,
+                                                        89
+                                                    ],
+                                                    "./test/golden/surface/stages"
+                                                ],
+                                                {
+                                                    "contents": {
+                                                        "contents": [
+                                                            {
+                                                                "contents": [
+                                                                    [],
+                                                                    "x"
+                                                                ],
+                                                                "tag": "PlainName"
+                                                            },
+                                                            {
+                                                                "tag": "PlainVar"
+                                                            }
+                                                        ],
+                                                        "tag": "VariableName"
+                                                    },
+                                                    "tag": "Content"
+                                                }
+                                            ]
+                                        ]
                                     ],
-                                    "tag": "VariableName"
+                                    "tag": "Splote"
                                 },
                                 "tag": "Content"
                             }
@@ -1636,9 +1659,9 @@
         [
             [
                 13,
-                89,
+                93,
                 13,
-                91
+                95
             ],
             "./test/golden/surface/stages"
         ],
@@ -1651,9 +1674,9 @@
         [
             [
                 13,
-                91,
+                95,
                 13,
-                92
+                96
             ],
             "./test/golden/surface/stages"
         ],
@@ -1675,9 +1698,9 @@
         [
             [
                 13,
-                93,
+                97,
                 13,
-                98
+                102
             ],
             "./test/golden/surface/stages"
         ],
@@ -1691,9 +1714,9 @@
                             [
                                 [
                                     13,
-                                    96,
+                                    100,
                                     13,
-                                    97
+                                    101
                                 ],
                                 "./test/golden/surface/stages"
                             ],
