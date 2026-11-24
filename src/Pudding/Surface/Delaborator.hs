@@ -17,7 +17,7 @@ import Prettyprinter qualified as Doc
 import Prettyprinter.Render.Text (renderStrict)
 import qualified Prettyprinter.Render.Terminal as Ansi
 import Control.DeepSeq (NFData)
-import Data.Foldable (toList)
+import Data.Foldable (fold, toList)
 import Data.Functor ((<&>))
 import Data.Function ((&))
 import Data.Map (Map)
@@ -190,8 +190,9 @@ delab = \case
         pure $ CVar Nothing $ DBIndex $ fromIntegral idx
   TGlobal _m name -> pure $
     CVar (Just $ PlainName [] $ nameText name) PlainVar
-  -- FIXME: scope
-  THole _m fresh _scope -> pure $ CHole (Just $ T.pack $ show fresh)
+  THole _m fresh locals ->
+    CHole (Just $ T.pack $ show fresh) . Just <$>
+      traverse delab (Vector.toList locals)
   TUniv _m _univ -> pure CUniv
   TAscribe _m tm ty -> flip CAscribe <$> delab ty <*> delab tm
   TLet _ binder ty tm (Scoped body) -> do
@@ -386,7 +387,13 @@ printCST = dbgPrec \case
   -- CStr ![Either Text CST]
   -- CHole !(Maybe Text)
   CStr _ -> error "Unsupported CStr"
-  CHole _ -> error "Unsupported CHole"
+  CHole (Just name) Nothing   -> parens [ lit "??", pretty name ]
+  CHole (Just name) (Just []) -> parens [ lit "??", pretty name ]
+  CHole (Just name) (Just locals) -> fold
+    [ parens [ lit "??", pretty name ]
+    , wrap ".[" "]" [commas $ printCST <$> locals]
+    ]
+  CHole _ _ -> error "Unsupported CHole"
   CPlaceholder -> lit "_"
 
   CPair l r -> withPrec PrecPair spaced [printCST l <> lit ",", printCST r]

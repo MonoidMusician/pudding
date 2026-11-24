@@ -1,6 +1,7 @@
 module Pudding.Types.Monads.Prover where
 
 import Pudding.Types.Monads
+import Pudding.Types.Monads.Types
 import qualified Pudding.Types.Monads as M
 import Pudding.Core.Types
 import Pudding.Core.Unify as U
@@ -12,7 +13,7 @@ import Control.Monad.Writer.Class (tell, listen)
 import Control.Monad.State.Class (get, gets, state, put, modify')
 import GHC.Generics (Generic, Generically(..))
 import Data.Function ((&))
-import Data.Functor ((<&>), void)
+import Data.Functor ((<&>))
 import Pudding.Types.Config (Config, Field (dflt))
 import qualified Pudding.Semantics.Universes.Fused as Universes
 import Data.IntMap.Strict (IntMap)
@@ -21,7 +22,6 @@ import Data.IntSet (IntSet)
 import qualified Data.IntSet as IntSet
 import Data.IntMap.Monoidal.Strict (MonoidalIntMap)
 import qualified Data.IntMap.Monoidal.Strict as MonoidalIntMap
-import Data.Vector (Vector)
 import Data.Pair (Pair(..), pattern Pair)
 import Control.Lens (review)
 import qualified Pudding.Semantics.Universes.Fused as Fused
@@ -38,6 +38,7 @@ newtype Prover t = Prover (RWST ProverR ProverW ProverS IO t)
 
 data ProverS = ProverS
   { freshest :: {-# UNPACK #-} !Fresh
+  , nextUV :: {-# UNPACK #-} !Fresh
   -- | Override the globals in the context
   , proofGlobals :: Maybe Globals
   , uvState :: !(IntMap UnivarState)
@@ -46,40 +47,6 @@ data ProverS = ProverS
   -- | sparse array / arbitrary IDs
   , uvConstraints :: !(IntMap ("uvs involved" @:: IntSet, Equation))
   , uvConstraintsRev :: !("uv ID to" @:: MonoidalIntMap ("uvConstraints" @:: IntSet))
-  }
-
--- TODO: cache by referential identity
-uvsOf :: Either Eval Term -> IntSet
-uvsOf = summarize $ trivialSummarize
-  { onNeutFocus = \case
-      NHole _ (Fresh n) _ -> Append $ IntSet.singleton n
-      _ -> Append mempty
-  }
-
-freeVarsOf :: Either Eval Term -> IntSet
-freeVarsOf = summarize $ trivialSummarize
-  { onNeutFocus = \case
-      NVar _ (Level lvl) -> Append $ IntSet.singleton lvl
-      _ -> Append mempty
-  }
-
-data UnivarState = UVState
-  -- the original context of the hole. TODO: globals? TODO: let?
-  { uvCtx :: !EvalTypeCtx
-  -- which variables (Levels) are known to be irrelevant
-  , uvIrrelevant :: !IntSet
-  -- the value for the term itself and its type
-  , uvTerm :: !("tm" @:: Eval)
-  , uvType :: "ty" @:: Eval -- ^ lazy
-  -- Partial equations (constraints with this unification variable as its head)
-  , uvEqns :: Stack ("ctx" @:: Vector ("value given" @:: Eval), "projections" @:: Stack NeutPrj, "value achieved" @:: Eval)
-  -- Callbacks? for filling in holes for deferred elaboration?
-  , uvNotify :: IntSet -- into ProverS.uvDeferred
-  }
-
-data AfterSolve = AfterSolve
-  { aftHeadEqns :: Stack Equation
-  , aftGlobalEqns :: IntMap (IntSet, Equation)
   }
 
 -- | Gather the equations as a list of pairs
@@ -108,6 +75,7 @@ solveFully (Fresh !i) !val = do
           IntMap.intersection (uvConstraints st) $ IntMap.fromSet id relevant
   case IntMap.lookup i $ uvState st of
     Nothing -> do
+      -- FIXME: rewind context??
       ctx <- Prover $ asks proofCtx
       tm <- M.quote val
       ty <- U.reinfer tm
@@ -122,6 +90,7 @@ solveFully (Fresh !i) !val = do
           , uvType = ty
           , uvEqns = Nil
           , uvNotify = mempty
+          , uvStatus = UVProgressed -- TODO: UVClosed?
           }
       Prover $ put $ st
         { uvState = IntMap.insert i entry $ uvState st }
@@ -135,6 +104,7 @@ solveFully (Fresh !i) !val = do
               then uvIrrelevant current
               else freeVarsOf $ Left val
           , uvTerm = val
+          , uvStatus = UVProgressed
           }
         hydrate locals prjs = ENeut $ Neutral
           (NHole mempty (Fresh i) locals)
@@ -144,6 +114,31 @@ solveFully (Fresh !i) !val = do
       Prover $ put $! st
         { uvState = IntMap.insert i updated $ uvState st }
       pure $ AfterSolve { aftHeadEqns = headEqns, aftGlobalEqns = globalEqns }
+
+initUV :: Eval -> Prover (Fresh, Term, Eval)
+initUV ty = do
+  ctx <- askCtx
+  which@(Fresh i) <- Prover do
+    state \st -> (nextUV st, st { nextUV = nextFresh $ nextUV st })
+  let val = ENeutralHole mempty which (Vector.fromList $ fmap (snd . snd) $ review stack $ ctxStack ctx) Nil
+  tm <- M.quote val
+  let
+    entry = UVState
+      { uvCtx = ctx
+      , uvIrrelevant =
+          if size ctx == 0
+          then mempty
+          else freeVarsOf $ Left val
+      , uvTerm = val
+      , uvType = ty
+      , uvEqns = Nil
+      , uvNotify = mempty
+      , uvStatus = UVUnsolved
+      }
+  Prover $ modify' \st -> st
+    { uvState = IntMap.insert i entry $ uvState st }
+  pure (which, tm, val)
+
 
 -- Create a new constraint to check when the relevant variables are solved
 equateGlobal :: Equation -> Prover ()
@@ -160,12 +155,12 @@ equateHead (focus :# result) = case focus of
   ENeutralHole _meta (Fresh i) locals prjs -> do
     st <- Prover get
     updated <- case IntMap.lookup i $ uvState st of
-      Nothing -> error "equateHead"
+      Nothing -> error "equateHead missing"
       Just current -> pure $
         current { uvEqns = uvEqns current :> (locals, prjs, result) }
     Prover $ put $! st
       { uvState = IntMap.insert i updated $ uvState st }
-  _ -> error "equateHead"
+  _ -> error "equateHead bad form"
 
 data ProverR = ProverR
   { proofCtx :: !EvalTypeCtx
@@ -190,6 +185,7 @@ runProverMonad cfg (Prover act) = do
       }
     s = ProverS
       { freshest = Fresh 0
+      , nextUV = Fresh 0
       , proofGlobals = Nothing
       , uvState = IntMap.empty
       , uvDeferred = IntMap.empty
@@ -240,22 +236,6 @@ instance Scoping Prover where
     inner & local \ctx -> ctx { proofCtx = proofCtx ctx :> (b, tyval) }
 
 
-uvSolution :: UnivarState -> (Eval, Vector Eval -> Eval)
-uvSolution current
-  -- If every variable is irrelevant, the term does not depend on its local context
-  | IntSet.size (uvIrrelevant current) == size (uvCtx current) =
-      (uvTerm current, const (uvTerm current))
-  | otherwise =
-      (uvTerm current, \newLocals ->
-        -- TODO: check if newLocals is all neutral or referentially equal?
-        let
-          -- Replace the locals in the stored context
-          ctx = uvCtx current & mapCtx \_ (Level i) _old ->
-            newLocals Vector.! i
-        -- TODO: traverse Eval directly
-        in E.eval ctx $ E.quote (void ctx) $ uvTerm current
-      )
-
 instance Evaling Prover where
   eval tm = do
     ctx <- M.askEvalCtx
@@ -265,7 +245,11 @@ instance Evaling Prover where
     pure $ E.quote ctx val
   currentSolutions = Prover do
     -- TODO: return Nothing if the var is not solved?
-    gets ((\vars (Fresh which) -> uvSolution <$> IntMap.lookup which vars) . uvState)
+    gets ((\vars (Fresh which) -> uvSolution =<< IntMap.lookup which vars) . uvState)
+  univarsType = Prover do
+    gets ((\vars (Fresh which) -> maybe (error "univarsType") uvTypeEval $ IntMap.lookup which vars) . uvState)
+  univarsLocals = Prover do
+    gets ((\vars (Fresh which) -> maybe (error "univarsLocals") uvCtx $ IntMap.lookup which vars) . uvState)
   progressGlobal val = do
     ctx <- M.askCtx
     pure $ E.progressGlobal ctx val
@@ -298,8 +282,10 @@ instance Unifying Prover where
     ENeutralHole {} :# ENeutralHole {} ->
       equateHead (l :# r) *> equateHead (r :# l)
     ENeutralHole {} :# _ -> equateHead (l :# r)
-    _ :# ENeutralHole {} -> equateHead (l :# r)
+    _ :# ENeutralHole {} -> equateHead (r :# l)
     _ -> equateGlobal eqn
+
+  initUVTerm = initUV
 
 instance Proving Prover where
   subsume = U.subsume

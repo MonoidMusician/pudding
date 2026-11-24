@@ -79,7 +79,7 @@ data CST
   | CUniv
   | CNum !Text
   | CStr ![Either Text CST]
-  | CHole !(Maybe Text)
+  | CHole !(Maybe Text) !(Maybe [CST])
 
   | CRecordTy ![(L.NameForm, CST)]
   | CRecordTm ![(L.NameForm, CST)]

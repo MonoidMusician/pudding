@@ -10,14 +10,14 @@ module Pudding.Core.Unify where
 
 import Control.Arrow (Arrow(first))
 import Control.DeepSeq (NFData)
-import Control.Lens (view)
-import Control.Monad ((<=<))
+import Control.Lens (view, Bifunctor (bimap))
+import Control.Monad ((<=<), when)
 import Control.Monad.Reader.Class (ask, MonadReader (local))
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.Align (Semialign(alignWith))
 import Data.Distributive (Distributive(distribute))
-import Data.Foldable (foldl')
+import Data.Foldable (foldl', traverse_)
 import Data.Function ((&))
 import Data.Functor ((<&>), void)
 import Data.Functor.Classes (Eq1(liftEq))
@@ -25,7 +25,7 @@ import Data.Maybe (fromMaybe)
 import Data.Pair (Pair(..), pattern Pair)
 import Data.Semialign.Indexed (SemialignWithIndex (ialignWith))
 import Data.These (These(..))
-import Data.Void (Void)
+import Data.Void (Void, absurd)
 import GHC.Generics (Generic)
 import GHC.StableName (StableName)
 import GHC.Stack (HasCallStack)
@@ -43,6 +43,8 @@ import Pudding.Types.Monads.Cont1T (Cont1T, adaptCont, runCont1pT)
 import Control.Monad.Error.Class (MonadError(catchError, throwError))
 import Pudding.Types.Monads.Errors (ProverE(ProverE))
 import qualified Data.Text as T
+import Data.List.NonEmpty (NonEmpty((:|)))
+import qualified Pudding.Core.Eval as E
 
 
 type Transform m t = t -> m t
@@ -86,10 +88,10 @@ reinfer = validateOrNot False
 -- | `(n <= m) -> Fin n -> Fin m`.
 subsume :: forall m r. Proving m => UnifyMode r -> Pair Eval -> m ("unified" @:: Pair Eval, "coercion" @:: Maybe r)
 subsume _ (!evalL :# !evalR) | evalL FastEq.===? evalR = pure (evalL :# evalR, Nothing)
-subsume mode (!evalL :# !evalR) = case evalL :# evalR of
-  -- ENeutralHole {} :# ENeutralHole {} -> _
-  -- ENeutralHole {} :# _ -> _
-  -- _ :# ENeutralHole {} -> _
+subsume mode evalLR@(!evalL :# !evalR) = case evalL :# evalR of
+  ENeutralHole {} :# ENeutralHole {} -> substsubsumeUniVars evalLR <&> (, Nothing)
+  ENeutralHole {} :# _ -> substsubsumeUniVars evalLR <&> (, Nothing)
+  _ :# ENeutralHole {} -> substsubsumeUniVars evalLR <&> (, Nothing)
 
   -- We unravel `EDeferred` slowly, to check if any names match up, before
   -- continuing with the main cases.
@@ -386,6 +388,29 @@ subsume mode (!evalL :# !evalR) = case evalL :# evalR of
 -- conversionCheck :: HasCallStack => Ctx () -> Eval -> Eval -> Bool
 
 
+alignCC ::
+  forall f m.
+    Eq1 f => Semialign f => Traversable f =>
+    Proving m =>
+  UnifyMode Void ->
+  Pair (f Eval) -> m (f (Pair Eval))
+alignCC mode2 (itemsL :# itemsR)
+  | not (liftEq (\_ _ -> True) itemsL itemsR) = ccFailed
+  | otherwise = sequence (alignWith aligned itemsL itemsR)
+  where
+  aligned = \case
+    This _ -> ccFailed
+    That _ -> ccFailed
+    These x y -> cc mode2 (x :# y)
+
+  cc :: UnifyMode Void -> Pair Eval -> m (Pair Eval)
+  cc mode2 pair = fst <$> subsume mode2 pair
+
+  ccFailed :: forall any. m any
+  ccFailed = do
+    throwError $ ProverE $ "Conversion check failed"
+
+
 
 --------------------------------------------------------------------------------
 -- Type inference / checking / validation                                     --
@@ -411,7 +436,15 @@ validateOrNot should = \case
         M.fatal $ "Undefined global " <> show name <>
           if Map.size defns == 0 then " (global context is empty)" else ""
       Just (GlobalDefn _ (GlobalTerm _ ty) _) -> pure ty
-  THole _ _fresh _ -> M.fatal "typeof hole not implemented"
+  THole _ which locals -> do
+    saved <- M.univarLocals which
+    when should do
+      checkFor "locals same length" $ size saved == Vector.length locals
+      traverse_ (validateOrNot should) locals
+      -- TODO: check subsumption
+      -- TODO: conversion check let bindings
+    (_, withLocals) <- M.univarType which
+    withLocals <$> traverse M.eval locals
   TUniv meta univ -> pure $ EUniv meta univ -- FIXME universe
   TAscribe _ tm ty -> do
     tyAct <- vv tm
@@ -751,3 +784,179 @@ instance Applicative StrictPositivityM where
 --     _
 --   test ty = case irrelevant ty of
 --     _ -> _
+
+
+-- TODO: pass original expressions
+substsubsumeUniVars :: Proving m => Pair Eval -> m (Pair Eval)
+substsubsumeUniVars eLR@(eL :# eR) = do
+  eL' :# eR' <- traverse asCurrentSolution eLR
+  case (eL', eR') of
+    (Nothing, Nothing) -> subsumeUniVars eLR
+    _ -> substsubsumeUniVars (fromMaybe eL eL' :# fromMaybe eR eR')
+
+asCurrentSolution :: Proving m => Eval -> m (Maybe Eval)
+asCurrentSolution (ENeutralHole _ which locals spine) = do
+  M.currentSolution which >>= traverse \(_, sol) ->
+    pure $ doPrjs (sol locals) spine
+asCurrentSolution _ = pure Nothing
+
+-- TODO: pass original expressions
+subsumeUniVars :: forall m. Proving m => Pair Eval -> m (Pair Eval)
+subsumeUniVars eLR@(eL :# eR) = do
+  solvL :# solvR <- traverse canSolvePattern eLR
+  -- FIXME: check occurs relation
+  case (solvL, solvR) of
+    -- These are not in the pattern fragment, so add them as constraints
+    -- and return them as-is
+    (Nothing, Nothing) -> eLR <$ M.equate eLR
+    -- Both have solutions? choose which one may be better
+    (Just (whichL, subsL), Just (whichR, subsR)) ->
+      case whichL `compare` whichR of
+        LT -> do
+          M.unsafeSolve whichL $ subsL eR
+          pure eLR -- ??
+        GT -> do
+          M.unsafeSolve whichR $ subsR eL
+          pure eLR -- ??
+        -- EQ -> do
+        --   tL :# tR <- traverse (M.printCore <=< M.quote) eLR
+        --   error $ "TODO: univar irrelevance: " <> T.unpack tL <> " ~ " <> T.unpack tR*
+        -- FIXME: do conversion check without unification
+        EQ -> do
+          case eLR of
+            ENeutralHole mL _ localsL spineL :# ENeutralHole mR _ localsR spineR -> do
+              if not (checkPrjs (spineL :# spineR)) then error "mismatch" else do
+                localsU <- alignCC equating (localsL :# localsR)
+                spineU <- unifyPrjs (spineL :# spineR)
+                pure $ (ENeutralHole mL whichL :# ENeutralHole mR whichR) <*> distribute localsU <*> spineU
+            _ -> error "EQ eLR"
+    (Just (whichL, subsL), Nothing) -> do
+      M.unsafeSolve whichL $ subsL eR
+      pure eLR -- ??
+    (Nothing, Just (whichR, subsR)) -> do
+      M.unsafeSolve whichR $ subsR eL
+      pure eLR -- ??
+  where
+  checkPrjs = \case
+    (moreL :> NApp _ _ _argL) :# (moreR :> NApp _ _ _argR) ->
+      checkPrjs (moreL :# moreR)
+    (moreL :> NFst _) :# (moreR :> NFst _) ->
+      checkPrjs (moreL :# moreR)
+    (moreL :> NSnd _) :# (moreR :> NSnd _) ->
+      checkPrjs (moreL :# moreR)
+    (moreL :> NSplice _) :# (moreR :> NSplice _) ->
+      checkPrjs (moreL :# moreR)
+    (moreL :> NField _ fieldL) :# (moreR :> NField _ fieldR) ->
+      fieldL == fieldR && checkPrjs (moreL :# moreR)
+    Nil :# Nil -> True
+    -- Differing lengths or differing projections
+    _ -> False
+
+  unifyPrjs :: Crosscheck m (Stack NeutPrj)
+  unifyPrjs ((prjsL :> prjL) :# (prjsR :> prjR)) =
+    liftA2 (:>) <$> unifyPrjs (prjsL :# prjsR) <*> unifyPrj (prjL :# prjR)
+  unifyPrjs _ = pure (pure Nil)
+
+  -- TODO: unify metadata?
+  unifyPrj :: Crosscheck m NeutPrj
+  unifyPrj = \case
+    NApp mL pL argL :# NApp mR pR argR ->
+      (<*>) (NApp mL pL :# NApp mR pR) <$> cc equating (argL :# argR)
+    prj -> pure prj
+
+  equating = UnifyMode Invariant IdentitySubsumption NotInjective
+
+  cc :: UnifyMode Void -> Pair Eval -> m (Pair Eval)
+  cc mode2 pair = fst <$> subsume mode2 pair
+
+
+
+canSolvePattern :: Proving m => Eval -> m (Maybe (Fresh, Eval -> Eval))
+canSolvePattern (ENeutralHole _ which locals spine@Nil) = do
+  g <- M.askGlobals
+  -- TODO: irrelevant variables, let-bound variables, and definitional unit-types
+  case sequence <$> calculable (traverse findNeutral locals) of
+    Right (Just vars) | Nil <- spine -> do
+      let
+        addVar c lvl = c :> (BFresh, ENeutralVar mempty lvl Nil)
+        newCtx = Ctx g (foldl addVar Nil vars)
+      pure $ Just (which, E.reeval newCtx)
+    _ -> pure Nothing
+canSolvePattern _ = pure Nothing
+
+data Difficulty e t = Now t | Later (Difficulty e t) | Shorted e
+  deriving (Functor)
+data Mode t r = Confirm t r | Generate (t -> r)
+  deriving (Functor)
+
+asNeeded :: Difficulty Void t -> t
+asNeeded (Now t) = t
+asNeeded (Later t) = asNeeded t
+asNeeded (Shorted e) = absurd e
+
+calculable :: Difficulty e t -> Either e t
+calculable (Shorted e) = Left e
+calculable (Now t) = Right t
+calculable (Later t) = calculable t
+
+type ScanningFor e t = Mode t (Maybe t) -> Difficulty e (Maybe t)
+
+byDifficulty :: [ScanningFor e Level] -> ScanningFor e Level
+byDifficulty = go []
+  where
+  go []  [] (Confirm _ r) = Now r
+  go []  [] (Generate _) = Now Nothing
+  go acc [] m = byDifficulty (List.reverse acc) m
+  go acc (hd : tl) m = case hd m of
+    Shorted e -> Shorted e
+    Now Nothing -> go acc tl m
+    Now (Just t) -> go acc tl case m of
+      Confirm _ _ -> m
+      Generate k -> Confirm t (k t)
+    Later deferred -> go (const deferred : acc) tl m
+
+instance Applicative (Difficulty e) where
+  pure = Now
+
+  liftA2 f ml mr = case ml of
+    Shorted e -> Shorted e
+    Now l -> f l <$> mr
+    Later l -> case mr of
+      Shorted e -> Shorted e
+      Now r -> Later (l <&> (`f` r))
+      Later r -> Later (liftA2 f l r)
+
+instance Bifunctor Difficulty where
+  bimap f _ (Shorted e) = Shorted (f e)
+  bimap _ g (Now t) = Now (g t)
+  bimap f g (Later t) = Later (bimap f g t)
+
+findNeutral :: Eval -> Difficulty () (Maybe Level)
+findNeutral val = recognizeNeutral val (Generate Just)
+
+scanFound :: Eq t => t -> Mode t (Maybe r) -> Difficulty () (Maybe r)
+scanFound t0 (Confirm t1 r) = if t0 == t1 then Now r else Shorted ()
+scanFound t0 (Generate k)   = Now $ k t0
+
+recognizeNeutral :: Eval -> Mode Level (Maybe Level) -> Difficulty () (Maybe Level)
+-- TODO: splice and lift
+recognizeNeutral (ENeutralVar _ lvl Nil) = scanFound lvl
+recognizeNeutral (EDeferred (Deferred _ _ _ _ val)) = Later . recognizeNeutral val
+-- TODO: Handle eta reductions
+-- FIXME: plicity. if it changes plicity, it needs to be undone
+-- recognizeNeutral (ELambda _ _ _ _ _) = _
+recognizeNeutral (ERecordTm _ r) =
+  let fields = Map.toAscList r in
+  case recognizeFields fields of
+    Just fields' -> byDifficulty $ recognizeNeutral . snd <$> fields'
+    Nothing -> const $ Shorted ()
+-- TODO: force neutrals. force globals if they are passed the local?
+recognizeNeutral _ = const $ Shorted ()
+
+recognizeFields :: [(Name, Eval)] -> Maybe [(Name, Eval)]
+-- TODO: force neutrals. force globals if they are passed the local?
+recognizeFields = traverse \(name, val) -> case val of
+  ENeutral focus (prjs :> NField _ name')
+    | name == name' -> Just (name, ENeutral focus prjs)
+  _ -> Nothing
+

@@ -26,7 +26,7 @@ import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), pattern Nil, pattern (:>), (@@?))
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO (liftIO), MonadTrans (lift), MonadState)
-import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti, BFresh, BPair), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar, NGlobal), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo), Closure (Closure, ConstClosure), ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL), UnifyMode (UnifyMode), InjectiveStatus (StillInjective), addGlobal, freshGlobals, pattern ENeutral, pattern ENeutralVar)
+import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti, BFresh, BPair), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar, NGlobal), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals, Ctx), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo), Closure (Closure, ConstClosure), ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL), UnifyMode (UnifyMode), InjectiveStatus (StillInjective), addGlobal, freshGlobals, pattern ENeutral, pattern ENeutralVar)
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl(..), CST(..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize, Attributes))
@@ -50,11 +50,13 @@ import qualified Data.Foldable as F
 import Pudding.Types.Monads (Freshener(freshen), eval, quote, reinfer)
 import qualified Pudding.Types.Monads as M
 import Data.Pair (Pair(..))
-import Pudding.Types.Monads.Prover (Prover (Prover), runProverMonad, ProverS (proofGlobals))
+import Pudding.Types.Monads.Prover (Prover (Prover), runProverMonad, ProverS (proofGlobals, uvState))
 import Pudding.Types.Config (Field(dflt))
 import Pudding.Types.Monads.Cont1T (Cont1T, adaptCont, runCont1pT, evalCont1pT, localizeCont)
 import Pudding.Core.Boot (typeAuxDefns)
 import Data.Generics.Constructor (ctorName)
+import qualified Data.IntMap.Strict as IntMap
+import Pudding.Types.Monads.Types (UnivarState)
 
 class Applicative m => TwoPhase m where
   twoPhases :: m (m r) -> m r
@@ -154,12 +156,12 @@ willInitGLM text creator = Compose $ mintName id text <&>
 clearLocals :: Scoped r -> Scoped r
 clearLocals inner = do
   let clearGL gl = gl { glLocals = M.empty }
-  -- Globals are in persistent state
-  local clearGL $ M.withCtx Nil inner
+  g <- M.askGlobals
+  local clearGL $ M.withCtx (Ctx g Nil) inner
 
 -- | For `@example`, for example
 willUseGLM :: Scoped r -> GLM r
-willUseGLM = Compose . pure . GGather mempty . const
+willUseGLM = Compose . pure . GGather mempty . const . clearLocals
 
 initedGLM :: Name -> Scoped GlobalInfo
 initedGLM n = do
@@ -193,19 +195,20 @@ withForced f e = do
   f e''
 
 
-runElabFull :: forall r. IORef NameTable -> GLM r -> IO (Map Name GlobalInfo, r)
+runElabFull :: forall r. IORef NameTable -> GLM r -> IO ((Globals, IntMap.IntMap UnivarState), r)
 runElabFull tbl (Compose stage0) = do
   -- First we provide the name table to mint all the names
   GGather items stage1 <- runReaderT stage0 tbl
   let
     -- Now we run a scoped computation
-    stage2 :: Scoped (Map Name GlobalInfo, r)
+    stage2 :: Scoped ((Globals, IntMap.IntMap UnivarState), r)
     stage2 = do
       -- Do whatever computation the user asked for
       r <- stage1 items
       -- Ensure all of the items are elaborated
-      env <- sequence items
-      pure (env, r)
+      env <- M.askGlobals
+      univars <- lift $ lift $ Prover $ gets uvState
+      pure ((env, univars), r)
   -- Keep track of all the globals in state, and provide the default
   -- global context with no locals, plus the name table to mint more names
   (r, _) <- runProverMonad dflt $ runReaderT (runStateT stage2 (Uninitialized <$ items))
@@ -278,13 +281,13 @@ elaborateDecl = \case
         asks (M.lookup tyName . glGlobals) >>= \case
           Just tyDef -> tyDef >>= \case
             TypeGlobal (GlobalTypeInfo _ _ _ctors) -> do
-              ctx <- M.askCtx
-              pure $ DefnGlobal $ fromMaybe (error "wat") $ M.lookup ctorName $ globalDefns $ ctxGlobals ctx
+              ctx <- M.askGlobals
+              pure $ DefnGlobal $ fromMaybe (error "wat") $ M.lookup ctorName $ globalDefns ctx
             _ -> error "Impossible"
           Nothing -> error "Impossible!"
     pure ret
 
-  _ -> error "Not supported"
+  decl -> error $ "Not supported: " <> ctorName decl
 
 -- | Elaborate a type (optional) and a term of that type, into a "global"
 -- | definition which caches the term and type as both `Term` and `Eval`.
@@ -391,7 +394,15 @@ elab mexp = \case
 
   -- | CNum !Text
   -- | CStr ![Either Text CST]
-  -- | CHole !(Maybe Text)
+
+  CPlaceholder -> elab mexp (CHole Nothing Nothing)
+  CHole _name Nothing -> do
+    ty <- case mexp of
+      Nothing -> M.initUVType <&> \(_, _, e) -> e
+      Just e -> pure e
+    (_, tm, _) <- M.initUVTerm ty
+    pure tm
+  CHole _name (Just _) -> error "CHole should not come with context filled"
 
   CLift t -> synth mexp . TLift mempty =<< elabType t
   CQuote e -> do
@@ -462,7 +473,7 @@ elabBinder1 tyE = \case
   CAssign l r -> BMulti
     <$> elabBinder1 tyE l
     <*> elabBinder1 tyE r
-  _ -> error "Bad/unsupported binder"
+  bdr -> error $ "Bad/unsupported binder: " <> ctorName bdr
 
 elabMultiBinder :: ("ty" @:: Eval) -> NonEmpty CBinder -> Cont1T c Scoped (NonEmpty Binder)
 elabMultiBinder tyE = traverse (elabBinder1 tyE)

@@ -162,6 +162,8 @@ exprInParens :: { CST }
   | expr ',' exprInParens { CPair $1 $3 }
   -- for patterns
   | expr ':=' expr { CAssign $1 $3 }
+  | '??' { CHole Nothing Nothing }
+  | '??' VNAME { CHole (Just case $2 of Token _ (Content (VariableName (Just (PlainName [] n)) PlainVar)) -> n) Nothing }
 
 -- Parse a record term or record type inside braces
 -- (assume term by default)

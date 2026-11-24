@@ -26,6 +26,8 @@ import Data.Void (Void)
 import Data.Typeable (Typeable)
 import qualified Data.Typeable as Typeable
 import Data.Pair (Pair)
+import Data.IntSet (IntSet)
+import qualified Data.IntSet as IntSet
 
 --------------------------------------------------------------------------------
 -- Main semantic types!                                                       --
@@ -386,8 +388,8 @@ arityOfTerm = go 0
     go !acc (TLambda _ _ _ _ (Scoped body)) = go (1 + acc) body
     go !acc _ = acc
 
-spine :: Term -> (Term, [Term])
-spine = go []
+funcSpine :: Term -> (Term, [Term])
+funcSpine = go []
   where
     go acc (TApp _ _ fun arg) = go (arg : acc) fun
     go acc fun = (fun, acc)
@@ -837,3 +839,18 @@ summarize (Summarize { onEval, onNeutPrj, onNeutFocus, onTerm }) =
 --   }
 --   where
 
+
+-- TODO: cache by referential identity
+uvsOf :: Either Eval Term -> IntSet
+uvsOf = summarize $ trivialSummarize
+  { onNeutFocus = \case
+      NHole _ (Fresh n) _ -> Append $ IntSet.singleton n
+      _ -> Append mempty
+  }
+
+freeVarsOf :: Either Eval Term -> IntSet
+freeVarsOf = summarize $ trivialSummarize
+  { onNeutFocus = \case
+      NVar _ (Level lvl) -> Append $ IntSet.singleton lvl
+      _ -> Append mempty
+  }

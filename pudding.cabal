@@ -126,6 +126,7 @@ library
         Pudding.Types.Metadata,
         Pudding.Types.Stack,
         Pudding.Types.Monads,
+        Pudding.Types.Monads.Types,
         Pudding.Types.Monads.Errors,
         Pudding.Types.Monads.Verifier,
         Pudding.Types.Monads.Prover,

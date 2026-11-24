@@ -53,6 +53,12 @@ eval = flip evaling
 quote :: HasCallStack => QuoteCtx -> Eval -> Term
 quote = flip quoting
 
+-- Use with caution; it should generally not be necessary
+-- TODO: traverse Eval directly?
+reeval :: HasCallStack => EvalCtx -> Eval -> Eval
+reeval Nil = id
+reeval ctx = eval ctx . quote (void ctx)
+
 -- Turn a `Term` context into an `Eval` context, evaluating from the root
 -- (global scope) to the top of the stack.
 evalCtx :: Ctx Term -> Ctx Eval

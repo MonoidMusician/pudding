@@ -117,20 +117,33 @@ printCore term = do
   pure $ Printer.formatCoreFrom Printer.Plain depth term
 
 class Scoping m => Evaling m where
-  eval  :: Term -> m Eval
-  quote :: Eval -> m Term
+  eval  :: HasCallStack => Term -> m Eval
+  quote :: HasCallStack => Eval -> m Term
   -- unification variables
   -- may be a no-op, may be constant (reader-like),
   -- or may be the full stateful apparatus
-  currentSolutions :: m (Fresh -> Maybe (Eval, Vector Eval -> Eval))
+  currentSolutions :: HasCallStack => m (Fresh -> Maybe (Eval, Vector Eval -> Eval))
+  univarsType   :: HasCallStack => m (Fresh -> (Eval, Vector Eval -> Eval))
+  univarsLocals :: HasCallStack => m (Fresh -> EvalTypeCtx)
   progressGlobal :: Eval -> m Eval
   forceGlobal :: Eval -> m (Maybe Eval)
   forceNeutral :: Eval -> m (Maybe Eval)
 
-currentSolution :: Evaling m => Fresh -> m (Maybe (Eval, Vector Eval -> Eval))
-currentSolution var = do
+currentSolution :: Evaling m => HasCallStack => Fresh -> m (Maybe (Eval, Vector Eval -> Eval))
+currentSolution which = do
   sols <- currentSolutions
-  pure $ sols var
+  pure $ sols which
+
+univarType :: Evaling m => HasCallStack => Fresh -> m (Eval, Vector Eval -> Eval)
+univarType which = do
+  tyFor <- univarsType
+  pure $ tyFor which
+
+univarLocals :: Evaling m => HasCallStack => Fresh -> m EvalTypeCtx
+univarLocals which = do
+  localsFor <- univarsLocals
+  pure $ localsFor which
+
 
 -- Writer-like
 
@@ -143,9 +156,15 @@ class Monad m => Constraining m where
   constrainULevel :: Relationship ULevelEvidence -> m ()
 
 -- State/IO-like
-class Constraining m => Unifying m where
+class (Constraining m, Typing m) => Unifying m where
   unsafeSolve :: Fresh -> Eval -> m ()
   equate :: Equation -> m ()
+  -- unification variables
+  initUVType :: m (Fresh, Term, Eval)
+  initUVType = do
+    (_, _, u) <- freshUniv
+    initUVTerm u
+  initUVTerm :: Eval -> m (Fresh, Term, Eval)
 
 class Monad m => Checkpointing m where
   type Checkpoint m
@@ -180,12 +199,18 @@ instance Checkpointing m => Checkpointing (FreshT m) where
 
 -- logging...
 
-class Evaling m => Typing m where
+class (Freshener m, Evaling m) => Typing m where
   fatal :: HasCallStack => String -> m any
   context :: HasCallStack => String -> m r -> m r
   validate :: HasCallStack => Term -> m ("type" @:: Eval)
   validEval :: HasCallStack => Term -> m ("type" @:: Eval, "value" @:: Eval)
   reinfer :: HasCallStack => Term -> m ("type" @:: Eval)
+  freshUniv :: m (ULevel, Term, Eval)
+  freshUniv = do
+    uLevel <- freshen
+    uStage <- freshen
+    let u = ULevel { uStage = uStage, uLevel = uLevel }
+    pure (u, TUniv mempty u, EUniv mempty u)
 
 validateQuote :: Typing m => HasCallStack => Term -> m ("type" @:: Term)
 validateQuote = quote <=< validate
@@ -293,6 +318,8 @@ instance Evaling m => Evaling (StateT s m) where
   eval = lift . eval
   quote = lift . quote
   currentSolutions = lift currentSolutions
+  univarsType = lift univarsType
+  univarsLocals = lift univarsLocals
   progressGlobal = lift . progressGlobal
   forceGlobal = lift . forceGlobal
   forceNeutral = lift . forceNeutral
@@ -300,6 +327,8 @@ instance Evaling m => Evaling (ReaderT r m) where
   eval = lift . eval
   quote = lift . quote
   currentSolutions = lift currentSolutions
+  univarsType = lift univarsType
+  univarsLocals = lift univarsLocals
   progressGlobal = lift . progressGlobal
   forceGlobal = lift . forceGlobal
   forceNeutral = lift . forceNeutral
@@ -307,6 +336,8 @@ instance Evaling m => Evaling (ExceptT e m) where
   eval = lift . eval
   quote = lift . quote
   currentSolutions = lift currentSolutions
+  univarsType = lift univarsType
+  univarsLocals = lift univarsLocals
   progressGlobal = lift . progressGlobal
   forceGlobal = lift . forceGlobal
   forceNeutral = lift . forceNeutral
@@ -314,6 +345,8 @@ instance (Evaling m, Monoid w) => Evaling (WriterT w m) where
   eval = lift . eval
   quote = lift . quote
   currentSolutions = lift currentSolutions
+  univarsType = lift univarsType
+  univarsLocals = lift univarsLocals
   progressGlobal = lift . progressGlobal
   forceGlobal = lift . forceGlobal
   forceNeutral = lift . forceNeutral
@@ -321,6 +354,8 @@ instance Evaling m => Evaling (FreshT m) where
   eval = lift . eval
   quote = lift . quote
   currentSolutions = lift currentSolutions
+  univarsType = lift univarsType
+  univarsLocals = lift univarsLocals
   progressGlobal = lift . progressGlobal
   forceGlobal = lift . forceGlobal
   forceNeutral = lift . forceNeutral
@@ -328,6 +363,8 @@ instance Evaling m => Evaling (ContT c m) where
   eval = lift . eval
   quote = lift . quote
   currentSolutions = lift currentSolutions
+  univarsType = lift univarsType
+  univarsLocals = lift univarsLocals
   progressGlobal = lift . progressGlobal
   forceGlobal = lift . forceGlobal
   forceNeutral = lift . forceNeutral
@@ -335,6 +372,8 @@ instance Evaling m => Evaling (Cont1T c m) where
   eval = lift . eval
   quote = lift . quote
   currentSolutions = lift currentSolutions
+  univarsType = lift univarsType
+  univarsLocals = lift univarsLocals
   progressGlobal = lift . progressGlobal
   forceGlobal = lift . forceGlobal
   forceNeutral = lift . forceNeutral
@@ -377,55 +416,73 @@ instance Typing m => Typing (StateT s m) where
   validate = lift . validate
   validEval = lift . validEval
   reinfer = lift . reinfer
+  freshUniv = lift freshUniv
 instance Typing m => Typing (ReaderT r m) where
   fatal = lift . fatal
   context msg = mapReaderT (context msg)
   validate = lift . validate
   validEval = lift . validEval
   reinfer = lift . reinfer
+  freshUniv = lift freshUniv
 instance Typing m => Typing (ExceptT e m) where
   fatal = lift . fatal
   context msg = mapExceptT (context msg)
   validate = lift . validate
   validEval = lift . validEval
   reinfer = lift . reinfer
+  freshUniv = lift freshUniv
 instance (Typing m, Monoid w) => Typing (WriterT w m) where
   fatal = lift . fatal
   context msg = mapWriterT (context msg)
   validate = lift . validate
   validEval = lift . validEval
   reinfer = lift . reinfer
+  freshUniv = lift freshUniv
 instance Typing m => Typing (FreshT m) where
   fatal = lift . fatal
   context msg = mapFreshT (context msg)
   validate = lift . validate
   validEval = lift . validEval
   reinfer = lift . reinfer
+  freshUniv = lift freshUniv
 instance Typing m => Typing (Cont1T c m) where
   fatal = lift . fatal
   context msg = mapCont1T (context msg)
   validate = lift . validate
   validEval = lift . validEval
   reinfer = lift . reinfer
+  freshUniv = lift freshUniv
 
 instance (Monad m, Unifying m) => Unifying (StateT s m) where
   unsafeSolve = fmap lift . unsafeSolve
   equate = lift . equate
+  initUVType = lift initUVType
+  initUVTerm = lift . initUVTerm
 instance (Monad m, Unifying m) => Unifying (ReaderT r m) where
   unsafeSolve = fmap lift . unsafeSolve
   equate = lift . equate
+  initUVType = lift initUVType
+  initUVTerm = lift . initUVTerm
 instance (Monad m, Unifying m) => Unifying (ExceptT e m) where
   unsafeSolve = fmap lift . unsafeSolve
   equate = lift . equate
+  initUVType = lift initUVType
+  initUVTerm = lift . initUVTerm
 instance (Monad m, Unifying m, Monoid w) => Unifying (WriterT w m) where
   unsafeSolve = fmap lift . unsafeSolve
   equate = lift . equate
+  initUVType = lift initUVType
+  initUVTerm = lift . initUVTerm
 instance (Monad m, Unifying m) => Unifying (FreshT m) where
   unsafeSolve = fmap lift . unsafeSolve
   equate = lift . equate
+  initUVType = lift initUVType
+  initUVTerm = lift . initUVTerm
 instance (Monad m, Unifying m) => Unifying (Cont1T c m) where
   unsafeSolve = fmap lift . unsafeSolve
   equate = lift . equate
+  initUVType = lift initUVType
+  initUVTerm = lift . initUVTerm
 
 instance Proving m => Proving (StateT s m) where
   subsume = fmap lift . subsume

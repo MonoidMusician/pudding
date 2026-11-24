@@ -46,7 +46,10 @@ import Pudding.Surface.Delaborator (delab, runDelab)
 import qualified Pudding.Surface.Delaborator as Delab
 import Pudding.Core.Boot (bootGlobals)
 import qualified Pudding.Types.Monads as M
-import Pudding.Types.Monads.Prover (unsafeRunProver)
+import Pudding.Types.Monads.Prover (unsafeRunProver, ProverS (uvState), Prover (Prover))
+import qualified Data.IntMap.Strict as IntMap
+import Pudding.Types.Monads.Types (UnivarState)
+import Control.Monad.State.Class (modify')
 
 data Formats = Formats
   { text :: Text
@@ -228,8 +231,8 @@ delabModule modul = Formats
 validateTerm :: Term -> Formats
 validateTerm = formatsTerm . unsafeRunProver Nil . M.validateQuote
 
-validateModule :: (Vector.Vector (Maybe Name, GlobalInfo), Globals) -> Formats
-validateModule (modul, globals) = Formats
+validateModule :: (Vector.Vector (Maybe Name, GlobalInfo), Globals, IntMap.IntMap UnivarState) -> Formats
+validateModule (modul, globals, univars) = Formats
   { text = text
   , html = xmlEscape text
   , ansi = fmt Ansi
@@ -244,13 +247,15 @@ validateModule (modul, globals) = Formats
   validateGTerm (GlobalTerm tmT tmE) = do
     (!tyE, !tmE') <- M.validEval tmT
     tyE <$ cc "different eval" tmE tmE'
-  modulTyped = unsafeRunProver ctx $ modul & (traverse . traverse) \case
-    info@(DefnGlobal (GlobalDefn _ (GlobalTerm tyT tyE) (GlobalTerm tmT tmE))) -> do
-      inferred <- validateGTerm (GlobalTerm tmT tmE)
-      _typeOfType <- validateGTerm (GlobalTerm tyT tyE)
-      cc "GlobalDefn wrong type" tyE inferred
-      pure info
-    info -> pure info
+  modulTyped = unsafeRunProver ctx do
+    Prover $ modify' \st -> st { uvState = univars }
+    modul & (traverse . traverse) \case
+      info@(DefnGlobal (GlobalDefn _ (GlobalTerm tyT tyE) (GlobalTerm tmT tmE))) -> do
+        inferred <- validateGTerm (GlobalTerm tmT tmE)
+        _typeOfType <- validateGTerm (GlobalTerm tyT tyE)
+        cc "GlobalDefn wrong type" tyE inferred
+        pure info
+      info -> pure info
   fmt f = modulTyped & foldMap \(name, info) ->
     case info of
       DefnGlobal (GlobalDefn _ (GlobalTerm ty _) (GlobalTerm _tm _)) ->
@@ -300,10 +305,9 @@ finishDecls _ _ decls =
   (stage3DSuccess decls :) <$> do
     tbl <- initTable
     catching "elab" do
-      (forCtx, modul) <- Elab.runElabFull tbl (Elab.elaborateModule decls)
-      let ctx = bootGlobals $ globalsFrom forCtx
+      ((globals, univars), modul) <- Elab.runElabFull tbl (Elab.elaborateModule decls)
       pure [stage4DSuccess modul] <> fold
-        [ extra "validate" $ pure $ StageSuccess (validateModule (modul, ctx)) Nothing
+        [ extra "validate" $ pure $ StageSuccess (validateModule (modul, globals, univars)) Nothing
         , extra "delab" $ pure $ StageSuccess (delabModule modul) Nothing
         ]
 

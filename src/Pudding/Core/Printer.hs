@@ -78,7 +78,11 @@ printCore = \case
     ]
   TGlobal _m name -> pure $ Doc.pretty name
   -- FIXME: scope?
-  THole _m fresh _scope -> pure $ Doc.pretty fresh
+  THole _m fresh scope -> sexp
+    [ pure "??"
+    , pure $ Doc.pretty fresh
+    , sexp $ printCore <$> Vector.toList scope
+    ]
   TUniv _m _univ -> pure $ Doc.pretty ("Type" :: String) -- $ case univ of
     -- UBase lvl -> "(Type0 " <> show lvl <> ")" -- (Type0 0), (Type0 1), ...
     -- UMeta lvl -> "(Type1 " <> show lvl <> ")" -- (Type1 0), ...
@@ -102,7 +106,7 @@ printCore = \case
     , bound binder printCore body
     ]
   app@(TApp _m _ _ _) ->
-    let (fun, args) = spine app in
+    let (fun, args) = funcSpine app in
     sexp $ printCore <$> fun : args
   TSigma _m p binder ty body -> sexp
     [ pure $ "Σ" <> if p == Implicit then "?" else ""
