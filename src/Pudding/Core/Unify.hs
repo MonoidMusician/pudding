@@ -17,7 +17,7 @@ import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.Align (Semialign(alignWith))
 import Data.Distributive (Distributive(distribute))
-import Data.Foldable (foldl', traverse_, for_)
+import Data.Foldable (foldl', traverse_, for_, toList)
 import Data.Function ((&))
 import Data.Functor ((<&>), void)
 import Data.Functor.Classes (Eq1(liftEq))
@@ -42,9 +42,8 @@ import qualified Pudding.Types.Stack as Stack
 import Pudding.Types.Monads.Cont1T (Cont1T, adaptCont, runCont1pT)
 import Control.Monad.Error.Class (MonadError(catchError, throwError))
 import Pudding.Types.Monads.Errors (ProverE(ProverE))
-import qualified Data.Text as T
-import Data.List.NonEmpty (NonEmpty((:|)))
 import qualified Pudding.Core.Eval as E
+import qualified Data.Set as Set
 
 
 type Transform m t = t -> m t
@@ -86,15 +85,15 @@ reinfer = validateOrNot False
 -- | the `n` in `Fin n` could be considered for subsumption in the category
 -- | `n <= m` in order to help generate coercions from monotonocity:
 -- | `(n <= m) -> Fin n -> Fin m`.
-subsume :: forall m r. Proving m => UnifyMode r -> Pair Eval -> m ("unified" @:: Pair Eval, "coercion" @:: Maybe r)
+subsume :: forall m r. Proving m => UnifyMode r -> HasCallStack => Pair Eval -> m ("unified" @:: Pair Eval, "coercion" @:: Maybe r)
 subsume _ (!evalL :# !evalR) | evalL FastEq.===? evalR = pure (evalL :# evalR, Nothing)
 subsume mode evalLR@(!evalL :# !evalR) = case evalL :# evalR of
   ENeutralHole {} :# ENeutralHole {} | StillInjective <- stillInjective mode ->
-    substsubsumeUniVars evalLR <&> (, Nothing)
+    toUnifyVars mode evalLR
   ENeutralHole {} :# _ | StillInjective <- stillInjective mode ->
-    substsubsumeUniVars evalLR <&> (, Nothing)
+    toUnifyVars mode evalLR
   _ :# ENeutralHole {} | StillInjective <- stillInjective mode ->
-    substsubsumeUniVars evalLR <&> (, Nothing)
+    toUnifyVars mode evalLR
 
   -- We unravel `EDeferred` slowly, to check if any names match up, before
   -- continuing with the main cases.
@@ -321,7 +320,7 @@ subsume mode evalLR@(!evalL :# !evalR) = case evalL :# evalR of
     NHole _ holeL _localsL :# NHole _ holeR _localsR -> holeL == holeR
     -- We also check globals separately if it fails
     NGlobal _ _ nameL :# NGlobal _ _ nameR -> nameL == nameR
-    _ -> False -- FIXME: handle holes via unification!!
+    _ -> False
   checkPrjs = \case
     (moreL :> NApp _ _ _argL) :# (moreR :> NApp _ _ _argR) ->
       checkPrjs (moreL :# moreR)
@@ -787,15 +786,22 @@ instance Applicative StrictPositivityM where
 --     _ -> _
 
 
+-- Instantiate solutions to unification variables, before trying to actually
+-- unify them.
 -- TODO: pass original expressions
-substsubsumeUniVars :: Proving m => Pair Eval -> m (Pair Eval)
-substsubsumeUniVars eLR@(eL :# eR) = do
-  eL' :# eR' <- traverse asCurrentSolution eLR
-  case (eL', eR') of
-    (Nothing, Nothing) -> subsumeUniVars eLR
-    _ -> substsubsumeUniVars (fromMaybe eL eL' :# fromMaybe eR eR')
+toUnifyVars :: Proving m => UnifyMode r -> HasCallStack => Pair Eval -> m ("unified" @:: Pair Eval, "coercion" @:: Maybe r)
+toUnifyVars mode eLR@(eL :# eR) = do
+  eLR'@(eL' :# eR') <- traverse asCurrentSolution eLR
+  case eLR' of
+    Nothing :# Nothing ->
+      case eLR of
+        ENeutralHole {} :# ENeutralHole {} -> unifyVars eLR <&> (, Nothing)
+        ENeutralHole {} :# _               -> unifyVars eLR <&> (, Nothing)
+        _               :# ENeutralHole {} -> unifyVars eLR <&> (, Nothing)
+        _ -> subsume mode eLR
+    _ -> toUnifyVars mode (fromMaybe eL eL' :# fromMaybe eR eR')
 
-asCurrentSolution :: Proving m => Eval -> m (Maybe Eval)
+asCurrentSolution :: Proving m => HasCallStack => Eval -> m (Maybe Eval)
 asCurrentSolution (ENeutralHole _ which locals spine) = do
   M.currentSolution which >>= traverse \(_, sol) ->
     pure $ doPrjs (sol locals) spine
@@ -803,7 +809,7 @@ asCurrentSolution _ = pure Nothing
 
 
 -- Solve a unification variable and check equations
-solveCascade :: forall m. Proving m => Fresh -> Eval -> m ()
+solveCascade :: forall m. Proving m => HasCallStack => Fresh -> Eval -> m ()
 solveCascade which val = do
   let unifying = UnifyMode Invariant IdentitySubsumption StillInjective
   eqns <- M.unsafeSolve which val
@@ -812,9 +818,10 @@ solveCascade which val = do
       void $ subsume unifying eqn
 
 
+-- Actually solve a variable, or at least impose an equational constraint.
 -- TODO: pass original expressions
-subsumeUniVars :: forall m. Proving m => Pair Eval -> m (Pair Eval)
-subsumeUniVars eLR@(eL :# eR) = do
+unifyVars :: forall m. Proving m => HasCallStack => Pair Eval -> m (Pair Eval)
+unifyVars eLR@(eL :# eR) = do
   solvL :# solvR <- traverse canSolvePattern eLR
   -- FIXME: check occurs relation
   case (solvL, solvR) of
@@ -883,13 +890,16 @@ subsumeUniVars eLR@(eL :# eR) = do
   cc mode2 pair = fst <$> subsume mode2 pair
 
 
+distinct :: forall f t. (Foldable f, Ord t) => f t -> Bool
+distinct items = length (Set.fromList (toList items)) == length items
 
-canSolvePattern :: Proving m => Eval -> m (Maybe (Fresh, Eval -> Eval))
+
+canSolvePattern :: Proving m => HasCallStack => Eval -> m (Maybe (Fresh, Eval -> Eval))
 canSolvePattern (ENeutralHole _ which locals spine@Nil) = do
   g <- M.askGlobals
   -- TODO: irrelevant variables, let-bound variables, and definitional unit-types
   case sequence <$> calculable (traverse findNeutral locals) of
-    Right (Just vars) | Nil <- spine -> do
+    Right (Just vars) | Nil <- spine, distinct vars -> do
       let
         addVar c lvl = c :> (BFresh, ENeutralVar mempty lvl Nil)
         newCtx = Ctx g (foldl addVar Nil vars)

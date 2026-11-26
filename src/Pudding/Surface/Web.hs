@@ -8,7 +8,7 @@ import qualified Pudding.Surface.Happy as Happy
 
 import qualified Data.Text as T
 import Data.Pair (Pair(..))
-import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Name (nameText), Term, GlobalInfo (DefnGlobal), Globals, globalsFrom, Ctx (Ctx, ctxStack, ctxGlobals), pattern Nil, UnifyMode (UnifyMode), UnifyDir (Invariant), RequestSubsumption (IdentitySubsumption), InjectiveStatus (StillInjective), pattern ENeutralHole, stack, Fresh (Fresh), StackLike (size), mapCtx, Level (Level), ctxOfSize, StackFunctor (mapWithLevel), pattern ENeutralVar)
+import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Name (nameText), Term, GlobalInfo (DefnGlobal), Globals, Ctx (Ctx, ctxStack, ctxGlobals), pattern Nil, UnifyMode (UnifyMode), UnifyDir (Invariant), RequestSubsumption (IdentitySubsumption), InjectiveStatus (StillInjective), pattern ENeutralHole, stack, Fresh (Fresh), StackLike (size), Level (Level), ctxOfSize, StackFunctor (mapWithLevel), pattern ENeutralVar)
 import qualified Text.Parsec as P
 import qualified Data.Text.IO.Utf8 as TIO
 import Control.Monad.Identity (Identity (runIdentity))
@@ -44,7 +44,6 @@ import qualified Data.Vector as Vector
 import Data.IORef (newIORef, modifyIORef', readIORef)
 import Pudding.Surface.Delaborator (delab, runDelab)
 import qualified Pudding.Surface.Delaborator as Delab
-import Pudding.Core.Boot (bootGlobals)
 import qualified Pudding.Types.Monads as M
 import Pudding.Types.Monads.Prover (unsafeRunProver, ProverS (uvState), Prover (Prover))
 import qualified Data.IntMap.Strict as IntMap
@@ -269,7 +268,9 @@ validateModule (modul, globals, univars, constraints) = Formats
           ctx = uvCtx info
           hole = ENeutralHole mempty (Fresh which) (Vector.fromList $ fmap (snd . snd) $ review stack $ ctxStack ctx) Nil
           fmtHere = formatCoreFrom f (size ctx) . Eval.quote (void ctx)
-        in fmtHere hole <> " : " <> fmtHere (uvType info) <> " := " <> fmtHere (uvTerm info) <> "\n\n"
+        in fmtHere hole <> " : " <> fmtHere (uvType info) <> case uvTerm info of
+            ENeutralHole _ (Fresh w') _ Nil | w' == which -> ""
+            _ -> " := " <> fmtHere (uvTerm info) <> "\n\n"
     , IntMap.toAscList constraints & foldMap \(_n, (_involved, ctx, lhs :# rhs)) ->
         let
           printStack = foldMap (<> "\n") . mapWithLevel \(Level l, _) (bdr, (ty, val)) ->

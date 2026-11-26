@@ -150,6 +150,12 @@ univarLocals which = do
   localsFor <- univarsLocals
   pure $ localsFor which
 
+globalEval :: Evaling m => HasCallStack => Term -> m GlobalTerm
+globalEval t = GlobalTerm <$> pure t <*> eval t
+
+globalQuote :: Evaling m => HasCallStack => Eval -> m GlobalTerm
+globalQuote e = GlobalTerm <$> quote e <*> pure e
+
 
 -- Writer-like
 
@@ -222,7 +228,7 @@ validateQuote :: Typing m => HasCallStack => Term -> m ("type" @:: Term)
 validateQuote = quote <=< validate
 
 class (Unifying m, Typing m, MonadError ProverE m) => Proving m where
-  subsume :: HasCallStack => UnifyMode r -> Pair Eval -> m ("unified" @:: Pair Eval, "coercion" @:: Maybe r)
+  subsume :: UnifyMode r -> HasCallStack => Pair Eval -> m ("unified" @:: Pair Eval, "coercion" @:: Maybe r)
 
 -- MonadMask
 -- class MonadError e m => Proving e m | m -> e where
@@ -491,14 +497,14 @@ instance (Monad m, Unifying m) => Unifying (Cont1T c m) where
   initUVTerm = lift . initUVTerm
 
 instance Proving m => Proving (StateT s m) where
-  subsume = fmap lift . subsume
+  subsume m = lift <$> subsume m
 instance Proving m => Proving (ReaderT r m) where
-  subsume = fmap lift . subsume
+  subsume m = lift <$> subsume m
 -- instance Proving m => Proving (ExceptT e m) where
---   subsume = fmap lift . subsume
+--   subsume m = lift <$> subsume m
 instance (Proving m, Monoid w) => Proving (WriterT w m) where
-  subsume = fmap lift . subsume
+  subsume m = lift <$> subsume m
 instance Proving m => Proving (FreshT m) where
-  subsume = fmap lift . subsume
+  subsume m = lift <$> subsume m
 instance Proving m => Proving (Cont1T c m) where
-  subsume = fmap lift . subsume
+  subsume m = lift <$> subsume m

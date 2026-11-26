@@ -154,7 +154,7 @@ Nat'add : Nat -> Nat -> Nat
   | nil := zero
   | cons _ ts := succ (length ts)
 
-  length_homo @{T} : Π (l1 l2 : List T). length (append l1 l2) = length l1 + length l2
+  length_homo @{T} : Π (l1 & l2 : List T). length (append l1 l2) = length l1 + length l2
   | nil, l2 := refl
   | cons _ l1, l2 :=
   prove:
@@ -186,7 +186,7 @@ Nat'add : Nat -> Nat -> Nat
     := { justs := cons o justs, tail }
   '' we revert the `& f i ??` now, by just matching two items
   | f, tail := { justs := nil, tail }
- 
+
   while_right @{I, L, R} :
     (I -> Either (I -> L) R) ->
     List I ->

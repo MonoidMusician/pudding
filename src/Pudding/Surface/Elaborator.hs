@@ -16,17 +16,17 @@ module Pudding.Surface.Elaborator where
 
 import Prelude hiding (exp)
 
-import Data.Functor ((<&>), void)
+import Data.Functor ((<&>))
 import Data.Function ((&))
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text (Text)
 import Pudding.Types.Name (Name(..), internalize, NameTable, canonicalName, CanonicalName (chosenName))
-import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::))
+import Pudding.Types.Base (Plicit(..), type (@::))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), pattern Nil, pattern (:>), (@@?), size)
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO (liftIO), MonadTrans (lift), MonadState)
-import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti, BFresh, BPair), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar, NGlobal), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals, Ctx), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo), Closure (Closure, ConstClosure), ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL, Invariant), UnifyMode (UnifyMode), InjectiveStatus (StillInjective), addGlobal, freshGlobals, pattern ENeutral, pattern ENeutralVar, pattern ENeutralHole)
+import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti, BFresh, BPair), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar, NGlobal), ULevel (ULevel), Ctx (Ctx), GlobalTypeInfo (GlobalTypeInfo), Closure (Closure, ConstClosure), ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL, Invariant), UnifyMode (UnifyMode), InjectiveStatus (StillInjective), addGlobal, freshGlobals, pattern ENeutral, pattern ENeutralVar, pattern ENeutralHole)
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl(..), CST(..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize, Attributes))
@@ -174,16 +174,6 @@ joinScoped :: GLM (Scoped r) -> GLM r
 joinScoped (Compose stage0) = Compose $ stage0 <&>
   \(GGather outs ins) -> GGather outs $ join <$> ins
 
-globalEval :: HasCallStack => Term -> Scoped GlobalTerm
-globalEval t = do
-  e <- eval t
-  pure $ GlobalTerm t e
-
-globalQuote :: HasCallStack => Eval -> Scoped GlobalTerm
-globalQuote e = do
-  t <- quote e
-  pure $ GlobalTerm t e
-
 normalize :: HasCallStack => Bool -> Term -> Scoped Term
 normalize ridGlobals t = do
   c <- M.askEvalCtx
@@ -306,14 +296,22 @@ elaborateDefn attrs mty tm = do
     tmT <- mayNormalize attrs tmT0
     ty' <- case mty' of
       Just (tyT, tyE) -> pure $ GlobalTerm tyT tyE
-      Nothing -> globalQuote =<< reinfer tmT
-    GlobalDefn (arityOfTerm tmT) ty' <$> globalEval tmT
+      Nothing -> M.globalQuote =<< reinfer tmT
+    GlobalDefn (arityOfTerm tmT) ty' <$> M.globalEval tmT
 
 
 elabType :: HasCallStack => CST -> Scoped Term
 elabType cst = do
   (_, _, univ) <- M.freshUniv
   elab (Just univ) cst
+
+elabEvalType :: HasCallStack => CST -> Scoped Eval
+elabEvalType cst = elabType cst >>= M.eval
+
+elabAndEval :: HasCallStack => Maybe ("expected type" @:: Eval) -> CST -> Scoped (Term, Eval)
+elabAndEval mty cst = do
+  tm <- elab mty cst
+  (tm,) <$> M.eval tm
 
 -- | Coerce a synthesized term to an expected type, if provided.
 synth :: HasCallStack => Maybe ("expected type" @:: Eval) -> Term -> Scoped Term
@@ -340,17 +338,18 @@ elab mexp = \case
       prethingy (funT, funTy) arg = do
         funTy' <- fromMaybe funTy <$> M.forceNeutral funTy
         thingy (funT, funTy') arg
-      thingy (_, EPi _ Implicit _ _ _) _ = error "cannot handle implicits"
       thingy (funT, EPi _ Explicit _ argTy clo) arg = do
-        argT <- elab (Just argTy) arg
-        argE <- eval argT
+        (argT, argE) <- elabAndEval (Just argTy) arg
         pure (TApp mempty Explicit funT argT, E.instantiateClosure clo argE)
+      thingy (funT, EPi _ implicit _ impTy clo) arg = do
+        (_, impT, impE) <- M.initUVTerm impTy
+        thingy (TApp mempty implicit funT impT, E.instantiateClosure clo impE) arg
       thingy (funT, univar@(ENeutralHole _ which locals spine@Nil)) arg = do
         -- FIXME assert the hole has a universe type
         (_, _, dom0) <- M.initUVType
-        argT <- elab (Just dom0) arg
-        argE <- eval argT
+        (argT, argE) <- elabAndEval (Just dom0) arg
         -- Maybe it was solved
+        -- TODO: instantiate univars but do not force globals
         dom <- fromMaybe dom0 <$> M.forceNeutral dom0
         (_, codT, cod) <- M.bindNeut mempty BFresh dom \_ _ -> M.initUVType
         clo <- M.bindClosure BFresh $ Scoped codT
@@ -380,9 +379,10 @@ elab mexp = \case
     lvl <- ULevel <$> freshen <*> freshen
     synth mexp $ TUniv mempty lvl
 
-  CLambda binders body -> elabBinders (TLambda mempty) binders [] body
-  CPi     binders body -> elabBinders (TPi     mempty) binders [] body
-  CSigma  binders body -> elabBinders (TSigma  mempty) binders [] body
+  -- TODO: elab against Pi type
+  CLambda binders body -> elabBinders (TLambda mempty) binders [] $ elab Nothing body
+  CPi     binders body -> elabBinders (TPi     mempty) binders [] $ elabType body
+  CSigma  binders body -> elabBinders (TSigma  mempty) binders [] $ elabType body
   -- | CLet    ![(CBinder, "ty" @:: Maybe CST, "tm" @:: CST)]    !CST
 
   -- | CSentence !(NonEmpty (Either L.OpForm CST))
@@ -443,19 +443,29 @@ elab mexp = \case
     tm' <- elab Nothing tm
     pure $ TField mempty tm' name
 
-  CPair l r | Just exp@(ESigma _ _ _ lTy rTy) <- mexp -> do
+  CPair l r | Just exp@(ESigma _ _ _ lTy (ConstClosure rTy)) <- mexp -> do
     lT <- elab (Just lTy) l
-    lE <- eval lT
+    rT <- elab (Just rTy) r
+    expT <- quote exp
+    pure $ TPair mempty expT lT rT
+  CPair l r | Just exp@(ESigma _ _ _ lTy rTy) <- mexp -> do
+    (lT, lE) <- elabAndEval (Just lTy) l
     rT <- elab (Just (E.instantiateClosure rTy lE)) r
     expT <- quote exp
     pure $ TPair mempty expT lT rT
+  -- Synthesize a non-dependent pair
+  CPair l r | Nothing <- mexp -> do
+    lT <- elab Nothing l
+    lTy <- M.reinfer lT
+    rT <- elab Nothing r
+    rTy <- M.reinfer rT
+    ty <- M.quote $ ESigma mempty Explicit BUnused lTy $ ConstClosure $ rTy
+    pure $ TPair mempty ty lT rT
 
   CAscribe tm ty -> do
     tyT <- elabType ty
     tyE <- eval tyT
     tmT <- elab (Just tyE) tm
-    tmtyE <- M.validate tmT
-    (_tys, _coercion) <- M.subsume (UnifyMode RSubsumesL IdentitySubsumption StillInjective) (tyE :# tmtyE)
     pure (TAscribe mempty tmT tyT)
 
   -- | CAssign !CST !CST -- for patterns and do notation
@@ -464,10 +474,10 @@ elab mexp = \case
 
 elabBinders ::
   (Plicit -> Binder -> Term -> ScopedTerm -> Term) ->
-  NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST) -> [Eval] -> CST -> Scoped Term
-elabBinders cons binders telescope body = do
+  NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST) -> [Eval] -> Scoped Term -> Scoped Term
+elabBinders cons binders telescope elabBody = do
   runCont1pT (foldMap addBinder binders) \(Endo wrap) ->
-    wrap <$> elab Nothing body
+    wrap <$> elabBody
   where
   addBinder :: (Plicit, NonEmpty CBinder, Maybe CST) -> Cont1T r Scoped (Endo Term)
   addBinder (plicit, binder, mty) = do
@@ -520,8 +530,8 @@ addTypeAuxDefns name final =
   for_ (typeAuxDefns name final) \(auxName, tm) -> do
     ty <- M.reinfer tm
     defn <- GlobalDefn (arityOfTerm tm)
-      <$> globalQuote ty
-      <*> globalEval  tm
+      <$> M.globalQuote ty
+      <*> M.globalEval  tm
     addProofGlobal auxName $ DefnGlobal defn
 
 
@@ -534,17 +544,14 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
   -- and indices of the inductive type
   (newParams, newIndices) <- evalCont1pT do
     -- Parameters are listed first; enter that telescoping context
-    termParams <- processBinders rawParams $
-      error "Missing type for datatype parameter"
+    termParams <- processBinders rawParams
     -- Indices may be listed next
-    explicitTermIndices <- processBinders rawIndices $
-      error "Missing type for datatype index"
+    explicitTermIndices <- processBinders rawIndices
     -- Finally the type may reduce to a Pi type, providing more indices
     implicitTermIndices <- fromMaybe [] <$> for mdest \dest -> lift do
-      term <- elabType dest
-      e <- eval term
+      ty <- elabEvalType dest
       -- But it must end in a universe, like `Type`
-      fst <$> peelToUniv e
+      fst <$> peelToUniv ty
     let termIndices = explicitTermIndices <> implicitTermIndices
     pure (Vector.fromList termParams, Vector.fromList termIndices)
 
@@ -569,13 +576,11 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
     -- which becomes available for pattern matching.
     (ctor,) <$> evalCont1pT do
       -- Explicit binders
-      explicitArguments <- processBinders argTypes $
-        error "Missing type for constructor argument"
+      explicitArguments <- processBinders argTypes
       -- Again, it can result in a pi type with more binders
       (implicitArguments, (params, indices)) <- do
         fromMaybe mempty <$> for resultType \r -> do
-          rT <- lift $ elabType r
-          rE <- lift $ eval rT
+          rE <- lift $ elabEvalType r
           -- But it must end with the type constructor that names the type,
           -- instantiated with all parameters and indices
           peelToTyCtor rE
@@ -613,12 +618,12 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
     foldr (\(i, b) -> (:) (plicit, b, E.shift i tyT))
       []
       (zip [0..] (NE.toList bounders))
-  processBinders :: forall c. [CBinderGroup] -> (forall void. Scoped void) -> Scoping c [(Plicit, Binder, Term)]
-  processBinders rawBinders nope =
+  processBinders :: forall c. [CBinderGroup] -> Scoping c [(Plicit, Binder, Term)]
+  processBinders rawBinders =
     join <$> for rawBinders \(plicit, binder, mty) -> do
       tyT <- lift case mty of
-        Nothing -> nope
-        Just ty -> elab Nothing ty
+        Nothing -> M.initUVType <&> \(_, ty, _) -> ty
+        Just ty -> elabType ty
       tyE <- lift $ eval tyT
       multiCons plicit <$> elabMultiBinder tyE binder <*> pure tyT
   peelToUniv :: Eval -> Scoped ([(Plicit, Binder, Term)], ULevel)

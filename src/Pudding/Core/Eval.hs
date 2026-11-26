@@ -358,13 +358,13 @@ doSplice _ _ = error "Type error: cannot splice a non-quote"
 
 -- Quoting takes a term that was evaluated to depth 1 (`Eval`) and turns it back
 -- into a `Term`, calling `eval` on all closures to evaluate it fully.
-quoting :: Eval -> QuoteCtx -> Term
+quoting :: HasCallStack => Eval -> QuoteCtx -> Term
 quoting = eval2termWith False quotingClosure
 
 -- We implement it via a generic function, to avoid duplication. (Duplication
 -- itself is not too painful, but having to add 500 new cases every time you
 -- add an AST node is painful.)
-eval2termWith ::
+eval2termWith :: HasCallStack =>
   "force globals" @:: Bool ->
   (Closure -> "type" @:: Eval -> QuoteCtx -> ScopedTerm) ->
   Eval -> QuoteCtx -> Term
@@ -414,7 +414,7 @@ eval2termWith forceGlobals handleClosure = \case
 -- normalizing it.
 --
 -- Note: this calls directly into `quoting`.
-quotingClosure :: Closure -> Eval -> QuoteCtx -> ScopedTerm
+quotingClosure :: HasCallStack => Closure -> Eval -> QuoteCtx -> ScopedTerm
 quotingClosure (Closure savedCtx bdr (Scoped savedBody)) _argTy ctx =
   let
     (lvl, ctx') = push (bdr, ()) ctx
