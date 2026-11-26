@@ -488,7 +488,7 @@ data ULevel = ULevel
 data UnifyMode r = UnifyMode
   { unifyDir :: UnifyDir
   , shouldSubsume :: RequestSubsumption r
-  , stillInjective :: InjectiveStatus
+  , isUnifying :: Unifying
   }
   deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
@@ -536,9 +536,15 @@ instance Typeable r => AE.FromJSON (RequestSubsumption r) where
     _ -> error "Decode RequestSubsumption"
 
 -- | Whether we can still learn unification equalities.
-data InjectiveStatus = StillInjective | NotInjective
+data Unifying = Unifying | Checking
   deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 
+pattern ModeUnifying :: UnifyMode Void
+pattern ModeUnifying = UnifyMode Invariant IdentitySubsumption Unifying
+
+-- | The mode for conversion checking, no unifying (just check equality)
+pattern ModeEquating :: UnifyMode Void
+pattern ModeEquating = UnifyMode Invariant IdentitySubsumption Checking
 
 
 --------------------

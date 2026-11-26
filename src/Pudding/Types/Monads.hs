@@ -168,7 +168,7 @@ class Monad m => Constraining m where
   constrainULevel :: Relationship ULevelEvidence -> m ()
 
 -- State/IO-like
-class (Constraining m, Typing m) => Unifying m where
+class (Constraining m, Typing m) => Unifier m where
   unsafeSolve :: Fresh -> Eval -> m AfterSolve
   equate :: Equation -> m ()
   -- unification variables
@@ -227,7 +227,7 @@ class (Freshener m, Evaling m) => Typing m where
 validateQuote :: Typing m => HasCallStack => Term -> m ("type" @:: Term)
 validateQuote = quote <=< validate
 
-class (Unifying m, Typing m, MonadError ProverE m) => Proving m where
+class (Unifier m, Typing m, MonadError ProverE m) => Proving m where
   subsume :: UnifyMode r -> HasCallStack => Pair Eval -> m ("unified" @:: Pair Eval, "coercion" @:: Maybe r)
 
 -- MonadMask
@@ -465,32 +465,32 @@ instance Typing m => Typing (Cont1T c m) where
   reinfer = lift . reinfer
   freshUniv = lift freshUniv
 
-instance (Monad m, Unifying m) => Unifying (StateT s m) where
+instance (Monad m, Unifier m) => Unifier (StateT s m) where
   unsafeSolve = fmap lift . unsafeSolve
   equate = lift . equate
   initUVType = lift initUVType
   initUVTerm = lift . initUVTerm
-instance (Monad m, Unifying m) => Unifying (ReaderT r m) where
+instance (Monad m, Unifier m) => Unifier (ReaderT r m) where
   unsafeSolve = fmap lift . unsafeSolve
   equate = lift . equate
   initUVType = lift initUVType
   initUVTerm = lift . initUVTerm
-instance (Monad m, Unifying m) => Unifying (ExceptT e m) where
+instance (Monad m, Unifier m) => Unifier (ExceptT e m) where
   unsafeSolve = fmap lift . unsafeSolve
   equate = lift . equate
   initUVType = lift initUVType
   initUVTerm = lift . initUVTerm
-instance (Monad m, Unifying m, Monoid w) => Unifying (WriterT w m) where
+instance (Monad m, Unifier m, Monoid w) => Unifier (WriterT w m) where
   unsafeSolve = fmap lift . unsafeSolve
   equate = lift . equate
   initUVType = lift initUVType
   initUVTerm = lift . initUVTerm
-instance (Monad m, Unifying m) => Unifying (FreshT m) where
+instance (Monad m, Unifier m) => Unifier (FreshT m) where
   unsafeSolve = fmap lift . unsafeSolve
   equate = lift . equate
   initUVType = lift initUVType
   initUVTerm = lift . initUVTerm
-instance (Monad m, Unifying m) => Unifying (Cont1T c m) where
+instance (Monad m, Unifier m) => Unifier (Cont1T c m) where
   unsafeSolve = fmap lift . unsafeSolve
   equate = lift . equate
   initUVType = lift initUVType

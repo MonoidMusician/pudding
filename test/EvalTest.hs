@@ -226,7 +226,7 @@ typecheck term = do
 
 conversionCheck :: HasCallStack => EvalTypeCtx -> Eval -> Eval -> Bool
 conversionCheck ctx e1 e2 = True <$ unsafeRunProver ctx $
-  subsume (UnifyMode RSubsumesL IdentitySubsumption StillInjective) (e1 :# e2)
+  subsume (UnifyMode RSubsumesL IdentitySubsumption Unifying) (e1 :# e2)
 
 defEqTo :: forall i1 i2. Convert i1 Eval => Convert i2 Eval => "term1" @:: i1 -> "term2" @:: i2 -> EvalTest ()
 defEqTo i1 i2 = do

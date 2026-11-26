@@ -247,7 +247,7 @@ instance Typing Prover where
     pure (ty, val)
   reinfer = U.reinfer
 
-instance Unifying Prover where
+instance Unifier Prover where
   unsafeSolve = solveFully
 
   equate eqn = do

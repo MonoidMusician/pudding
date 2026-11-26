@@ -1,9 +1,6 @@
 -- | This is the core module for typechecking and unification. Core terms
 -- | are already intrinsically typed, which can be validated with `validate`,
 -- | or just quickly assembled with `reinfer`.
--- |
--- | Currently it does not have any features for unification: that needs
--- | some monad design first.
 {-# OPTIONS_GHC -Werror=incomplete-patterns #-}
 {- HLINT ignore "Redundant <$>" -}
 module Pudding.Core.Unify where
@@ -88,11 +85,11 @@ reinfer = validateOrNot False
 subsume :: forall m r. Proving m => UnifyMode r -> HasCallStack => Pair Eval -> m ("unified" @:: Pair Eval, "coercion" @:: Maybe r)
 subsume _ (!evalL :# !evalR) | evalL FastEq.===? evalR = pure (evalL :# evalR, Nothing)
 subsume mode evalLR@(!evalL :# !evalR) = case evalL :# evalR of
-  ENeutralHole {} :# ENeutralHole {} | StillInjective <- stillInjective mode ->
+  ENeutralHole {} :# ENeutralHole {} | Unifying <- isUnifying mode ->
     toUnifyVars mode evalLR
-  ENeutralHole {} :# _ | StillInjective <- stillInjective mode ->
+  ENeutralHole {} :# _ | Unifying <- isUnifying mode ->
     toUnifyVars mode evalLR
-  _ :# ENeutralHole {} | StillInjective <- stillInjective mode ->
+  _ :# ENeutralHole {} | Unifying <- isUnifying mode ->
     toUnifyVars mode evalLR
 
   -- We unravel `EDeferred` slowly, to check if any names match up, before
@@ -232,10 +229,7 @@ subsume mode evalLR@(!evalL :# !evalR) = case evalL :# evalR of
 
   -- The mode for recursing in conversion checking mode
   -- under an injective constructor
-  unifying = UnifyMode Invariant IdentitySubsumption (stillInjective mode)
-  -- The mode for conversion checking, non-injective
-  -- (just check equality)
-  equating = unifying { stillInjective = NotInjective }
+  unifying = UnifyMode Invariant IdentitySubsumption (isUnifying mode)
   -- Contravariant mode, just flip the relation of left and right
   _modeContra = case unifyDir mode of
     LSubsumesR -> mode { unifyDir = RSubsumesL }
@@ -343,7 +337,7 @@ subsume mode evalLR@(!evalL :# !evalR) = case evalL :# evalR of
   unifyFocus = \case
     NHole mL holeL localsL :# NHole mR holeR localsR ->
       (<*>) (NHole mL holeL :# NHole mR holeR) . distribute <$>
-        alignCC equating (localsL :# localsR)
+        alignCC ModeEquating (localsL :# localsR)
     focus -> pure focus
 
   unifyPrjs :: Crosscheck m (Stack NeutPrj)
@@ -355,7 +349,7 @@ subsume mode evalLR@(!evalL :# !evalR) = case evalL :# evalR of
   unifyPrj :: Crosscheck m NeutPrj
   unifyPrj = \case
     NApp mL pL argL :# NApp mR pR argR ->
-      (<*>) (NApp mL pL :# NApp mR pR) <$> cc equating (argL :# argR)
+      (<*>) (NApp mL pL :# NApp mR pR) <$> cc ModeEquating (argL :# argR)
     prj -> pure prj
 
   -- TODO: keep track of deferred IDs?
@@ -569,15 +563,19 @@ validateOrNot should = \case
   might act | should = act
   might _ = pure ()
 
-  -- TODO: might?
-  validateType ty = vvv ty >>= \case
-    EUniv _ _ -> M.eval ty
-    _ -> M.fatal "Expected a valid type"
+  validateType ty = do
+    might $ vvv ty >>= \case
+      EUniv _ _ -> pure ()
+      u@(ENeutralHole _ _ _ _) -> do
+        (_, _, v) <- M.freshUniv
+        void $ subsume ModeUnifying (u :# v)
+      _ -> M.fatal "Expected a valid type"
+    M.eval ty
 
   -- TODO: subsumption
   cc :: HasCallStack => String -> Eval -> Eval -> m ()
   cc _err l r | should =
-    void $ subsume (UnifyMode Invariant IdentitySubsumption StillInjective) (l :# r)
+    void $ subsume (UnifyMode Invariant IdentitySubsumption Unifying) (l :# r)
   cc _ _ _ = pure ()
 
   vv = validateOrNot should
@@ -811,7 +809,7 @@ asCurrentSolution _ = pure Nothing
 -- Solve a unification variable and check equations
 solveCascade :: forall m. Proving m => HasCallStack => Fresh -> Eval -> m ()
 solveCascade which val = do
-  let unifying = UnifyMode Invariant IdentitySubsumption StillInjective
+  let unifying = UnifyMode Invariant IdentitySubsumption Unifying
   eqns <- M.unsafeSolve which val
   for_ eqns \(_involved, ctx, eqn) -> do
     M.withCtx ctx do
@@ -849,7 +847,7 @@ unifyVars eLR@(eL :# eR) = do
   checkSame = case eLR of
     ENeutralHole mL whichL localsL spineL :# ENeutralHole mR whichR localsR spineR | whichL == whichR -> do
       if not (checkPrjs (spineL :# spineR)) then throwError $ ProverE "mismatch" else do
-        localsU <- alignCC equating (localsL :# localsR)
+        localsU <- alignCC ModeEquating (localsL :# localsR)
         spineU <- unifyPrjs (spineL :# spineR)
         pure $ (ENeutralHole mL whichL :# ENeutralHole mR whichR) <*> distribute localsU <*> spineU
     _ -> throwError $ ProverE "EQ eLR"
@@ -881,10 +879,8 @@ unifyVars eLR@(eL :# eR) = do
   unifyPrj :: Crosscheck m NeutPrj
   unifyPrj = \case
     NApp mL pL argL :# NApp mR pR argR ->
-      (<*>) (NApp mL pL :# NApp mR pR) <$> cc equating (argL :# argR)
+      (<*>) (NApp mL pL :# NApp mR pR) <$> cc ModeEquating (argL :# argR)
     prj -> pure prj
-
-  equating = UnifyMode Invariant IdentitySubsumption NotInjective
 
   cc :: UnifyMode Void -> Pair Eval -> m (Pair Eval)
   cc mode2 pair = fst <$> subsume mode2 pair

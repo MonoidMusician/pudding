@@ -26,7 +26,7 @@ import Pudding.Types.Base (Plicit(..), type (@::))
 import Pudding.Types.Metadata
 import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), pattern Nil, pattern (:>), (@@?), size)
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO (liftIO), MonadTrans (lift), MonadState)
-import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti, BFresh, BPair), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar, NGlobal), ULevel (ULevel), Ctx (Ctx), GlobalTypeInfo (GlobalTypeInfo), Closure (Closure, ConstClosure), ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL, Invariant), UnifyMode (UnifyMode), InjectiveStatus (StillInjective), addGlobal, freshGlobals, pattern ENeutral, pattern ENeutralVar, pattern ENeutralHole)
+import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti, BFresh, BPair), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar, NGlobal), ULevel (ULevel), Ctx (Ctx), GlobalTypeInfo (GlobalTypeInfo), Closure (Closure, ConstClosure), ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL, Invariant), UnifyMode (UnifyMode), Unifying (Unifying), addGlobal, freshGlobals, pattern ENeutral, pattern ENeutralVar, pattern ENeutralHole)
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl(..), CST(..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize, Attributes))
@@ -289,13 +289,13 @@ elaborateDefn :: HasCallStack => Attributes -> Maybe CST -> CST -> Scoped Global
 elaborateDefn attrs mty tm = do
   -- lift . lift . evaluate . force =<< do
     mty' <- for mty \ty -> do
-      tyT <- elabType ty
-      tyE <- eval tyT
-      pure (tyT, tyE)
+      tyTm <- elabType ty
+      tyEv <- eval tyTm
+      pure (tyTm, tyEv)
     tmT0 <- elab (snd <$> mty') tm
     tmT <- mayNormalize attrs tmT0
     ty' <- case mty' of
-      Just (tyT, tyE) -> pure $ GlobalTerm tyT tyE
+      Just (tyTm, tyEv) -> pure $ GlobalTerm tyTm tyEv
       Nothing -> M.globalQuote =<< reinfer tmT
     GlobalDefn (arityOfTerm tmT) ty' <$> M.globalEval tmT
 
@@ -324,7 +324,7 @@ synth (Just expE) term = do
 -- | no coercion is necessary.
 coe :: HasCallStack => Term -> ("actual type" @:: Eval, "expected type" @:: Eval) -> Scoped (Maybe Term)
 coe term (actE, expE) = do
-  (_tys, coercion) <- M.subsume (UnifyMode RSubsumesL GenerateSubsumption StillInjective) (actE :# expE)
+  (_tys, coercion) <- M.subsume (UnifyMode RSubsumesL GenerateSubsumption Unifying) (actE :# expE)
   for coercion \fn ->
     TApp mempty Explicit <$> M.quote fn <*> pure term
 
@@ -357,7 +357,7 @@ elab mexp = \case
         let
           -- FIXME: is this the right scope and such?
           synthesized = EPi mempty Explicit BFresh dom clo
-        _ <- M.subsume (UnifyMode Invariant IdentitySubsumption StillInjective)
+        _ <- M.subsume (UnifyMode Invariant IdentitySubsumption Unifying)
           (univar :# synthesized)
         pure (TApp mempty Explicit funT argT, Eval.instantiateClosure clo argE)
       thingy _ _ = error "not a function/overapplied"

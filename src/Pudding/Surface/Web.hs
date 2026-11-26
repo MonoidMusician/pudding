@@ -8,7 +8,7 @@ import qualified Pudding.Surface.Happy as Happy
 
 import qualified Data.Text as T
 import Data.Pair (Pair(..))
-import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Name (nameText), Term, GlobalInfo (DefnGlobal), Globals, Ctx (Ctx, ctxStack, ctxGlobals), pattern Nil, UnifyMode (UnifyMode), UnifyDir (Invariant), RequestSubsumption (IdentitySubsumption), InjectiveStatus (StillInjective), pattern ENeutralHole, stack, Fresh (Fresh), StackLike (size), Level (Level), ctxOfSize, StackFunctor (mapWithLevel), pattern ENeutralVar)
+import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Name (nameText), Term, GlobalInfo (DefnGlobal), Globals, Ctx (Ctx, ctxStack, ctxGlobals), pattern Nil, UnifyMode (UnifyMode), UnifyDir (Invariant), RequestSubsumption (IdentitySubsumption), Unifying (Unifying), pattern ENeutralHole, stack, Fresh (Fresh), StackLike (size), Level (Level), ctxOfSize, StackFunctor (mapWithLevel), pattern ENeutralVar)
 import qualified Text.Parsec as P
 import qualified Data.Text.IO.Utf8 as TIO
 import Control.Monad.Identity (Identity (runIdentity))
@@ -244,7 +244,7 @@ validateModule (modul, globals, univars, constraints) = Formats
   ctx :: forall ctx. Ctx ctx
   ctx = Ctx globals Nil
   cc (_msg :: String) tm0 tm1 = void $
-    M.subsume (UnifyMode Invariant IdentitySubsumption StillInjective) (tm0 :# tm1)
+    M.subsume (UnifyMode Invariant IdentitySubsumption Unifying) (tm0 :# tm1)
   validateGTerm (GlobalTerm tmT tmE) = do
     (!tyE, !tmE') <- M.validEval tmT
     tyE <$ cc "different eval" tmE tmE'

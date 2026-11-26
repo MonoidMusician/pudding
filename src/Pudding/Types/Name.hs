@@ -46,6 +46,7 @@ instance Show Name where
 instance Pretty Name where
   pretty (Name _ name) = pretty name
 
+-- TODO: cache latest two items
 newtype NameTable = NameTable (Map.Map Text Name)
 
 initTable :: IO (IORef NameTable)
