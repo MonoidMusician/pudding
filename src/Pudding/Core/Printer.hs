@@ -79,8 +79,7 @@ printCore = \case
   TGlobal _m name -> pure $ Doc.pretty name
   -- FIXME: scope?
   THole _m fresh scope -> sexp
-    [ pure "??"
-    , pure $ Doc.pretty fresh
+    [ pure $ "??" <> Doc.pretty fresh
     , sexp $ printCore <$> Vector.toList scope
     ]
   TUniv _m _univ -> pure $ Doc.pretty ("Type" :: String) -- $ case univ of

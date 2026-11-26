@@ -11,7 +11,7 @@
 -- |
 -- | The third is the most important and complicated, involving unification and
 -- | and evaluation.
-{-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE ApplicativeDo, PartialTypeSignatures #-}
 module Pudding.Surface.Elaborator where
 
 import Prelude hiding (exp)
@@ -19,14 +19,14 @@ import Prelude hiding (exp)
 import Data.Functor ((<&>), void)
 import Data.Function ((&))
 import Data.Map (Map)
-import Data.Map qualified as M
+import Data.Map qualified as Map
 import Data.Text (Text)
 import Pudding.Types.Name (Name(..), internalize, NameTable, canonicalName, CanonicalName (chosenName))
 import Pudding.Types.Base (Plicit (Explicit, Implicit), type (@::))
 import Pudding.Types.Metadata
-import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), pattern Nil, pattern (:>), (@@?))
+import Pudding.Types.Stack (Stack, ToLevel(level), ToIndex(index), Level(Level), pattern Nil, pattern (:>), (@@?), size)
 import Control.Monad.State.Strict (StateT (runStateT), gets, modify', MonadIO (liftIO), MonadTrans (lift), MonadState)
-import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti, BFresh, BPair), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar, NGlobal), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals, Ctx), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo), Closure (Closure, ConstClosure), ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL), UnifyMode (UnifyMode), InjectiveStatus (StillInjective), addGlobal, freshGlobals, pattern ENeutral, pattern ENeutralVar)
+import Pudding.Core.Types (GlobalInfo(..), Term(..), GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Binder (BVar, BUnused, BMulti, BFresh, BPair), ScopedTerm (Scoped), Eval(..), Neutral (Neutral), NeutFocus (NVar, NGlobal), ULevel (ULevel), globalsFrom, Ctx (ctxGlobals, Ctx), EvalTypeCtx, GlobalTypeInfo (GlobalTypeInfo), Closure (Closure, ConstClosure), ConstructorInfo (ConstructorInfo), Globals (globalDefns), arityOfTerm, RequestSubsumption (IdentitySubsumption, GenerateSubsumption), UnifyDir (RSubsumesL, Invariant), UnifyMode (UnifyMode), InjectiveStatus (StillInjective), addGlobal, freshGlobals, pattern ENeutral, pattern ENeutralVar, pattern ENeutralHole)
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.IORef (IORef)
 import Pudding.Surface.Parser (Decl(..), CST(..), CBinder, CBinderGroup, RawAttribute (RawAttribute), Attributes (aNormalize, Attributes))
@@ -50,13 +50,14 @@ import qualified Data.Foldable as F
 import Pudding.Types.Monads (Freshener(freshen), eval, quote, reinfer)
 import qualified Pudding.Types.Monads as M
 import Data.Pair (Pair(..))
-import Pudding.Types.Monads.Prover (Prover (Prover), runProverMonad, ProverS (proofGlobals, uvState))
+import Pudding.Types.Monads.Prover (Prover (Prover), runProverMonad, ProverS (proofGlobals, uvState, uvConstraints))
 import Pudding.Types.Config (Field(dflt))
 import Pudding.Types.Monads.Cont1T (Cont1T, adaptCont, runCont1pT, evalCont1pT, localizeCont)
 import Pudding.Core.Boot (typeAuxDefns)
 import Data.Generics.Constructor (ctorName)
 import qualified Data.IntMap.Strict as IntMap
-import Pudding.Types.Monads.Types (UnivarState)
+import Pudding.Types.Monads.Types (UnivarState, AfterSolve)
+import qualified Pudding.Core.Eval as Eval
 
 class Applicative m => TwoPhase m where
   twoPhases :: m (m r) -> m r
@@ -70,15 +71,15 @@ data GGather m r = GGather
   deriving (Functor)
 
 instance Applicative m => Applicative (GGather m) where
-  pure = GGather M.empty . const . pure
+  pure = GGather Map.empty . const . pure
   liftA2 f (GGather ml cl) (GGather mr cr) = GGather
-    (M.unionWith (\_ r -> r) ml mr)
+    (Map.unionWith (\_ r -> r) ml mr)
     (liftA2 (liftA2 f) cl cr)
 
 instance Monad m => TwoPhase (GGather m) where
   twoPhases (GGather m1 c1) = GGather m1 \m2 ->
     c1 m2 >>= \case
-      GGather m3 c2 -> c2 (M.unionWith (\_ r -> r) m2 m3)
+      GGather m3 c2 -> c2 (Map.unionWith (\_ r -> r) m2 m3)
 
 type GInit = StateT (Map Name (Initializing GlobalInfo))
 
@@ -90,26 +91,26 @@ data Initializing t
   deriving (Eq, Ord, Functor, Foldable, Traversable)
 
 willInit :: forall m. Monad m => Name -> GInit m GlobalInfo -> GGather (GInit m) (GInit m GlobalInfo)
-willInit !n creator = GGather (M.singleton n cachedCreator)
+willInit !n creator = GGather (Map.singleton n cachedCreator)
   \_items -> pure cachedCreator
   where
   cachedCreator :: GInit m GlobalInfo
   cachedCreator = do
-    gets (M.lookup n) >>= \case
+    gets (Map.lookup n) >>= \case
       Nothing -> error $ "Missing name: " <> show n
       Just InitFailed -> error $ "Init failed: " <> show n
       Just (Initialized r) -> pure r
       Just (Initializing (Just r)) -> pure r
       Just (Initializing Nothing) -> error $ "Circular dependency: " <> show n
       Just Uninitialized -> do
-        modify' $ M.insert n (Initializing Nothing)
+        modify' $ Map.insert n (Initializing Nothing)
         r <- creator
-        modify' $ M.insert n (Initialized r)
+        modify' $ Map.insert n (Initialized r)
         pure r
 
 inited :: forall m. Monad m => Name -> GGather (GInit m) GlobalInfo
-inited !n = GGather M.empty \items ->
-  case M.lookup n items of
+inited !n = GGather Map.empty \items ->
+  case Map.lookup n items of
     Nothing -> error $ "Missing name: " <> show n
     Just r -> r
 
@@ -155,7 +156,7 @@ willInitGLM text creator = Compose $ mintName id text <&>
 
 clearLocals :: Scoped r -> Scoped r
 clearLocals inner = do
-  let clearGL gl = gl { glLocals = M.empty }
+  let clearGL gl = gl { glLocals = Map.empty }
   g <- M.askGlobals
   local clearGL $ M.withCtx (Ctx g Nil) inner
 
@@ -165,7 +166,7 @@ willUseGLM = Compose . pure . GGather mempty . const . clearLocals
 
 initedGLM :: Name -> Scoped GlobalInfo
 initedGLM n = do
-  asks (M.lookup n . glGlobals) >>= \case
+  asks (Map.lookup n . glGlobals) >>= \case
     Nothing -> error $ "Missing name: " <> show n
     Just i -> i
 
@@ -195,30 +196,32 @@ withForced f e = do
   f e''
 
 
-runElabFull :: forall r. IORef NameTable -> GLM r -> IO ((Globals, IntMap.IntMap UnivarState), r)
+runElabFull :: forall r. IORef NameTable -> GLM r -> IO ((Globals, IntMap.IntMap UnivarState, AfterSolve), r)
 runElabFull tbl (Compose stage0) = do
   -- First we provide the name table to mint all the names
   GGather items stage1 <- runReaderT stage0 tbl
   let
     -- Now we run a scoped computation
-    stage2 :: Scoped ((Globals, IntMap.IntMap UnivarState), r)
+    stage2 :: Scoped (_, r)
     stage2 = do
       -- Do whatever computation the user asked for
       r <- stage1 items
       -- Ensure all of the items are elaborated
       env <- M.askGlobals
-      univars <- lift $ lift $ Prover $ gets uvState
-      pure ((env, univars), r)
+      lift $ lift $ Prover do
+        univars <- gets uvState
+        constraints <- gets uvConstraints
+        pure ((env, univars, constraints), r)
   -- Keep track of all the globals in state, and provide the default
   -- global context with no locals, plus the name table to mint more names
   (r, _) <- runProverMonad dflt $ runReaderT (runStateT stage2 (Uninitialized <$ items))
-    (GLScope tbl items M.empty)
+    (GLScope tbl items Map.empty)
   pure r
 
 runElabScoped :: IORef NameTable -> Scoped r -> IO r
 runElabScoped tbl stage2 = do
-  fmap fst $ runProverMonad dflt $ runReaderT (runStateT stage2 M.empty) $
-    GLScope tbl M.empty M.empty
+  fmap fst $ runProverMonad dflt $ runReaderT (runStateT stage2 Map.empty) $
+    GLScope tbl Map.empty Map.empty
 
 
 
@@ -278,11 +281,11 @@ elaborateDecl = \case
           _ -> error "Bad constructor name"
       willInitGLM ctor \ctorName -> do
         tyName <- mintName glNames tyText
-        asks (M.lookup tyName . glGlobals) >>= \case
+        asks (Map.lookup tyName . glGlobals) >>= \case
           Just tyDef -> tyDef >>= \case
             TypeGlobal (GlobalTypeInfo _ _ _ctors) -> do
               ctx <- M.askGlobals
-              pure $ DefnGlobal $ fromMaybe (error "wat") $ M.lookup ctorName $ globalDefns ctx
+              pure $ DefnGlobal $ fromMaybe (error "wat") $ Map.lookup ctorName $ globalDefns ctx
             _ -> error "Impossible"
           Nothing -> error "Impossible!"
     pure ret
@@ -308,7 +311,9 @@ elaborateDefn attrs mty tm = do
 
 
 elabType :: HasCallStack => CST -> Scoped Term
-elabType = elab Nothing -- TODO: Type
+elabType cst = do
+  (_, _, univ) <- M.freshUniv
+  elab (Just univ) cst
 
 -- | Coerce a synthesized term to an expected type, if provided.
 synth :: HasCallStack => Maybe ("expected type" @:: Eval) -> Term -> Scoped Term
@@ -332,11 +337,30 @@ elab mexp = \case
     funTmT <- elab Nothing fun
     funTyE <- M.validate funTmT
     let
+      prethingy (funT, funTy) arg = do
+        funTy' <- fromMaybe funTy <$> M.forceNeutral funTy
+        thingy (funT, funTy') arg
       thingy (_, EPi _ Implicit _ _ _) _ = error "cannot handle implicits"
       thingy (funT, EPi _ Explicit _ argTy clo) arg = do
         argT <- elab (Just argTy) arg
         argE <- eval argT
         pure (TApp mempty Explicit funT argT, E.instantiateClosure clo argE)
+      thingy (funT, univar@(ENeutralHole _ which locals spine@Nil)) arg = do
+        -- FIXME assert the hole has a universe type
+        (_, _, dom0) <- M.initUVType
+        argT <- elab (Just dom0) arg
+        argE <- eval argT
+        -- Maybe it was solved
+        dom <- fromMaybe dom0 <$> M.forceNeutral dom0
+        (_, codT, cod) <- M.bindNeut mempty BFresh dom \_ _ -> M.initUVType
+        clo <- M.bindClosure BFresh $ Scoped codT
+        -- Instantiate the univar
+        let
+          -- FIXME: is this the right scope and such?
+          synthesized = EPi mempty Explicit BFresh dom clo
+        _ <- M.subsume (UnifyMode Invariant IdentitySubsumption StillInjective)
+          (univar :# synthesized)
+        pure (TApp mempty Explicit funT argT, Eval.instantiateClosure clo argE)
       thingy _ _ = error "not a function/overapplied"
 
       -- TODO: have metadata to indicate a constructor, so this is cheap
@@ -351,14 +375,14 @@ elab mexp = \case
       inlineConstructor appliedT =
         fromMaybe appliedT $ peel Nil (funTmT, appliedT)
     -- TODO: stash type?
-    inlineConstructor . fst <$> foldlM thingy (funTmT, funTyE) args
+    inlineConstructor . fst <$> foldlM prethingy (funTmT, funTyE) args
   CUniv -> do
     lvl <- ULevel <$> freshen <*> freshen
     synth mexp $ TUniv mempty lvl
 
-  CLambda binders body -> elabBinders (TLambda mempty) binders body
-  CPi     binders body -> elabBinders (TPi     mempty) binders body
-  CSigma  binders body -> elabBinders (TSigma  mempty) binders body
+  CLambda binders body -> elabBinders (TLambda mempty) binders [] body
+  CPi     binders body -> elabBinders (TPi     mempty) binders [] body
+  CSigma  binders body -> elabBinders (TSigma  mempty) binders [] body
   -- | CLet    ![(CBinder, "ty" @:: Maybe CST, "tm" @:: CST)]    !CST
 
   -- | CSentence !(NonEmpty (Either L.OpForm CST))
@@ -366,14 +390,14 @@ elab mexp = \case
   CVar (Just (PlainName [] text)) PlainVar -> synth mexp =<< do
     name <- mintName glNames text
     here <- asks id
-    asks (M.lookup name . glLocals) >>= \case
+    asks (Map.lookup name . glLocals) >>= \case
       Just (_ :> e) -> quote e
-      _ -> asks (M.lookup name . glGlobals) >>= \case
+      _ -> asks (Map.lookup name . glGlobals) >>= \case
         Just getter -> getter <&> \case
           TypeGlobal (GlobalTypeInfo _ _ _) ->
             TGlobal mempty name
           DefnGlobal (GlobalDefn _ _ _) -> TGlobal mempty name
-        _ -> error $ "Missing name: " <> show name <> " " <> show (M.keys (glLocals here)) <> " " <> show (M.keys (glGlobals here))
+        _ -> error $ "Missing name: " <> show name <> " " <> show (Map.keys (glLocals here)) <> " " <> show (Map.keys (glGlobals here))
   CVar Nothing idxOrLvl -> synth mexp =<< case idxOrLvl of
     PlainVar -> error "impossible: CVar Nothing PlainVar"
     DBIndex i -> do
@@ -384,7 +408,7 @@ elab mexp = \case
       pure $ TVar mempty $ index c $ level c l
   CVar (Just (PlainName [] text)) idxOrLvl -> synth mexp =<< do
     name <- mintName glNames text
-    asks (M.lookup name . glLocals) >>= \case
+    asks (Map.lookup name . glLocals) >>= \case
       Just stack | Just found <- stack @@? idxOrLvl -> do
         quote found
       Just _ -> error $ "Local stack too small: " <> T.unpack (nameText name)
@@ -440,16 +464,16 @@ elab mexp = \case
 
 elabBinders ::
   (Plicit -> Binder -> Term -> ScopedTerm -> Term) ->
-  NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST) -> CST -> Scoped Term
-elabBinders cons binders body = do
+  NonEmpty (Plicit, NonEmpty CBinder, "ty" @:: Maybe CST) -> [Eval] -> CST -> Scoped Term
+elabBinders cons binders telescope body = do
   runCont1pT (foldMap addBinder binders) \(Endo wrap) ->
     wrap <$> elab Nothing body
   where
   addBinder :: (Plicit, NonEmpty CBinder, Maybe CST) -> Cont1T r Scoped (Endo Term)
   addBinder (plicit, binder, mty) = do
-    tyT <- case mty of
-      Nothing -> error "Missing type for lambda/pi/sigma"
-      Just ty -> lift $ elab Nothing ty
+    tyT <- lift case mty of
+      Nothing -> M.initUVType <&> \(_, ty, _) -> ty
+      Just ty -> elabType ty
     tyE <- eval tyT
     elabMultiBinder tyE binder <&> \binderB ->
       Endo (multiCons plicit binderB tyT)
@@ -465,7 +489,7 @@ elabBinder1 tyE = \case
     let binder = BVar (Meta (canonicalName name))
     (_, neutral) <- M.bindNeut1 mempty binder tyE
     localizeCont \outer ->
-      let addVar = name & M.alter do Just . (:> neutral) . fromMaybe Nil
+      let addVar = name & Map.alter do Just . (:> neutral) . fromMaybe Nil
       in outer { glLocals = addVar (glLocals outer) }
     pure binder
   CPlaceholder ->
@@ -526,9 +550,9 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
 
   -- Provisionally initialize an empty inductive datatype, so that it exists
   -- with the correct type while checking each constructor
-  let prelim = GlobalTypeInfo newParams newIndices M.empty
+  let prelim = GlobalTypeInfo newParams newIndices Map.empty
   -- This is the only place that `Initializing $ Just` is used
-  modify' $ M.insert name $ Initializing $ Just $ TypeGlobal prelim
+  modify' $ Map.insert name $ Initializing $ Just $ TypeGlobal prelim
   addProofGlobal name $ TypeGlobal prelim
   addTypeAuxDefns name prelim
 
@@ -576,7 +600,7 @@ elaborateDataType name rawParams rawIndices mdest rawConstrs = do
       pure $ ConstructorInfo ctorArguments ctorIndices
 
   -- Now the full info is available for the inductive type
-  let final = GlobalTypeInfo newParams newIndices (M.fromList constructors)
+  let final = GlobalTypeInfo newParams newIndices (Map.fromList constructors)
 
   addProofGlobal name $ TypeGlobal final
   -- Add its auxiliary definitions to the booted globals as well

@@ -4,12 +4,12 @@ import Pudding.Core.Types
 import Pudding.Core.Eval as E
 import GHC.Generics (Generic)
 import Data.Function ((&))
-import Data.IntMap.Strict (IntMap)
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as IntSet
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
 import Control.DeepSeq (NFData)
+import qualified Data.IntMap.Strict as IntMap
 
 
 
@@ -22,22 +22,19 @@ data UnivarState = UVState
   , uvTerm :: !("tm" @:: Eval)
   , uvType :: "ty" @:: Eval -- ^ lazy
   -- Partial equations (constraints with this unification variable as its head)
-  , uvEqns :: Stack ("ctx" @:: Vector ("value given" @:: Eval), "projections" @:: Stack NeutPrj, "value achieved" @:: Eval)
+  , uvHeadEqns :: !IntSet -- into ProverS.uvConstraints
   -- Callbacks? for filling in holes for deferred elaboration?
-  , uvNotify :: IntSet -- into ProverS.uvDeferred
-  , uvStatus :: UnivarStatus
+  , uvNotify :: !IntSet -- into ProverS.uvDeferred
+  , uvStatus :: !UnivarStatus
   }
+
+type AfterSolve = IntMap.IntMap ("uvs involved" @:: IntSet, "equation ctx" @:: EvalTypeCtx, Equation)
 
 data UnivarStatus
   = UVUnsolved
   | UVProgressed
   | UVClosed
   deriving (Eq, Ord, Generic, NFData)
-
-data AfterSolve = AfterSolve
-  { aftHeadEqns :: Stack Equation
-  , aftGlobalEqns :: IntMap (IntSet, Equation)
-  }
 
 uvSolution :: UnivarState -> Maybe (Eval, Vector Eval -> Eval)
 uvSolution current

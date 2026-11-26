@@ -26,6 +26,7 @@ import Control.Monad.Trans.Cont (ContT, mapContT)
 import Pudding.Types.Monads.Cont1T (Cont1T (Cont1T), mapCont1T, runCont1pT, adaptCont)
 import Pudding.Types.Monads.Errors (ProverE)
 import qualified Pudding.Core.Printer as Printer
+import Pudding.Types.Monads.Types (AfterSolve)
 
 -----------------
 -- Memoization --
@@ -111,6 +112,11 @@ lookupType name = Map.lookup name . globalTypes <$> askGlobals
 lookupDefn :: Scoping m => ("defn name" @:: Name) -> m (Maybe GlobalDefn)
 lookupDefn name = Map.lookup name . globalDefns <$> askGlobals
 
+bindClosure :: Scoping m => Binder -> ScopedTerm -> m Closure
+bindClosure bdr body = do
+  ctx <- askEvalCtx
+  pure $ Closure ctx bdr body
+
 printCore :: Scoping m => Term -> m Text
 printCore term = do
   depth <- ctxDepth
@@ -157,7 +163,7 @@ class Monad m => Constraining m where
 
 -- State/IO-like
 class (Constraining m, Typing m) => Unifying m where
-  unsafeSolve :: Fresh -> Eval -> m ()
+  unsafeSolve :: Fresh -> Eval -> m AfterSolve
   equate :: Equation -> m ()
   -- unification variables
   initUVType :: m (Fresh, Term, Eval)

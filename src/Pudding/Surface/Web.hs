@@ -8,13 +8,13 @@ import qualified Pudding.Surface.Happy as Happy
 
 import qualified Data.Text as T
 import Data.Pair (Pair(..))
-import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Name (nameText), Term, GlobalInfo (DefnGlobal), Globals, globalsFrom, Ctx (Ctx), pattern Nil, UnifyMode (UnifyMode), UnifyDir (Invariant), RequestSubsumption (IdentitySubsumption), InjectiveStatus (StillInjective))
+import Pudding.Core.Types (initTable, GlobalDefn (GlobalDefn), GlobalTerm (GlobalTerm), Name (nameText), Term, GlobalInfo (DefnGlobal), Globals, globalsFrom, Ctx (Ctx, ctxStack, ctxGlobals), pattern Nil, UnifyMode (UnifyMode), UnifyDir (Invariant), RequestSubsumption (IdentitySubsumption), InjectiveStatus (StillInjective), pattern ENeutralHole, stack, Fresh (Fresh), StackLike (size), mapCtx, Level (Level), ctxOfSize, StackFunctor (mapWithLevel), pattern ENeutralVar)
 import qualified Text.Parsec as P
 import qualified Data.Text.IO.Utf8 as TIO
 import Control.Monad.Identity (Identity (runIdentity))
 import Data.Show.Reshow (reshowAs)
 import qualified Pudding.Surface.Elaborator as Elab
-import Pudding.Core.Printer (Style(..), formatCore)
+import Pudding.Core.Printer (Style(..), formatCore, formatCoreFrom)
 import GHC.IO (catch, evaluate, catchAny)
 import GHC.Exception (SomeException)
 import qualified Data.Map.Strict as Map
@@ -48,8 +48,10 @@ import Pudding.Core.Boot (bootGlobals)
 import qualified Pudding.Types.Monads as M
 import Pudding.Types.Monads.Prover (unsafeRunProver, ProverS (uvState), Prover (Prover))
 import qualified Data.IntMap.Strict as IntMap
-import Pudding.Types.Monads.Types (UnivarState)
+import Pudding.Types.Monads.Types (UnivarState (uvCtx, uvTerm, uvType), AfterSolve)
 import Control.Monad.State.Class (modify')
+import Control.Lens (review)
+import qualified Pudding.Core.Eval as Eval
 
 data Formats = Formats
   { text :: Text
@@ -231,8 +233,8 @@ delabModule modul = Formats
 validateTerm :: Term -> Formats
 validateTerm = formatsTerm . unsafeRunProver Nil . M.validateQuote
 
-validateModule :: (Vector.Vector (Maybe Name, GlobalInfo), Globals, IntMap.IntMap UnivarState) -> Formats
-validateModule (modul, globals, univars) = Formats
+validateModule :: (Vector.Vector (Maybe Name, GlobalInfo), Globals, IntMap.IntMap UnivarState, AfterSolve) -> Formats
+validateModule (modul, globals, univars, constraints) = Formats
   { text = text
   , html = xmlEscape text
   , ansi = fmt Ansi
@@ -256,11 +258,29 @@ validateModule (modul, globals, univars) = Formats
         cc "GlobalDefn wrong type" tyE inferred
         pure info
       info -> pure info
-  fmt f = modulTyped & foldMap \(name, info) ->
-    case info of
-      DefnGlobal (GlobalDefn _ (GlobalTerm ty _) (GlobalTerm _tm _)) ->
-        maybe "_" nameText name <> " : " <> formatCore f ty <> "\n\n"
-      _ -> mempty
+  fmt f = fold
+    [ modulTyped & foldMap \(name, info) ->
+        case info of
+          DefnGlobal (GlobalDefn _ (GlobalTerm ty _) (GlobalTerm _tm _)) ->
+            maybe "_" nameText name <> " : " <> formatCore f ty <> "\n\n"
+          _ -> mempty
+    , IntMap.toAscList univars & foldMap \(which, info) ->
+        let
+          ctx = uvCtx info
+          hole = ENeutralHole mempty (Fresh which) (Vector.fromList $ fmap (snd . snd) $ review stack $ ctxStack ctx) Nil
+          fmtHere = formatCoreFrom f (size ctx) . Eval.quote (void ctx)
+        in fmtHere hole <> " : " <> fmtHere (uvType info) <> " := " <> fmtHere (uvTerm info) <> "\n\n"
+    , IntMap.toAscList constraints & foldMap \(_n, (_involved, ctx, lhs :# rhs)) ->
+        let
+          printStack = foldMap (<> "\n") . mapWithLevel \(Level l, _) (bdr, (ty, val)) ->
+            let
+              fmtLvl = formatCoreFrom f l . Eval.quote (ctxOfSize (ctxGlobals ctx) l)
+            in "_" <> T.pack (show l) <> " : " <> fmtLvl ty <> case val of
+              ENeutralVar _ (Level l') Nil | l' == l -> ""
+              _ -> " := " <> fmtLvl val
+          fmtHere = formatCoreFrom f (size ctx) . Eval.quote (void ctx)
+        in printStack (ctxStack ctx) <> "|- " <> fmtHere lhs <> " =:= " <> fmtHere rhs <> "\n\n"
+    ]
 
 extra :: Text -> IO Stage -> IO [(Text, Stage)]
 extra name produce = catching name $ pure . (name,) <$> produce
@@ -305,9 +325,9 @@ finishDecls _ _ decls =
   (stage3DSuccess decls :) <$> do
     tbl <- initTable
     catching "elab" do
-      ((globals, univars), modul) <- Elab.runElabFull tbl (Elab.elaborateModule decls)
+      ((globals, univars, constraints), modul) <- Elab.runElabFull tbl (Elab.elaborateModule decls)
       pure [stage4DSuccess modul] <> fold
-        [ extra "validate" $ pure $ StageSuccess (validateModule (modul, globals, univars)) Nothing
+        [ extra "validate" $ pure $ StageSuccess (validateModule (modul, globals, univars, constraints)) Nothing
         , extra "delab" $ pure $ StageSuccess (delabModule modul) Nothing
         ]
 

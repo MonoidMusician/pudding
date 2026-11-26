@@ -17,7 +17,7 @@ import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Data.Align (Semialign(alignWith))
 import Data.Distributive (Distributive(distribute))
-import Data.Foldable (foldl', traverse_)
+import Data.Foldable (foldl', traverse_, for_)
 import Data.Function ((&))
 import Data.Functor ((<&>), void)
 import Data.Functor.Classes (Eq1(liftEq))
@@ -89,9 +89,12 @@ reinfer = validateOrNot False
 subsume :: forall m r. Proving m => UnifyMode r -> Pair Eval -> m ("unified" @:: Pair Eval, "coercion" @:: Maybe r)
 subsume _ (!evalL :# !evalR) | evalL FastEq.===? evalR = pure (evalL :# evalR, Nothing)
 subsume mode evalLR@(!evalL :# !evalR) = case evalL :# evalR of
-  ENeutralHole {} :# ENeutralHole {} -> substsubsumeUniVars evalLR <&> (, Nothing)
-  ENeutralHole {} :# _ -> substsubsumeUniVars evalLR <&> (, Nothing)
-  _ :# ENeutralHole {} -> substsubsumeUniVars evalLR <&> (, Nothing)
+  ENeutralHole {} :# ENeutralHole {} | StillInjective <- stillInjective mode ->
+    substsubsumeUniVars evalLR <&> (, Nothing)
+  ENeutralHole {} :# _ | StillInjective <- stillInjective mode ->
+    substsubsumeUniVars evalLR <&> (, Nothing)
+  _ :# ENeutralHole {} | StillInjective <- stillInjective mode ->
+    substsubsumeUniVars evalLR <&> (, Nothing)
 
   -- We unravel `EDeferred` slowly, to check if any names match up, before
   -- continuing with the main cases.
@@ -303,8 +306,6 @@ subsume mode evalLR@(!evalL :# !evalR) = case evalL :# evalR of
   deferred namesL namesR (EDeferred (Deferred _ _ _ mnameL tmL) :# EDeferred (Deferred _ _ _ mnameR tmR)) match nomatch =
     deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) (tmL :# tmR) match nomatch
   -- Check for holes at each step?
-
-  -- _
   deferred namesL namesR (EDeferred (Deferred _ _ _ mnameL tmL) :# tmR) match nomatch | mnameR <- Nothing =
     deferred (maybe id (:) mnameL namesL) (maybe id (:) mnameR namesR) (tmL :# tmR) match nomatch
   deferred namesL namesR (tmL :# EDeferred (Deferred _ _ _ mnameR tmR)) match nomatch | mnameL <- Nothing =
@@ -800,6 +801,17 @@ asCurrentSolution (ENeutralHole _ which locals spine) = do
     pure $ doPrjs (sol locals) spine
 asCurrentSolution _ = pure Nothing
 
+
+-- Solve a unification variable and check equations
+solveCascade :: forall m. Proving m => Fresh -> Eval -> m ()
+solveCascade which val = do
+  let unifying = UnifyMode Invariant IdentitySubsumption StillInjective
+  eqns <- M.unsafeSolve which val
+  for_ eqns \(_involved, ctx, eqn) -> do
+    M.withCtx ctx do
+      void $ subsume unifying eqn
+
+
 -- TODO: pass original expressions
 subsumeUniVars :: forall m. Proving m => Pair Eval -> m (Pair Eval)
 subsumeUniVars eLR@(eL :# eR) = do
@@ -808,35 +820,36 @@ subsumeUniVars eLR@(eL :# eR) = do
   case (solvL, solvR) of
     -- These are not in the pattern fragment, so add them as constraints
     -- and return them as-is
-    (Nothing, Nothing) -> eLR <$ M.equate eLR
+    (Nothing, Nothing) -> checkSameOrEquate
     -- Both have solutions? choose which one may be better
     (Just (whichL, subsL), Just (whichR, subsR)) ->
       case whichL `compare` whichR of
         LT -> do
-          M.unsafeSolve whichL $ subsL eR
+          solveCascade whichL $ subsL eR
           pure eLR -- ??
         GT -> do
-          M.unsafeSolve whichR $ subsR eL
+          solveCascade whichR $ subsR eL
           pure eLR -- ??
-        -- EQ -> do
-        --   tL :# tR <- traverse (M.printCore <=< M.quote) eLR
-        --   error $ "TODO: univar irrelevance: " <> T.unpack tL <> " ~ " <> T.unpack tR*
-        -- FIXME: do conversion check without unification
-        EQ -> do
-          case eLR of
-            ENeutralHole mL _ localsL spineL :# ENeutralHole mR _ localsR spineR -> do
-              if not (checkPrjs (spineL :# spineR)) then error "mismatch" else do
-                localsU <- alignCC equating (localsL :# localsR)
-                spineU <- unifyPrjs (spineL :# spineR)
-                pure $ (ENeutralHole mL whichL :# ENeutralHole mR whichR) <*> distribute localsU <*> spineU
-            _ -> error "EQ eLR"
+        EQ -> checkSameOrEquate
     (Just (whichL, subsL), Nothing) -> do
-      M.unsafeSolve whichL $ subsL eR
+      solveCascade whichL $ subsL eR
       pure eLR -- ??
     (Nothing, Just (whichR, subsR)) -> do
-      M.unsafeSolve whichR $ subsR eL
+      solveCascade whichR $ subsR eL
       pure eLR -- ??
   where
+
+  checkSame = case eLR of
+    ENeutralHole mL whichL localsL spineL :# ENeutralHole mR whichR localsR spineR | whichL == whichR -> do
+      if not (checkPrjs (spineL :# spineR)) then throwError $ ProverE "mismatch" else do
+        localsU <- alignCC equating (localsL :# localsR)
+        spineU <- unifyPrjs (spineL :# spineR)
+        pure $ (ENeutralHole mL whichL :# ENeutralHole mR whichR) <*> distribute localsU <*> spineU
+    _ -> throwError $ ProverE "EQ eLR"
+  checkSameOrEquate =
+    catchError checkSame
+      \_ -> pure eLR <* M.equate eLR
+
   checkPrjs = \case
     (moreL :> NApp _ _ _argL) :# (moreR :> NApp _ _ _argR) ->
       checkPrjs (moreL :# moreR)

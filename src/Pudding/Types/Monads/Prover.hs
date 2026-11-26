@@ -22,7 +22,7 @@ import Data.IntSet (IntSet)
 import qualified Data.IntSet as IntSet
 import Data.IntMap.Monoidal.Strict (MonoidalIntMap)
 import qualified Data.IntMap.Monoidal.Strict as MonoidalIntMap
-import Data.Pair (Pair(..), pattern Pair)
+import Data.Pair (Pair(..))
 import Control.Lens (review)
 import qualified Pudding.Semantics.Universes.Fused as Fused
 import Control.Monad.IO.Class (MonadIO (liftIO))
@@ -40,21 +40,15 @@ data ProverS = ProverS
   { freshest :: {-# UNPACK #-} !Fresh
   , nextUV :: {-# UNPACK #-} !Fresh
   -- | Override the globals in the context
-  , proofGlobals :: Maybe Globals
+  , proofGlobals :: !(Maybe Globals)
+  -- | The state of each unification variable
   , uvState :: !(IntMap UnivarState)
   -- | indexed by univar ID?
   , uvDeferred :: !(IntMap (Prover ()))
   -- | sparse array / arbitrary IDs
-  , uvConstraints :: !(IntMap ("uvs involved" @:: IntSet, Equation))
+  , uvConstraints :: !(IntMap ("uvs involved" @:: IntSet, "equation ctx" @:: EvalTypeCtx, Equation))
   , uvConstraintsRev :: !("uv ID to" @:: MonoidalIntMap ("uvConstraints" @:: IntSet))
   }
-
--- | Gather the equations as a list of pairs
-aftEqns :: AfterSolve -> [Equation]
-aftEqns d =
-  review rstack (aftHeadEqns d)
-    <>
-  (snd <$> IntMap.toAscList (snd <$> aftGlobalEqns d))
 
 -- Solve a variable fully and return constraints it is involved in,
 -- so they can be checked/solved in turn.
@@ -63,38 +57,8 @@ aftEqns d =
 solveFully :: Fresh -> Eval -> Prover AfterSolve
 solveFully (Fresh !i) !val = do
   st <- Prover get
-  let
-    -- Global equations that constrain this variable.
-    -- Will be returned in an arbitrary order *after*
-    -- the head equations, which are stored with the variable.
-    globalEqns :: IntMap (IntSet, Equation)
-    globalEqns =
-      case MonoidalIntMap.lookup i (uvConstraintsRev st) of
-        Nothing -> IntMap.empty
-        Just relevant ->
-          IntMap.intersection (uvConstraints st) $ IntMap.fromSet id relevant
-  case IntMap.lookup i $ uvState st of
-    Nothing -> do
-      -- FIXME: rewind context??
-      ctx <- Prover $ asks proofCtx
-      tm <- M.quote val
-      ty <- U.reinfer tm
-      let
-        entry = UVState
-          { uvCtx = ctx
-          , uvIrrelevant =
-              if size ctx == 0
-              then mempty
-              else freeVarsOf $ Left val
-          , uvTerm = val
-          , uvType = ty
-          , uvEqns = Nil
-          , uvNotify = mempty
-          , uvStatus = UVProgressed -- TODO: UVClosed?
-          }
-      Prover $ put $ st
-        { uvState = IntMap.insert i entry $ uvState st }
-      pure $ AfterSolve { aftHeadEqns = Nil, aftGlobalEqns = globalEqns }
+  headEqns <- case IntMap.lookup i $ uvState st of
+    Nothing -> error "Unknown univar"
     Just current -> do
       let
         updated = current
@@ -106,14 +70,22 @@ solveFully (Fresh !i) !val = do
           , uvTerm = val
           , uvStatus = UVProgressed
           }
-        hydrate locals prjs = ENeut $ Neutral
-          (NHole mempty (Fresh i) locals)
-          prjs
-        headEqns = uvEqns current
-          <&> \(locals, prjs, result) -> Pair (hydrate locals prjs) result
       Prover $ put $! st
         { uvState = IntMap.insert i updated $ uvState st }
-      pure $ AfterSolve { aftHeadEqns = headEqns, aftGlobalEqns = globalEqns }
+      pure $ uvHeadEqns current
+  let
+    -- Global equations that constrain this variable.
+    -- Will be returned in an arbitrary order *after*
+    -- the head equations, which are stored with the variable.
+    globalEqns :: IntMap (IntSet, EvalTypeCtx, Equation)
+    globalEqns =
+      case MonoidalIntMap.lookup i (uvConstraintsRev st) of
+        Nothing -> IntMap.empty
+        Just relevant ->
+          IntMap.intersection (uvConstraints st) $ IntMap.fromSet id $
+            relevant <> headEqns
+  Prover $ modify' \st' -> st' { uvState = IntMap.difference (uvState st') globalEqns }
+  pure globalEqns
 
 initUV :: Eval -> Prover (Fresh, Term, Eval)
 initUV ty = do
@@ -131,7 +103,7 @@ initUV ty = do
           else freeVarsOf $ Left val
       , uvTerm = val
       , uvType = ty
-      , uvEqns = Nil
+      , uvHeadEqns = IntSet.empty
       , uvNotify = mempty
       , uvStatus = UVUnsolved
       }
@@ -141,26 +113,28 @@ initUV ty = do
 
 
 -- Create a new constraint to check when the relevant variables are solved
-equateGlobal :: Equation -> Prover ()
+equateGlobal :: Equation -> Prover Fresh
 equateGlobal (l :# r) = do
-  Fresh i <- freshen
+  Fresh n <- freshen
+  ctx <- M.askCtx
+  -- FIXME: include uvs of the uvs' types?
   let mentioned = uvsOf (Left l) <> uvsOf (Left r)
   Prover $ modify' \s -> s
-    { uvConstraints = IntMap.insert i (mentioned, l :# r) $ uvConstraints s
-    , uvConstraintsRev = uvConstraintsRev s <> MonoidalIntMap.fromSet (const (IntSet.singleton i)) mentioned
+    { uvConstraints = IntMap.insert n (mentioned, ctx, l :# r) $ uvConstraints s
+    , uvConstraintsRev = uvConstraintsRev s <>
+        MonoidalIntMap.fromSet (const (IntSet.singleton n)) mentioned
     }
+  pure (Fresh n)
 
-equateHead :: Equation -> Prover ()
-equateHead (focus :# result) = case focus of
-  ENeutralHole _meta (Fresh i) locals prjs -> do
-    st <- Prover get
-    updated <- case IntMap.lookup i $ uvState st of
-      Nothing -> error "equateHead missing"
-      Just current -> pure $
-        current { uvEqns = uvEqns current :> (locals, prjs, result) }
-    Prover $ put $! st
-      { uvState = IntMap.insert i updated $ uvState st }
-  _ -> error "equateHead bad form"
+equateHead :: "univar" @:: Fresh -> "constraint" @:: Fresh -> Prover ()
+equateHead (Fresh i) (Fresh n) = do
+  st <- Prover get
+  updated <- case IntMap.lookup i $ uvState st of
+    Nothing -> error "equateHead missing"
+    Just current -> pure $
+      current { uvHeadEqns = IntSet.insert n $ uvHeadEqns current }
+  Prover $ put $! st
+    { uvState = IntMap.insert i updated $ uvState st }
 
 data ProverR = ProverR
   { proofCtx :: !EvalTypeCtx
@@ -274,16 +248,16 @@ instance Typing Prover where
   reinfer = U.reinfer
 
 instance Unifying Prover where
-  unsafeSolve var val = do
-    _ <- solveFully var val
-    pure ()
+  unsafeSolve = solveFully
 
-  equate eqn@(l :# r) = case eqn of
-    ENeutralHole {} :# ENeutralHole {} ->
-      equateHead (l :# r) *> equateHead (r :# l)
-    ENeutralHole {} :# _ -> equateHead (l :# r)
-    _ :# ENeutralHole {} -> equateHead (r :# l)
-    _ -> equateGlobal eqn
+  equate eqn = do
+    n <- equateGlobal eqn
+    case eqn of
+      ENeutralHole _ whichL _ _ :# ENeutralHole _ whichR _ _ ->
+        equateHead whichL n *> equateHead whichR n
+      ENeutralHole _ whichL _ _ :# _ -> equateHead whichL n
+      _ :# ENeutralHole _ whichR _ _ -> equateHead whichR n
+      _ -> pure ()
 
   initUVTerm = initUV
 

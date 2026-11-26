@@ -387,10 +387,10 @@ printCST = dbgPrec \case
   -- CStr ![Either Text CST]
   -- CHole !(Maybe Text)
   CStr _ -> error "Unsupported CStr"
-  CHole (Just name) Nothing   -> parens [ lit "??", pretty name ]
-  CHole (Just name) (Just []) -> parens [ lit "??", pretty name ]
+  CHole (Just name) Nothing   -> parens [ lit "??" <> pretty name ]
+  CHole (Just name) (Just []) -> parens [ lit "??" <> pretty name ]
   CHole (Just name) (Just locals) -> fold
-    [ parens [ lit "??", pretty name ]
+    [ parens [ lit "??" <> pretty name ]
     , wrap ".[" "]" [commas $ printCST <$> locals]
     ]
   CHole _ _ -> error "Unsupported CHole"
