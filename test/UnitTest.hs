@@ -13,7 +13,7 @@ import Control.Monad.Reader.Class (MonadReader(local))
 type Cont1R = Cont1T String ((->) (Stack String))
 
 into :: (Stack String -> Stack String) -> Cont1R ()
-into = localizeCont
+into = localizeCont1
 snoc :: String -> Cont1R ()
 snoc v = into (:> v)
 

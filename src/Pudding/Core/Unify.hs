@@ -36,7 +36,7 @@ import qualified Data.Map as Map
 import qualified Data.Vector as Vector
 import qualified Pudding.Types.Monads as M
 import qualified Pudding.Types.Stack as Stack
-import Pudding.Types.Monads.Cont1T (Cont1T, adaptCont, runCont1pT)
+import Pudding.Types.Monads.Cont1T (Cont1T, adaptCont1, runCont1pT)
 import Control.Monad.Error.Class (MonadError(catchError, throwError))
 import Pudding.Types.Monads.Errors (ProverE(ProverE))
 import qualified Pudding.Core.Eval as E
@@ -633,7 +633,7 @@ validateOrNot should = \case
           valueTy <- validateOrNot should value
           cc (mismatchError <> " " <> show i) valueTy tyEval
         -- Now we extend `typeCtx` with the new value (laziness is nice here)
-        adaptCont $ local (:> (binder, eval (toEvalCtx ctorCtx) value))
+        adaptCont1 $ local (:> (binder, eval (toEvalCtx ctorCtx) value))
         -- Proceed with the next index `i+1`
         validateTelescope mismatchError (i+1) valueVector typeVector
       _ -> pure ()

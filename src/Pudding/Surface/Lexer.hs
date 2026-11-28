@@ -477,9 +477,9 @@ data NameForm
   -- | is expected. This may need some workshopping, especially to handle
   -- | disfixes. Is more aspirational right now.
   -- |
-  -- | `(+)` short for `(:+:)`, `(:Vector'@[:])`, `(:+[:]+:)`, `($[:+:])`
+  -- | `(+)` short for `(:+:)`, `(:Vector'@[:])`, `(:+[:]+:)`
   | OperatorName  ![Text] !(Maybe Text) ![Text] !(Maybe Text)
-  -- | `(Control'if:then:else:)`, `Control'(:if:else:)`,
+  -- | `(if:then:else:)`, `Control'(:if:else:)`,
   | DistfixPhrase ![Text] !(Maybe Text) ![Text] !(Maybe Text)
   deriving (Eq, Ord, Show, Generic, NFData, AE.ToJSON, AE.FromJSON)
 -- | Forms of operators.

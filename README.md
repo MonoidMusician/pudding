@@ -41,7 +41,7 @@ The first stage, of assembling the grammar and then generating the parse table/a
 @derive Functor List
   '' Generates something like this:
   /'
-  List'map @{I, O} (f : I -> O) : List I -> List O
+  List'map @{I & O} (f : I -> O) : List I -> List O
   | nil := nil
   | cons (t : I) (ts : List I) :=
     cons (f t : O) (List'map f ts : List O)

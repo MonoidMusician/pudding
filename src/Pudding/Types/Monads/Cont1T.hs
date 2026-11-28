@@ -11,6 +11,7 @@ import Control.Monad.Writer.Class (MonadWriter (tell, listen, pass))
 import Control.Monad.State.Class (MonadState (get, put))
 import Data.Functor ((<&>))
 import Data.Bifunctor (Bifunctor(first))
+import Control.Monad.Trans.Cont (ContT (ContT))
 
 
 -- Linear continuation monad
@@ -61,12 +62,13 @@ memoizeIO act = liftIO do
 -- | a monad `m` on a known result type `r`.
 -- |
 -- | Two things make this linear:
--- | - The `forall c.` skolem ensures that the transformation actually calls
--- |   the provided `m (c, r)` (or crashes; nothing you can do about that).
--- | - The provided `m (c, r)` should be memoized, so that side effects run
+-- | - The `forall i o.` skolems ensure that the transformation actually calls
+-- |   the provided `m i` to return an `o` (or crashes; nothing you can do about that).
+-- | - The provided `m i` should be memoized, so that side effects run
 -- |   the first time, only, and the result is cached in case it is called again.
 -- |
--- | Currently this is only provided for `IO` through `MVar`.
+-- | Currently memoization is only provided for `IO` through `MVar`.
+-- | But memoization is mostly not needed.
 data Tweak r m = Tweak (Memoizer m -> forall i o. ((r -> m r) -> i -> o) -> m i -> m o) | NoTweak
 
 tweaks :: forall r m i o. Applicative m => Memoizer m -> Tweak r m -> ((r -> m r) -> i -> o) -> m i -> m o
@@ -92,7 +94,20 @@ instance Monad m => Monoid (Tweak r m) where
   mempty = NoTweak
 
 
--- | A linear continuation monad.
+-- | A linear continuation monad, or something like it.
+-- |
+-- | The idea is that it runs some actions in `m` and ultimately runs a
+-- | hypothetical continuation `t -> m r` exactly once. To do this, it returns
+-- | the intermediate result `t` directly and leaves the caller responsible
+-- | for running the continuation. Besides just returning `t`, the action is
+-- | also allowed to adapt the continuation via an action `r -> m r`, which
+-- | allows adapting context, catching errors, modifying the result `r`, and so on.
+-- |
+-- | Together, this models how a linear continuation monad would be expected
+-- | to behave. Concretely, it also allows lifting `listen`-like actions, since
+-- | it is essentially a writer monad itself.
+-- |
+-- | See `adaptCont1` for the major caveat.
 newtype Cont1T r m t = Cont1T (Memoizer m -> m (Tweak r m, t))
   deriving (Functor)
 
@@ -104,7 +119,10 @@ instance Monad m => Applicative (Cont1T r m) where
 instance Monad m => Monad (Cont1T r m) where
   Cont1T act1 >>= g = Cont1T \m -> do
     (acc1, x) <- act1 m
+    -- Cache act2 with a memoizer, if provided
     act2 <- case g x of Cont1T act2 -> useMemoizer m (act2 m)
+    -- This is the key line: use `acc1` to adapt the action `act2` from `g`,
+    -- but also add it onto the tweaks for the final continuation.
     first (acc1 <>) <$> tweaks m acc1 (const id) act2
 
 runCont1TIO :: MonadIO m => Cont1T r m t -> (t -> m r) -> m r
@@ -126,12 +144,22 @@ evalCont1pT :: Monad m => Cont1T r m r -> m r
 evalCont1pT = evalCont1T noMemoizer
 
 
--- Provide a function to adapt the linear continuation
-adaptCont :: Applicative m => (forall c. m c -> m c) -> Cont1T r m ()
-adaptCont f = Cont1T \_ -> pure (Tweak \_ io x -> io pure <$> f x, ())
+-- | Provide a function to adapt the linear continuation.
+-- | **Important**: this function must be a monad morphism:
+-- |
+-- | - `f (x >>= k) = f x >>= f . k`
+-- |
+-- | This limits it to functions like `local`, adding context to errors, and
+-- | some idempotent actions.
+-- |
+-- | This is because it should apply for scoped actions before the continuation
+-- | then also apply to the final continuation as well.
+adaptCont1 :: Applicative m => (forall c. m c -> m c) -> Cont1T r m ()
+adaptCont1 f = Cont1T \_ -> pure (Tweak \_ io x -> io pure <$> f x, ())
 
-localizeCont :: MonadReader r m => (r -> r) -> Cont1T c m ()
-localizeCont f = adaptCont (local f)
+-- | The primary way to adapt a continuation: change context in a reader monad.
+localizeCont1 :: MonadReader r m => (r -> r) -> Cont1T c m ()
+localizeCont1 f = adaptCont1 (local f)
 
 onResult :: Monad m => (r -> m r) -> Cont1T r m ()
 onResult rmr = Cont1T \_ -> pure (Tweak \_ io x -> io rmr <$> x, ())
@@ -170,3 +198,11 @@ instance MonadIO m => MonadIO (Cont1T r m) where liftIO = lift . liftIO
 
 instance (Monoid t, Monad m) => Monoid (Cont1T r m t) where mempty = pure mempty
 instance (Semigroup t, Monad m) => Semigroup (Cont1T r m t) where (<>) = liftA2 (<>)
+
+
+adaptCont :: Applicative m => (forall c. m c -> m c) -> ContT r m ()
+adaptCont f = ContT \k -> f (k ())
+
+localizeCont :: MonadReader r m => (r -> r) -> ContT c m ()
+localizeCont f = adaptCont (local f)
+

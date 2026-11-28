@@ -87,6 +87,7 @@ solveFully (Fresh !i) !val = do
   Prover $ modify' \st' -> st' { uvState = IntMap.difference (uvState st') globalEqns }
   pure globalEqns
 
+-- | Initialize a unification variable, capturing its original context.
 initUV :: Eval -> Prover (Fresh, Term, Eval)
 initUV ty = do
   ctx <- askCtx
@@ -218,7 +219,6 @@ instance Evaling Prover where
     ctx <- M.askQuoteCtx
     pure $ E.quote ctx val
   currentSolutions = Prover do
-    -- TODO: return Nothing if the var is not solved?
     gets ((\vars (Fresh which) -> uvSolution =<< IntMap.lookup which vars) . uvState)
   univarsType = Prover do
     gets ((\vars (Fresh which) -> maybe (error "univarsType") uvTypeEval $ IntMap.lookup which vars) . uvState)
@@ -247,6 +247,12 @@ instance Typing Prover where
     pure (ty, val)
   reinfer = U.reinfer
 
+  freshUniv = do
+    uLevel <- freshen
+    uStage <- freshen
+    let u = ULevel { uStage = uStage, uLevel = uLevel }
+    pure (u, TUniv mempty u, EUniv mempty u)
+
 instance Unifier Prover where
   unsafeSolve = solveFully
 
@@ -260,6 +266,10 @@ instance Unifier Prover where
       _ -> pure ()
 
   initUVTerm = initUV
+
+  initUVType = do
+    (_, _, u) <- freshUniv
+    initUVTerm u
 
 instance Proving Prover where
   subsume = U.subsume

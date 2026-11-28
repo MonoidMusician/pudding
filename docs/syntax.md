@@ -172,7 +172,7 @@ Nat'add : Nat -> Nat -> Nat
     :by: cong succ (length_homo l1 l2)
   '/
 
-  while_just @{I, O} :
+  while_just @{I & O} :
     (I -> Maybe O) ->
     List I ->
     { justs : List O, tail : List I }
@@ -187,7 +187,7 @@ Nat'add : Nat -> Nat -> Nat
   '' we revert the `& f i ??` now, by just matching two items
   | f, tail := { justs := nil, tail }
 
-  while_right @{I, L, R} :
+  while_right @{I & L & R} :
     (I -> Either (I -> L) R) ->
     List I ->
     { rights : List R, leftover : List L }

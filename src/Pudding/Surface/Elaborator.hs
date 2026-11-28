@@ -52,7 +52,7 @@ import qualified Pudding.Types.Monads as M
 import Data.Pair (Pair(..))
 import Pudding.Types.Monads.Prover (Prover (Prover), runProverMonad, ProverS (proofGlobals, uvState, uvConstraints))
 import Pudding.Types.Config (Field(dflt))
-import Pudding.Types.Monads.Cont1T (Cont1T, adaptCont, runCont1pT, evalCont1pT, localizeCont)
+import Pudding.Types.Monads.Cont1T (Cont1T, adaptCont1, runCont1pT, evalCont1pT, localizeCont1)
 import Pudding.Core.Boot (typeAuxDefns)
 import Data.Generics.Constructor (ctorName)
 import qualified Data.IntMap.Strict as IntMap
@@ -498,7 +498,7 @@ elabBinder1 tyE = \case
     name <- mintName glNames text
     let binder = BVar (Meta (canonicalName name))
     (_, neutral) <- M.bindNeut1 mempty binder tyE
-    localizeCont \outer ->
+    localizeCont1 \outer ->
       let addVar = name & Map.alter do Just . (:> neutral) . fromMaybe Nil
       in outer { glLocals = addVar (glLocals outer) }
     pure binder
@@ -513,7 +513,7 @@ elabMultiBinder :: ("ty" @:: Eval) -> NonEmpty CBinder -> Cont1T c Scoped (NonEm
 elabMultiBinder tyE = traverse (elabBinder1 tyE)
 
 localize :: MonadReader r m => a -> (r -> r) -> Cont1T c m a
-localize c f = c <$ adaptCont (local f)
+localize c f = c <$ adaptCont1 (local f)
 
 
 -- Add an entry to the Globals, stored in the Prover part of the stack.
