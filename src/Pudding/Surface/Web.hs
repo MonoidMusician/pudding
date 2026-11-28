@@ -269,7 +269,7 @@ validateModule (modul, globals, univars, constraints) = Formats
           hole = ENeutralHole mempty (Fresh which) (Vector.fromList $ fmap (snd . snd) $ review stack $ ctxStack ctx) Nil
           fmtHere = formatCoreFrom f (size ctx) . Eval.quote (void ctx)
         in fmtHere hole <> " : " <> fmtHere (uvType info) <> case uvTerm info of
-            ENeutralHole _ (Fresh w') _ Nil | w' == which -> ""
+            ENeutralHole _ (Fresh w') _ Nil | w' == which -> "\n\n"
             _ -> " := " <> fmtHere (uvTerm info) <> "\n\n"
     , IntMap.toAscList constraints & foldMap \(_n, (_involved, ctx, lhs :# rhs)) ->
         let

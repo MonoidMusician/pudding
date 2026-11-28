@@ -47,6 +47,7 @@ import Data.ByteString.Lazy.UTF8 (toString)
 import GHC.StableName (StableName, makeStableName)
 import GHC.IO.Unsafe (unsafePerformIO)
 import Data.Vector (Vector)
+import Control.Comonad (Comonad(extract))
 
 eval :: HasCallStack => EvalCtx -> Term -> Eval
 eval = flip evaling
@@ -419,7 +420,7 @@ quotingClosure (Closure savedCtx bdr (Scoped savedBody)) _argTy ctx =
   let
     (lvl, ctx') = push (bdr, ()) ctx
     -- This is the (only-ish) place that we create neutrals: when quoting.
-    evalingArg = ENeut (Neutral (NVar mempty lvl) Nil)
+    evalingArg = ENeutralVar mempty lvl Nil
     e = (evaling savedBody $ savedCtx :> (bdr, evalingArg)) :: Eval
   in Scoped $ quoting e ctx'
 quotingClosure (ConstClosure ret) _ ctx =
@@ -451,7 +452,7 @@ shiftFrom _ 0 = id
 shiftFrom base delta = \case
   TVar meta (Index idx) -> TVar meta (Index (if idx >= base then idx + delta else idx))
   TGlobal meta name -> TGlobal meta name
-  THole meta fresh scope -> THole meta fresh (go <$> scope)
+  THole meta which locals -> THole meta which (go <$> locals)
   TUniv meta univ -> TUniv meta univ
   TAscribe meta tm ty -> TAscribe meta (go tm) (go ty)
   TLet meta b ty defn (Scoped body) -> TLet meta b (go ty) (go defn) (Scoped (into body))
@@ -488,7 +489,7 @@ shiftFrom' base delta t = conserve' t \case
   TVar _ _ -> pure t
   TGlobal _ _ -> pure t
   TUniv   _ _ -> pure t
-  THole meta hole scope -> THole meta hole <$> traverse go scope
+  THole meta which locals -> THole meta which <$> traverse go locals
   TAscribe meta tm ty -> TAscribe meta <$> go tm <*> go ty
   TLet meta b ty defn body -> TLet meta b <$> go ty <*> go defn <*> into body
   TLambda meta p b ty body -> TLambda meta p b <$> go ty <*> into body
@@ -517,3 +518,44 @@ mkHOAS :: EvalCtx -> Binder -> ("ty" @:: Eval) -> (Eval -> Eval) -> Eval
 mkHOAS ctx bdr inputTy f = ELambda mempty Explicit bdr inputTy $ Closure ctx bdr $
   Scoped $ quote (void ctx :> (bdr, ())) $ f $ ENeut $ Neutral (NVar mempty (Level $ size ctx)) Nil
 
+fillHoles :: (Fresh -> Maybe (Vector Eval -> Eval)) -> EvalCtx -> HasCallStack => Term -> Term
+fillHoles sols ctx = extract . fillHoles' sols ctx
+
+fillHoles' :: (Fresh -> Maybe (Vector Eval -> Eval)) -> EvalCtx -> HasCallStack => Term -> Conserve Term
+fillHoles' sols ctx t = conserve' t \case
+  TVar _ _ -> pure t
+  TGlobal _ _ -> pure t
+  TUniv   _ _ -> pure t
+  THole _meta which locals -> case sols which of
+    Nothing -> pure t
+    Just sol -> Altered $ quote (void ctx) $ sol $ eval ctx <$> locals
+  TAscribe meta tm ty -> TAscribe meta <$> go tm <*> go ty
+  TLet meta binder ty defn (Scoped body) ->
+    let
+      ty' = go ty
+      defn' = go defn
+      value = evaling (extract defn') ctx
+      shared = mkdeferred value $ Deferred meta
+        (Meta (DeferBcLetBound binder)) (evaling (extract ty') ctx) . Just
+      ctx' = ctx :> (binder, shared)
+    in TLet meta binder <$> ty' <*> defn' <*> (Scoped <$> fillHoles' sols ctx' body)
+  TLambda meta p b ty body -> TLambda meta p b <$> go ty <*> into b body
+  TPi     meta p b ty body -> TPi     meta p b <$> go ty <*> into b body
+  TSigma  meta p b ty body -> TSigma  meta p b <$> go ty <*> into b body
+  TPair meta ty left right -> TPair meta <$> go ty <*> go left <*> go right
+  TFst meta tm -> TFst meta <$> go tm
+  TSnd meta tm -> TSnd meta <$> go tm
+  TApp meta plicit fun arg -> TApp meta plicit <$> go fun <*> go arg
+  TTyCtor meta name params indices -> TTyCtor meta name <$> traverse go params <*> traverse go indices
+  TTmCtor meta name params args -> TTmCtor meta name <$> traverse go params <*> traverse go args
+  TCase meta motive cases scrutinee -> TCase meta <$> go motive <*> go cases <*> go scrutinee
+  TRecordTy meta fields -> TRecordTy meta <$> traverse go fields
+  TRecordTm meta fields -> TRecordTm meta <$> traverse go fields
+  TField meta focus field -> TField meta <$> go focus <*> pure field
+  TLift   meta ty -> TLift   meta <$> go ty
+  TQuote  meta tm -> TQuote  meta <$> go tm
+  TSplice meta tm -> TSplice meta <$> go tm
+  where
+  go = fillHoles' sols ctx
+  into b (Scoped body) = Scoped <$>
+    fillHoles' sols (ctx :> (b, ENeutralVar mempty (Level $ size ctx) Nil)) body

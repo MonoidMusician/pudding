@@ -293,7 +293,11 @@ elaborateDefn attrs mty tm = do
       tyEv <- eval tyTm
       pure (tyTm, tyEv)
     tmT0 <- elab (snd <$> mty') tm
-    tmT <- mayNormalize attrs tmT0
+    sols <- fmap (fmap snd) <$> M.currentSolutions
+    -- Substitute current solutions for unification variables
+    let subst = Eval.fillHoles sols Nil
+    -- Also normalize it
+    tmT <- fmap subst $ mayNormalize attrs tmT0
     ty' <- case mty' of
       Just (tyTm, tyEv) -> pure $ GlobalTerm tyTm tyEv
       Nothing -> M.globalQuote =<< reinfer tmT
